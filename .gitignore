@@ -1,0 +1,35 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Java / Maven
+backend/**/target/
+backend/**/.classpath
+backend/**/.project
+backend/**/.settings/
+*.jar
+*.war
+*.class
+
+# Node / React Native
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/build/
+mobile/*.log
+mobile/.metro-health-check*
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
