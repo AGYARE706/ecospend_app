@@ -1,6 +1,6 @@
 # EcoSpend
 
-Student expense tracking app — monorepo scaffold.
+Savings and expense tracking app — monorepo scaffold.
 
 ## Structure
 
