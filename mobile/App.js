@@ -7,6 +7,7 @@ export default function App() {
     <View style={styles.container}>
       <HomeScreen />
       <StatusBar style="auto" />
+      <Text>"hello my name is korley"</Text>
     </View>
   );
 }
