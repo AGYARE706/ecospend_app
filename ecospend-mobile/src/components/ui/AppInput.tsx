@@ -20,6 +20,8 @@ import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
  * secureTextEntry — hides text for password fields
  * error — validation error message shown below the field
  * showToggle — shows eye icon to toggle password visibility
+ * multiline — enables multiline text input
+ * numberOfLines — visible lines when multiline is enabled
  */
 export interface AppInputProps {
   label: string;
@@ -30,6 +32,8 @@ export interface AppInputProps {
   secureTextEntry?: boolean;
   error?: string;
   showToggle?: boolean;
+  multiline?: boolean;
+  numberOfLines?: number;
 }
 
 export default function AppInput({
@@ -41,6 +45,8 @@ export default function AppInput({
   secureTextEntry = false,
   error,
   showToggle = false,
+  multiline = false,
+  numberOfLines = 1,
 }: AppInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -58,7 +64,7 @@ export default function AppInput({
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.inputWrapper, wrapperStyle]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, multiline && styles.inputMultiline]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -69,6 +75,9 @@ export default function AppInput({
           onBlur={() => setIsFocused(false)}
           autoCapitalize="none"
           autoCorrect={false}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          textAlignVertical={multiline ? 'top' : 'center'}
         />
         {showToggle && secureTextEntry ? (
           <Pressable
@@ -122,6 +131,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.md,
     paddingVertical: spacing.sm,
+  },
+  inputMultiline: {
+    minHeight: 80,
+    paddingTop: spacing.sm,
   },
   toggleButton: {
     marginLeft: spacing.sm,
