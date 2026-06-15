@@ -1,4 +1,4 @@
-CREATE TABLE identity_schema.users (
+CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     phone_number VARCHAR(15) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -11,4 +11,4 @@ CREATE TABLE identity_schema.users (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_phone ON identity_schema.users(phone_number);
+CREATE INDEX idx_users_phone ON users(phone_number);
