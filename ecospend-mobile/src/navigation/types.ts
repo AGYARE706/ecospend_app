@@ -8,6 +8,12 @@ export type AppTabParamList = {
   Dashboard: undefined;
   Transactions: undefined;
   Goals: undefined;
-  Vault: undefined;
+  Budget: undefined;
+  Calculator: undefined;
   Profile: undefined;
+};
+
+export type AppStackParamList = {
+  MainTabs: undefined;
+  AddTransaction: undefined;
 };

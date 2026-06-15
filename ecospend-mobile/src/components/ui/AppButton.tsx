@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   View,
+  ViewStyle,
 } from 'react-native';
 
 import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
@@ -14,14 +14,16 @@ import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
  * onPress — callback when the button is pressed
  * loading — shows a spinner and disables interaction when true
  * disabled — disables the button without showing a spinner
- * variant — 'primary' for filled green button, 'text' for link-style button
+ * variant — visual style: primary, text link, outline, or ghost
+ * style — optional layout overrides for width/height in row layouts
  */
 export interface AppButtonProps {
   title: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
-  variant?: 'primary' | 'text';
+  variant?: 'primary' | 'text' | 'outline' | 'ghost';
+  style?: ViewStyle;
 }
 
 export default function AppButton({
@@ -30,6 +32,7 @@ export default function AppButton({
   loading = false,
   disabled = false,
   variant = 'primary',
+  style,
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
 
@@ -43,9 +46,37 @@ export default function AppButton({
     );
   }
 
+  if (variant === 'outline') {
+    return (
+      <Pressable
+        style={[styles.outlineButton, isDisabled && styles.buttonDisabled, style]}
+        onPress={onPress}
+        disabled={isDisabled}
+      >
+        {loading ? (
+          <ActivityIndicator color={colors.primary} />
+        ) : (
+          <Text style={styles.outlineTitle}>{title}</Text>
+        )}
+      </Pressable>
+    );
+  }
+
+  if (variant === 'ghost') {
+    return (
+      <Pressable
+        style={[styles.ghostButton, isDisabled && styles.buttonDisabled, style]}
+        onPress={onPress}
+        disabled={isDisabled}
+      >
+        <Text style={styles.ghostTitle}>{title}</Text>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
-      style={[styles.button, isDisabled && styles.buttonDisabled]}
+      style={[styles.button, isDisabled && styles.buttonDisabled, style]}
       onPress={onPress}
       disabled={isDisabled}
     >
@@ -67,6 +98,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
+  outlineButton: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+  },
+  ghostButton: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+  },
   buttonDisabled: {
     opacity: 0.6,
   },
@@ -74,6 +119,16 @@ const styles = StyleSheet.create({
     color: colors.buttonText,
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
+  },
+  outlineTitle: {
+    color: colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  ghostTitle: {
+    color: colors.textGrey,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
   },
   textButton: {
     color: colors.primary,

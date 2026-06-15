@@ -1,11 +1,12 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-import DashboardScreen from '../screens/stubs/DashboardScreen';
-import GoalsScreen from '../screens/stubs/GoalsScreen';
+import BudgetEnvelopesScreen from '../screens/app/BudgetEnvelopesScreen';
+import DashboardScreen from '../screens/app/DashboardScreen';
+import MoMoCalculatorScreen from '../screens/app/MoMoCalculatorScreen';
+import SavingsGoalsScreen from '../screens/app/SavingsGoalsScreen';
 import ProfileScreen from '../screens/stubs/ProfileScreen';
-import TransactionsScreen from '../screens/stubs/TransactionsScreen';
-import VaultScreen from '../screens/stubs/VaultScreen';
+import TransactionsScreen from '../screens/app/TransactionsScreen';
 import { colors, fontSize } from '../theme';
 import type { AppTabParamList } from './types';
 
@@ -17,15 +18,24 @@ const tabIcons: Record<keyof AppTabParamList, TabIconName> = {
   Dashboard: 'home-outline',
   Transactions: 'list-outline',
   Goals: 'flag-outline',
-  Vault: 'lock-closed-outline',
+  Budget: 'wallet-outline',
+  Calculator: 'calculator-outline',
   Profile: 'person-outline',
 };
+
+const hiddenHeaderRoutes: Array<keyof AppTabParamList> = [
+  'Dashboard',
+  'Transactions',
+  'Goals',
+  'Budget',
+  'Calculator',
+];
 
 export default function AppNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: true,
+        headerShown: !hiddenHeaderRoutes.includes(route.name),
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textGrey,
         tabBarLabelStyle: {
@@ -38,8 +48,13 @@ export default function AppNavigator() {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Transactions" component={TransactionsScreen} />
-      <Tab.Screen name="Goals" component={GoalsScreen} />
-      <Tab.Screen name="Vault" component={VaultScreen} />
+      <Tab.Screen name="Goals" component={SavingsGoalsScreen} />
+      <Tab.Screen name="Budget" component={BudgetEnvelopesScreen} />
+      <Tab.Screen
+        name="Calculator"
+        component={MoMoCalculatorScreen}
+        options={{ title: 'Calc' }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
