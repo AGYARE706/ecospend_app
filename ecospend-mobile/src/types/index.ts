@@ -10,7 +10,7 @@ export type TransactionCategory =
 
 export type Provider = 'MTN MoMo' | 'Telecel Cash' | 'AT Money';
 
-export type UserTier = 'FREE';
+export type UserTier = 'FREE' | 'PLUS';
 
 export type TransactionFilter =
   | 'All'

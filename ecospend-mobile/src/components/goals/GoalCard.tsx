@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import AppButton from '../ui/AppButton';
 import GhsText from '../ui/GhsText';
 import GoalDeadlineBadge from './GoalDeadlineBadge';
 import GoalProgressBar from './GoalProgressBar';
 import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
 import {
   formatMonthYear,
+  getGoalAccentColors,
   getGoalProgress,
   getWeeklyTarget,
 } from '../../utils/goals';
@@ -35,6 +35,7 @@ export default function GoalCard({
   const weeklyTarget = getWeeklyTarget(goal);
   const isHighWeeklyTarget =
     weeklyTarget !== null && weeklyTarget > goal.targetAmount * 0.5;
+  const accent = getGoalAccentColors(goal.color);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -47,32 +48,30 @@ export default function GoalCard({
 
   return (
     <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
+      <View style={[styles.accentStrip, { backgroundColor: accent.accent }]} />
+
       <View style={styles.topRow}>
-        <Text style={styles.name} numberOfLines={1}>
-          {goal.name}
-        </Text>
+        <View style={[styles.goalIcon, { backgroundColor: accent.background }]}>
+          <Ionicons name="flag-outline" size={18} color={accent.accent} />
+        </View>
+        <View style={styles.titleBlock}>
+          <Text style={styles.name} numberOfLines={1}>
+            {goal.name}
+          </Text>
+          <View style={styles.targetRow}>
+            <GhsText amount={goal.currentAmount} variant="income" size="sm" />
+            <Text style={styles.targetLabel}> of </Text>
+            <GhsText amount={goal.targetAmount} size="sm" style={styles.targetAmount} />
+          </View>
+        </View>
         <GoalDeadlineBadge goal={goal} />
       </View>
 
-      <View style={styles.amountRow}>
-        <GhsText amount={goal.currentAmount} variant="income" size="md" />
-        <Text style={styles.savedLabel}> saved</Text>
-      </View>
-      <View style={styles.targetRow}>
-        <Text style={styles.targetLabel}>of </Text>
-        <GhsText amount={goal.targetAmount} size="sm" style={styles.targetAmount} />
-        <Text style={styles.targetLabel}> goal</Text>
-      </View>
-
-      <GoalProgressBar progress={progress} />
+      <GoalProgressBar progress={progress} accentColor={accent.accent} />
 
       {weeklyTarget !== null && goal.deadline ? (
-        <View style={styles.weeklyRow}>
-          <Ionicons
-            name="calendar-outline"
-            size={fontSize.sm}
-            color={colors.textGrey}
-          />
+        <View style={[styles.weeklyRow, { backgroundColor: accent.background }]}>
+          <Ionicons name="calendar-outline" size={fontSize.sm} color={accent.accent} />
           <Text
             style={[
               styles.weeklyText,
@@ -85,21 +84,26 @@ export default function GoalCard({
         </View>
       ) : null}
 
-      <View style={styles.divider} />
-
       <View style={styles.actionRow}>
-        <AppButton
-          title="Add Money"
-          variant="outline"
+        <Pressable
+          style={({ pressed }) => [
+            styles.primaryAction,
+            { backgroundColor: accent.accent },
+            pressed && styles.actionPressed,
+          ]}
           onPress={() => onAddMoney(goal)}
-          style={styles.addMoneyButton}
-        />
-        <AppButton
-          title="Details"
-          variant="ghost"
+        >
+          <Ionicons name="add" size={18} color={colors.white} />
+          <Text style={styles.primaryActionText}>Add Money</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
           onPress={() => onDetails(goal)}
-          style={styles.detailsButton}
-        />
+        >
+          <Text style={styles.secondaryActionText}>Details</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
       </View>
     </Animated.View>
   );
@@ -107,38 +111,47 @@ export default function GoalCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.white,
+    borderColor: colors.borderSubtle,
     borderRadius: radius.goalCard,
+    borderWidth: 1,
+    overflow: 'hidden',
     padding: spacing.lg,
     ...cardShadow,
   },
+  accentStrip: {
+    height: 4,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
   topRow: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  goalIcon: {
+    alignItems: 'center',
+    borderRadius: radius.md,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  titleBlock: {
+    flex: 1,
+    minWidth: 0,
   },
   name: {
     color: colors.textDark,
-    flex: 1,
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    marginRight: spacing.sm,
-  },
-  amountRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
     marginBottom: spacing.xs,
-  },
-  savedLabel: {
-    color: colors.primary,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
   },
   targetRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: spacing.sm,
   },
   targetLabel: {
     color: colors.textGrey,
@@ -149,8 +162,7 @@ const styles = StyleSheet.create({
   },
   weeklyRow: {
     alignItems: 'flex-start',
-    backgroundColor: colors.pageBackground,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     flexDirection: 'row',
     marginTop: spacing.sm,
     padding: spacing.sm,
@@ -159,25 +171,47 @@ const styles = StyleSheet.create({
     color: colors.textGrey,
     flex: 1,
     fontSize: fontSize.xs,
+    lineHeight: 18,
     marginLeft: spacing.sm,
   },
   weeklyWarningText: {
     color: colors.warning,
   },
-  divider: {
-    backgroundColor: colors.divider,
-    height: 1,
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-  },
   actionRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+    marginTop: spacing.md,
   },
-  addMoneyButton: {
-    flex: 0.6,
+  primaryAction: {
+    alignItems: 'center',
+    borderRadius: radius.md,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
   },
-  detailsButton: {
-    flex: 0.4,
+  primaryActionText: {
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  secondaryAction: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    gap: 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  secondaryActionText: {
+    color: colors.textDark,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  actionPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
 });

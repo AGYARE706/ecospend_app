@@ -3,6 +3,8 @@ export const radius = {
   md: 10,
   lg: 14,
   xl: 20,
+  card: 18,
+  button: 14,
   goalCard: 16,
   sheet: 24,
   providerCard: 14,

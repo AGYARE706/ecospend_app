@@ -1,4 +1,5 @@
-import type { SavingsGoal } from '../types';
+import { colors } from '../theme';
+import type { GoalColorKey, SavingsGoal } from '../types';
 
 export type DeadlineBadgeType =
   | 'daysLeft'
@@ -95,6 +96,23 @@ export function formatCompletedDate(isoDate: string): string {
     month: 'long',
     year: 'numeric',
   });
+}
+
+export function getGoalAccentColors(colorKey: GoalColorKey): {
+  background: string;
+  accent: string;
+} {
+  switch (colorKey) {
+    case 'blueLight':
+      return { background: colors.blueLight, accent: colors.blue };
+    case 'warningLight':
+      return { background: colors.warningLight, accent: colors.warning };
+    case 'successLight':
+      return { background: colors.successLight, accent: colors.success };
+    case 'primaryBackground':
+    default:
+      return { background: colors.primaryBackground, accent: colors.primary };
+  }
 }
 
 export function getProgressFillColor(progress: number): 'low' | 'mid' | 'high' {

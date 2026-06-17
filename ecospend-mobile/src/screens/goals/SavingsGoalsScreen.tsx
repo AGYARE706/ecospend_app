@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 import AddGoalSheet from '../../components/goals/AddGoalSheet';
 import CompletedGoalCard from '../../components/goals/CompletedGoalCard';
@@ -10,17 +12,24 @@ import GoalsSummaryBar from '../../components/goals/GoalsSummaryBar';
 import GoalsTabToggle from '../../components/goals/GoalsTabToggle';
 import GoalToast from '../../components/goals/GoalToast';
 import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SkeletonBox from '../../components/ui/SkeletonBox';
 import { useSavingsGoals } from '../../hooks/useSavingsGoals';
-import { colors, fontSize, radius, spacing } from '../../theme';
+import { navigateApp } from '../../navigation/navigationRef';
+import type { GoalsStackParamList } from '../../navigation/types';
+import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
 import type { SavingsGoal } from '../../types';
+
+type SavingsGoalsNavigationProp = StackNavigationProp<
+  GoalsStackParamList,
+  'SavingsGoals'
+>;
 
 /**
  * Savings Goals tab with active/completed views, add/contribute sheets, and animated goal cards.
  */
 export default function SavingsGoalsScreen() {
+  const navigation = useNavigation<SavingsGoalsNavigationProp>();
   const {
     activeGoals,
     completedGoals,
@@ -44,15 +53,37 @@ export default function SavingsGoalsScreen() {
   const listHeader = useMemo(
     () => (
       <View>
-        <ScreenHeader
-          title="Savings Goals"
-          subtitle="Save towards what matters"
-          right={
-            <Pressable style={styles.addButton} onPress={() => setShowAddSheet(true)}>
-              <Ionicons name="add" size={fontSize.xl} color={colors.white} />
+        <View style={styles.header}>
+          <View style={styles.headerTextBlock}>
+            <Text style={styles.title}>Savings Goals</Text>
+            <Text style={styles.subtitle}>Save towards what matters</Text>
+          </View>
+
+          <View style={styles.headerActions}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.iconButtonPressed,
+              ]}
+              onPress={() => navigateApp('Notifications')}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={colors.textDark}
+              />
             </Pressable>
-          }
-        />
+            <Pressable
+              style={({ pressed }) => [
+                styles.addButton,
+                pressed && styles.iconButtonPressed,
+              ]}
+              onPress={() => navigateApp('CreateGoal')}
+            >
+              <Ionicons name="add" size={24} color={colors.white} />
+            </Pressable>
+          </View>
+        </View>
 
         <GoalsSummaryBar
           activeGoalCount={activeGoalCount}
@@ -83,12 +114,16 @@ export default function SavingsGoalsScreen() {
         <GoalCard
           goal={item}
           index={index}
-          onAddMoney={setContributeGoal}
-          onDetails={() => undefined}
+          onAddMoney={(goal) =>
+            navigateApp('AddGoalContribution', { goalId: goal.id })
+          }
+          onDetails={(goal) =>
+            navigation.navigate('GoalDetails', { goalId: goal.id })
+          }
         />
       );
     },
-    [activeTab],
+    [activeTab, navigation],
   );
 
   const emptyComponent = useMemo(() => {
@@ -116,7 +151,7 @@ export default function SavingsGoalsScreen() {
   }, [activeTab, loading]);
 
   return (
-    <ScreenWrapper background="page">
+    <ScreenWrapper background="page" padded={false}>
       {toastMessage ? <GoalToast message={toastMessage} /> : null}
 
       <FlatList
@@ -150,6 +185,39 @@ export default function SavingsGoalsScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
+  headerTextBlock: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  title: {
+    color: colors.textDark,
+    fontSize: fontSize.xxxl,
+    fontWeight: fontWeight.bold,
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  iconButton: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderRadius: radius.full,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
   addButton: {
     alignItems: 'center',
     backgroundColor: colors.primary,
@@ -157,6 +225,10 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     width: 44,
+  },
+  iconButtonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.96 }],
   },
   skeletonGap: {
     marginBottom: spacing.md,
@@ -169,7 +241,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.xxl,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },

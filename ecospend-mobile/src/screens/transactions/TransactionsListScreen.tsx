@@ -1,5 +1,8 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
+import {
+  CompositeNavigationProp,
+  useNavigation,
+} from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -14,17 +17,25 @@ import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SearchInput from '../../components/ui/SearchInput';
 import SkeletonBox from '../../components/ui/SkeletonBox';
 import { useTransactions } from '../../hooks/useTransactions';
-import type { AppStackParamList, AppTabParamList } from '../../navigation/types';
+import { navigateApp } from '../../navigation/navigationRef';
+import type {
+  AppStackParamList,
+  TabParamList,
+  TransactionsStackParamList,
+} from '../../navigation/types';
 import { spacing } from '../../theme';
 import type { Transaction } from '../../types';
 
-type TransactionsNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<AppTabParamList, 'Transactions'>,
-  StackNavigationProp<AppStackParamList>
+type TransactionsListNavigationProp = CompositeNavigationProp<
+  StackNavigationProp<TransactionsStackParamList, 'TransactionsList'>,
+  CompositeNavigationProp<
+    BottomTabNavigationProp<TabParamList, 'TransactionsTab'>,
+    StackNavigationProp<AppStackParamList>
+  >
 >;
 
-export default function TransactionsScreen() {
-  const navigation = useNavigation<TransactionsNavigationProp>();
+export default function TransactionsListScreen() {
+  const navigation = useNavigation<TransactionsListNavigationProp>();
   const {
     groupedTransactions,
     activeFilter,
@@ -37,7 +48,9 @@ export default function TransactionsScreen() {
   } = useTransactions();
 
   const openAddTransaction = () => {
-    navigation.getParent()?.navigate('AddTransaction');
+    navigation
+      .getParent<StackNavigationProp<AppStackParamList>>()
+      ?.navigate('AddTransaction');
   };
 
   return (
@@ -51,6 +64,12 @@ export default function TransactionsScreen() {
           <ScreenHeader
             title="Transactions"
             subtitle="Track income and spending"
+            onNotificationPress={() => navigateApp('Notifications')}
+            onCalculatorPress={() =>
+              navigation
+                .getParent<StackNavigationProp<AppStackParamList>>()
+                ?.navigate('MoMoCalculator')
+            }
           />
 
           {loading ? (
@@ -87,6 +106,11 @@ export default function TransactionsScreen() {
                     transaction={item}
                     variant="flat"
                     showDivider={index < section.data.length - 1}
+                    onPress={() =>
+                      navigation.navigate('TransactionDetails', {
+                        transactionId: item.id,
+                      })
+                    }
                   />
                 ))}
               </TransactionSectionCard>
