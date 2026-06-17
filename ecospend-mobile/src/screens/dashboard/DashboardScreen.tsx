@@ -72,7 +72,7 @@ export default function DashboardScreen() {
         >
           <View style={styles.header}>
             <View style={styles.headerTextBlock}>
-              <Text style={styles.greeting}>{greetingLabel}</Text>
+              <Text style={styles.greeting}>Good morning!</Text>
               <Text style={styles.userName}>{userName}</Text>
               <Text style={styles.dateLabel}>{todayLabel}</Text>
             </View>
