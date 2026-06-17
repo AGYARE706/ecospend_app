@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fontSize, fontWeight, radius, shadowSm, spacing } from '../../theme';
+import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
 
 /**
  * label — field label displayed above the input
@@ -53,16 +53,19 @@ export default function AppInput({
 
   const isSecure = secureTextEntry && !isPasswordVisible;
 
-  const wrapperStyle = error
-    ? styles.inputWrapperError
-    : isFocused
-      ? styles.inputWrapperFocused
-      : styles.inputWrapperDefault;
+  const wrapperStyle = [
+    styles.inputWrapper,
+    error
+      ? styles.inputWrapperError
+      : isFocused
+        ? styles.inputWrapperFocused
+        : styles.inputWrapperDefault,
+  ];
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <View style={[styles.inputWrapper, wrapperStyle]}>
+      <View style={wrapperStyle}>
         <TextInput
           style={[styles.input, multiline && styles.inputMultiline]}
           value={value}
@@ -75,6 +78,7 @@ export default function AppInput({
           onBlur={() => setIsFocused(false)}
           autoCapitalize="none"
           autoCorrect={false}
+          blurOnSubmit={!multiline}
           multiline={multiline}
           numberOfLines={numberOfLines}
           textAlignVertical={multiline ? 'top' : 'center'}
@@ -121,8 +125,8 @@ const styles = StyleSheet.create({
     borderColor: colors.borderSubtle,
   },
   inputWrapperFocused: {
+    backgroundColor: colors.primaryBackground,
     borderColor: colors.primary,
-    ...shadowSm,
   },
   inputWrapperError: {
     borderColor: colors.error,

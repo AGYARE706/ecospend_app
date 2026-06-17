@@ -32,17 +32,22 @@ export default function ScreenWrapper({
   padded = true,
   children,
 }: ScreenWrapperProps) {
-  const content = scrollable ? (
+  const scrollView = scrollable ? (
     <ScrollView
       contentContainerStyle={[
         styles.scrollContent,
         padded ? styles.paddedContent : styles.unpaddedContent,
       ]}
-      keyboardShouldPersistTaps="handled"
+      keyboardShouldPersistTaps="always"
+      keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
     >
       {children}
     </ScrollView>
+  ) : null;
+
+  const content = scrollable ? (
+    scrollView
   ) : (
     <View style={[styles.flex, padded ? styles.paddedContent : styles.unpaddedContent]}>
       {children}
@@ -52,7 +57,8 @@ export default function ScreenWrapper({
   const wrappedContent = keyboardAvoiding ? (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      enabled={Platform.OS === 'ios'}
     >
       {content}
     </KeyboardAvoidingView>

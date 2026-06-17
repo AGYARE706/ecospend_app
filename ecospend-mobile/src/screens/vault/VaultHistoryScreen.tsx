@@ -127,7 +127,7 @@ export default function VaultHistoryScreen({
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           contentContainerStyle={styles.scrollContent}
         >
           {/* ─── 4. Summary Section (shown at top for context) ── */}
