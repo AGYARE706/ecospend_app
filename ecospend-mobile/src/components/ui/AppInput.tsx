@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, fontSize, fontWeight, radius, shadowSm, spacing } from '../../theme';
 
 /**
  * label — field label displayed above the input
@@ -111,17 +111,18 @@ const styles = StyleSheet.create({
   inputWrapper: {
     alignItems: 'center',
     backgroundColor: colors.white,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
     flexDirection: 'row',
-    minHeight: 52,
+    minHeight: 54,
     paddingHorizontal: spacing.md,
   },
   inputWrapperDefault: {
-    borderColor: colors.border,
+    borderColor: colors.borderSubtle,
   },
   inputWrapperFocused: {
     borderColor: colors.primary,
+    ...shadowSm,
   },
   inputWrapperError: {
     borderColor: colors.error,

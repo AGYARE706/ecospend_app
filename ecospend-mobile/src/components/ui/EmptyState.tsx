@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
 
 /**
- * emoji — large emoji displayed above the title
+ * emoji — large emoji displayed inside a tinted medallion
  * title — primary empty state message
  * subtitle — secondary helper text below the title
  */
@@ -16,7 +16,9 @@ export interface EmptyStateProps {
 export default function EmptyState({ emoji, title, subtitle }: EmptyStateProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>{emoji}</Text>
+      <View style={styles.medallion}>
+        <Text style={styles.emoji}>{emoji}</Text>
+      </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
     </View>
@@ -30,20 +32,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xxl,
   },
+  medallion: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderRadius: radius.full,
+    height: 88,
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    width: 88,
+  },
   emoji: {
     fontSize: fontSize.xxxl,
-    marginBottom: spacing.md,
   },
   title: {
     color: colors.textDark,
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.bold,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
-    color: colors.textGrey,
+    color: colors.textMuted,
     fontSize: fontSize.md,
+    lineHeight: 22,
     textAlign: 'center',
   },
 });

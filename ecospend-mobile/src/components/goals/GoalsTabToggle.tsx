@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { colors, fontSize, fontWeight, radius, spacing, subtleShadow } from '../../theme';
 import type { GoalsTabMode } from '../../types';
@@ -21,6 +22,11 @@ export default function GoalsTabToggle({
         style={[styles.tab, activeTab === 'active' ? styles.activeTab : styles.inactiveTab]}
         onPress={() => onTabChange('active')}
       >
+        <Ionicons
+          name="flag-outline"
+          size={16}
+          color={activeTab === 'active' ? colors.primary : colors.textMuted}
+        />
         <Text
           style={[
             styles.tabText,
@@ -38,6 +44,11 @@ export default function GoalsTabToggle({
         ]}
         onPress={() => onTabChange('completed')}
       >
+        <Ionicons
+          name="trophy-outline"
+          size={16}
+          color={activeTab === 'completed' ? colors.primary : colors.textMuted}
+        />
         <Text
           style={[
             styles.tabText,
@@ -53,22 +64,26 @@ export default function GoalsTabToggle({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.chipBg,
+    backgroundColor: colors.white,
+    borderColor: colors.borderSubtle,
     borderRadius: radius.full,
+    borderWidth: 1,
     flexDirection: 'row',
     marginBottom: spacing.lg,
     padding: spacing.xs,
+    ...subtleShadow,
   },
   tab: {
     alignItems: 'center',
     borderRadius: radius.full,
     flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
     justifyContent: 'center',
     paddingVertical: spacing.sm,
   },
   activeTab: {
-    backgroundColor: colors.white,
-    ...subtleShadow,
+    backgroundColor: colors.primaryBackground,
   },
   inactiveTab: {},
   tabText: {

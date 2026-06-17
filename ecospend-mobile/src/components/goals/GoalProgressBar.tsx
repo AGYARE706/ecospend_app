@@ -11,23 +11,26 @@ export interface GoalProgressBarProps {
   progress: number;
   animate?: boolean;
   forceHighColor?: boolean;
+  accentColor?: string;
 }
 
 export default function GoalProgressBar({
   progress,
   animate = true,
   forceHighColor = false,
+  accentColor,
 }: GoalProgressBarProps) {
   const fillAnim = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
   const fillTier = forceHighColor ? 'high' : getProgressFillColor(progress);
-  const fillStyle =
-    fillTier === 'high'
-      ? styles.fillHigh
+  const fillColor =
+    accentColor ??
+    (fillTier === 'high'
+      ? colors.primary
       : fillTier === 'mid'
-        ? styles.fillMid
-        : styles.fillLow;
+        ? colors.progressMid
+        : colors.progressLow);
 
   useEffect(() => {
     if (trackWidth <= 0) {
@@ -55,9 +58,12 @@ export default function GoalProgressBar({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.percentLabel}>{progress}%</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.progressLabel}>Progress</Text>
+        <Text style={[styles.percentLabel, { color: fillColor }]}>{progress}%</Text>
+      </View>
       <View style={styles.track} onLayout={handleTrackLayout}>
-        <Animated.View style={[styles.fill, fillStyle, { width: fillAnim }]} />
+        <Animated.View style={[styles.fill, { width: fillAnim, backgroundColor: fillColor }]} />
       </View>
     </View>
   );
@@ -67,31 +73,31 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
   },
+  labelRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  progressLabel: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    textTransform: 'uppercase',
+  },
   percentLabel: {
-    color: colors.textDark,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
-    marginBottom: spacing.xs,
-    textAlign: 'right',
   },
   track: {
     backgroundColor: colors.divider,
     borderRadius: radius.full,
-    height: spacing.sm,
+    height: 8,
     overflow: 'hidden',
     width: '100%',
   },
   fill: {
     borderRadius: radius.full,
-    height: spacing.sm,
-  },
-  fillLow: {
-    backgroundColor: colors.progressLow,
-  },
-  fillMid: {
-    backgroundColor: colors.progressMid,
-  },
-  fillHigh: {
-    backgroundColor: colors.primary,
+    height: 8,
   },
 });

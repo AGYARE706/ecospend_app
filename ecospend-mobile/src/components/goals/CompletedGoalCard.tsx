@@ -1,11 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import GhsText from '../ui/GhsText';
 import GoalDeadlineBadge from './GoalDeadlineBadge';
 import GoalProgressBar from './GoalProgressBar';
 import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
-import { formatCompletedDate, getGoalProgress } from '../../utils/goals';
+import {
+  formatCompletedDate,
+  getGoalAccentColors,
+  getGoalProgress,
+} from '../../utils/goals';
 import type { SavingsGoal } from '../../types';
 
 /**
@@ -20,6 +25,7 @@ export default function CompletedGoalCard({ goal, index }: CompletedGoalCardProp
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progress = getGoalProgress(goal);
   const completedDate = goal.completedAt ?? goal.createdAt;
+  const accent = getGoalAccentColors(goal.color);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -33,76 +39,91 @@ export default function CompletedGoalCard({ goal, index }: CompletedGoalCardProp
   return (
     <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
       <View style={styles.topRow}>
-        <Text style={styles.name} numberOfLines={1}>
-          {goal.name}
-        </Text>
+        <View style={[styles.goalIcon, { backgroundColor: colors.successLight }]}>
+          <Ionicons name="trophy-outline" size={18} color={colors.success} />
+        </View>
+        <View style={styles.titleBlock}>
+          <Text style={styles.name} numberOfLines={1}>
+            {goal.name}
+          </Text>
+          <View style={styles.amountRow}>
+            <GhsText amount={goal.currentAmount} variant="income" size="sm" />
+            <Text style={styles.savedLabel}> saved</Text>
+          </View>
+        </View>
         <GoalDeadlineBadge goal={goal} />
       </View>
 
-      <View style={styles.amountRow}>
-        <GhsText amount={goal.currentAmount} variant="income" size="md" />
-        <Text style={styles.savedLabel}> saved</Text>
-      </View>
-      <View style={styles.targetRow}>
-        <Text style={styles.targetLabel}>of </Text>
-        <GhsText amount={goal.targetAmount} size="sm" style={styles.targetAmount} />
-        <Text style={styles.targetLabel}> goal</Text>
-      </View>
+      <GoalProgressBar
+        progress={progress}
+        animate={false}
+        forceHighColor
+        accentColor={colors.success}
+      />
 
-      <GoalProgressBar progress={progress} animate={false} forceHighColor />
-
-      <Text style={styles.completedDate}>
-        Completed on {formatCompletedDate(completedDate)}
-      </Text>
+      <View style={[styles.completedBanner, { backgroundColor: accent.background }]}>
+        <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+        <Text style={styles.completedDate}>
+          Completed on {formatCompletedDate(completedDate)}
+        </Text>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.goalCompletedTint,
+    backgroundColor: colors.white,
+    borderColor: colors.successLight,
     borderRadius: radius.goalCard,
+    borderWidth: 1,
     padding: spacing.lg,
     ...cardShadow,
   },
   topRow: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  goalIcon: {
+    alignItems: 'center',
+    borderRadius: radius.md,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  titleBlock: {
+    flex: 1,
+    minWidth: 0,
   },
   name: {
     color: colors.textDark,
-    flex: 1,
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    marginRight: spacing.sm,
+    marginBottom: spacing.xs,
   },
   amountRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: spacing.xs,
   },
   savedLabel: {
     color: colors.primary,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-  },
-  targetRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  targetLabel: {
-    color: colors.textGrey,
     fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
   },
-  targetAmount: {
-    color: colors.textGrey,
+  completedBanner: {
+    alignItems: 'center',
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
   },
   completedDate: {
     color: colors.textGrey,
+    flex: 1,
     fontSize: fontSize.sm,
-    marginTop: spacing.sm,
   },
 });

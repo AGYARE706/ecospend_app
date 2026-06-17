@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
 import {
@@ -20,7 +21,8 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
   if (badgeType === 'completed') {
     return (
       <View style={[styles.badge, styles.completedBadge]}>
-        <Text style={styles.completedText}>✓ Completed</Text>
+        <Ionicons name="checkmark" size={12} color={colors.white} />
+        <Text style={styles.completedText}>Done</Text>
       </View>
     );
   }
@@ -36,6 +38,7 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
   if (badgeType === 'overdue') {
     return (
       <View style={[styles.badge, styles.overdueBadge]}>
+        <Ionicons name="alert-circle" size={12} color={colors.error} />
         <Text style={styles.overdueText}>Overdue</Text>
       </View>
     );
@@ -46,6 +49,7 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
 
   return (
     <View style={[styles.badge, styles.daysBadge]}>
+      <Ionicons name="time-outline" size={12} color={colors.warning} />
       <Text style={styles.daysText}>{label}</Text>
     </View>
   );
@@ -53,8 +57,11 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
 
 const styles = StyleSheet.create({
   badge: {
+    alignItems: 'center',
     borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
   daysBadge: {
@@ -63,10 +70,10 @@ const styles = StyleSheet.create({
   daysText: {
     color: colors.warning,
     fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
   },
   neutralBadge: {
-    backgroundColor: colors.divider,
+    backgroundColor: colors.chipBg,
   },
   neutralText: {
     color: colors.textGrey,
@@ -79,7 +86,7 @@ const styles = StyleSheet.create({
   overdueText: {
     color: colors.error,
     fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
   },
   completedBadge: {
     backgroundColor: colors.primary,
