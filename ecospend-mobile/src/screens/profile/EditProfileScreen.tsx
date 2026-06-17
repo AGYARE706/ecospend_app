@@ -69,7 +69,8 @@ export default function EditProfileScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="on-drag"
           contentContainerStyle={styles.scrollContent}
         >
           {/* Profile Photo */}

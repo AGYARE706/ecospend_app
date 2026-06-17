@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { colors, fontSize, fontWeight, spacing } from '../../theme';
 
@@ -23,7 +23,7 @@ export default function AmountDisplayInput({
 
   return (
     <View style={styles.container}>
-      <Pressable style={styles.amountRow}>
+      <View style={styles.amountRow}>
         <Text style={styles.currencyLabel}>GHS</Text>
         <TextInput
           style={styles.amountInput}
@@ -35,7 +35,7 @@ export default function AmountDisplayInput({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
-      </Pressable>
+      </View>
       <View
         style={[
           styles.underline,

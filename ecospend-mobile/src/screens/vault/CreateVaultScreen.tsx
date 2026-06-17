@@ -93,7 +93,7 @@ export default function CreateVaultScreen({
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
         >
           {/* ─── Educational Banner ────────────────────────────────── */}
           <LinearGradient

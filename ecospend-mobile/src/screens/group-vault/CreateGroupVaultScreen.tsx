@@ -104,7 +104,7 @@ export default function CreateGroupVaultScreen({
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           contentContainerStyle={styles.scrollContent}
         >
           {/* ─── Educational Banner ───────────────────────────── */}
