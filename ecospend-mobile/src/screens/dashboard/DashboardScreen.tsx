@@ -49,6 +49,10 @@ export default function DashboardScreen() {
 
   const fullName = user?.name ?? mockUser.name;
 
+  const hour = new Date().getHours();
+  const greetingLabel =
+    hour < 12 ? 'Good morning!' : hour < 16 ? 'Good afternoon!' : 'Good evening!';
+
   const tabNavigation = navigation.getParent<BottomTabNavigationProp<TabParamList>>();
 
   return (
@@ -68,7 +72,7 @@ export default function DashboardScreen() {
         >
           <View style={styles.header}>
             <View style={styles.headerTextBlock}>
-              <Text style={styles.greeting}>Good morning,</Text>
+              <Text style={styles.greeting}>{greetingLabel}</Text>
               <Text style={styles.userName}>{userName}</Text>
               <Text style={styles.dateLabel}>{todayLabel}</Text>
             </View>
