@@ -1,7 +1,7 @@
 package com.ecospend.expense.services;
 
 import com.ecospend.expense.models.Expense;
-import com.ecospend.expense.models.ExpenseRepository;
+import com.ecospend.expense.repository.ExpenseRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
