@@ -18,34 +18,19 @@ services:
       timeout: 5s
       retries: 5
 
-  user-service:
-    build: ./backend/user-service
-    container_name: ecospend-user-service
+  identity-service:
+    build: ./backend/identity-service
+    container_name: ecospend-identity-service
     env_file: .env
     environment:
-      DB_HOST: postgres
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRY_MS: ${JWT_EXPIRY_MS}
+      JWT_REFRESH_EXPIRY_MS: ${JWT_REFRESH_EXPIRY_MS}
     ports:
-      - "${USER_SERVICE_PORT:-8081}:8081"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  expense-service:
-    build: ./backend/expense-service
-    container_name: ecospend-expense-service
-    env_file: .env
-    environment:
-      DB_HOST: postgres
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${EXPENSE_SERVICE_PORT:-8082}:8082"
+      - "${IDENTITY_SERVICE_PORT:-8081}:8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,13 +40,11 @@ services:
     container_name: ecospend-api-gateway
     env_file: .env
     environment:
-      USER_SERVICE_URL: http://user-service:8081
-      EXPENSE_SERVICE_URL: http://expense-service:8082
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "${API_GATEWAY_PORT:-8080}:8080"
     depends_on:
-      - user-service
-      - expense-service
+      - identity-service
 
 volumes:
   postgres_data:
