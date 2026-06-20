@@ -1,13 +1,14 @@
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontSize, fontWeight, spacing } from '../../theme';
 
 export default function AuthWordmark() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.wordmark}>EcoSpend</Text>
-      <Text style={styles.leaf}>🌿</Text>
-    </View>
+  return React.createElement(
+    View,
+    { style: styles.container },
+    React.createElement(Text, { style: styles.wordmark }, 'EcoSpend'),
+    React.createElement(Text, { style: styles.leaf }, '🌿')
   );
 }
 

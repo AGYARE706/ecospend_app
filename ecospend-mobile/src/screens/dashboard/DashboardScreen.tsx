@@ -32,6 +32,18 @@ type DashboardNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'DashboardTab'>
 >;
 
+function getGreeting(date = new Date()): string {
+  const hour = date.getHours();
+
+  if (hour < 12) {
+    return 'Good Morning';
+  }
+   if (hour < 15) {
+    return 'Good Afternoon';
+  }
+  return 'Good Evening';
+}
+
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
   const { user } = useAuth();
@@ -68,7 +80,7 @@ export default function DashboardScreen() {
         >
           <View style={styles.header}>
             <View style={styles.headerTextBlock}>
-              <Text style={styles.greeting}>Good morning,</Text>
+              <Text style={styles.greeting}>{`${getGreeting()},`}</Text>
               <Text style={styles.userName}>{userName}</Text>
               <Text style={styles.dateLabel}>{todayLabel}</Text>
             </View>
