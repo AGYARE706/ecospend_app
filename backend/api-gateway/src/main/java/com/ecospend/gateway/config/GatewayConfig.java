@@ -20,7 +20,14 @@ public class GatewayConfig {
         return builder.routes()
                 .route("identity-service", r -> r
                         .path("/api/auth/**")
+
                         .filters(f -> f.stripPrefix(1))
+                        .uri("http://identity-service:8081"))
+                .route("identity-users", r -> r
+                        .path("/api/users/**")
+                        .filters(f -> f.stripPrefix(1)
+                                .filter(authenticationFilter.apply(
+                                        new AuthenticationFilter.Config())))
                         .uri("http://identity-service:8081"))
                 .route("finance-service", r -> r
                         .path("/api/finance/**")
