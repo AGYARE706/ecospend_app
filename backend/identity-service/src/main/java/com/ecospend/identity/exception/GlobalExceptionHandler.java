@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.ecospend.identity.exception.UserNotFoundException;
 
 /**
  * Translates exceptions thrown anywhere in the Identity Service into
@@ -47,5 +48,10 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {
         return ErrorResponse.of("INTERNAL_ERROR", "Something went wrong. Please try again.", 500);
+    }
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleUserNotFound(UserNotFoundException ex) {
+        return ErrorResponse.of("USER_NOT_FOUND", ex.getMessage(), 404);
     }
 }
