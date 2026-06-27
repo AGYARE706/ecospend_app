@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, radius, shadowSm, spacing, typography } from '../../theme';
 
 /**
  * Rounded section card wrapper for grouped flat transaction rows.
@@ -28,17 +28,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
+    ...typography.overline,
     color: colors.textMuted,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-    letterSpacing: 0.5,
     marginBottom: spacing.sm,
     textTransform: 'uppercase',
   },
   card: {
     backgroundColor: colors.white,
+    borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
+    borderWidth: 1,
     overflow: 'hidden',
-    ...cardShadow,
+    ...shadowSm,
   },
 });

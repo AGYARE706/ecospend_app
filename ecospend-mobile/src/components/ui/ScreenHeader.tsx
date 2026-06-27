@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { colors, spacing, typography } from '../../theme';
+import IconButton from './IconButton';
 
 /**
  * Consistent screen header with title, optional subtitle, and optional right slot.
@@ -36,22 +36,20 @@ export default function ScreenHeader({
       {showActions ? (
         <View style={styles.right}>
           {onCalculatorPress ? (
-            <Pressable onPress={onCalculatorPress} style={styles.iconButton}>
-              <Ionicons
-                name="calculator-outline"
-                size={fontSize.xl}
-                color={colors.textDark}
-              />
-            </Pressable>
+            <IconButton
+              icon="calculator"
+              variant="soft"
+              onPress={onCalculatorPress}
+              accessibilityLabel="Calculator"
+            />
           ) : null}
           {onNotificationPress ? (
-            <Pressable onPress={onNotificationPress} style={styles.iconButton}>
-              <Ionicons
-                name="notifications-outline"
-                size={fontSize.xl}
-                color={colors.textDark}
-              />
-            </Pressable>
+            <IconButton
+              icon="bell"
+              variant="soft"
+              onPress={onNotificationPress}
+              accessibilityLabel="Notifications"
+            />
           ) : null}
           {right}
         </View>
@@ -70,24 +68,21 @@ const styles = StyleSheet.create({
   textBlock: {
     flex: 1,
     marginRight: spacing.md,
+    paddingTop: spacing.xs,
   },
   title: {
+    ...typography.h1,
     color: colors.textDark,
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   subtitle: {
+    ...typography.bodySm,
     color: colors.textMuted,
-    fontSize: fontSize.sm,
   },
   right: {
     alignItems: 'center',
     alignSelf: 'center',
     flexDirection: 'row',
-  },
-  iconButton: {
-    marginLeft: spacing.sm,
-    padding: spacing.xs,
+    gap: spacing.sm,
   },
 });

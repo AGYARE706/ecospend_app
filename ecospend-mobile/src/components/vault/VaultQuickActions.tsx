@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-import { fontSize, fontWeight, radius, shadowSm, spacing } from '../../theme';
+import { Icon } from '../ui/icons';
+import type { IconName } from '../ui/icons';
+import { radius, shadowSm, spacing, typography } from '../../theme';
 import type { VaultThemeColors } from './vaultTheme';
 
 export interface VaultQuickActionsProps {
@@ -53,7 +54,7 @@ function QuickAction({
   theme,
   onPress,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName | (string & {});
   iconColor: string;
   label: string;
   theme: VaultThemeColors;
@@ -67,20 +68,26 @@ function QuickAction({
         pressed && styles.pressed,
       ]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
       <View style={[styles.iconCircle, { backgroundColor: theme.chipBg }]}>
-        <Ionicons name={icon} size={20} color={iconColor} />
+        <Icon name={icon} size={20} color={iconColor} />
       </View>
-      <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
+      <Text style={[styles.label, { color: theme.text }]} numberOfLines={1}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    marginTop: spacing.sm,
+  },
   row: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginTop: spacing.sm,
   },
   action: {
     alignItems: 'center',
@@ -104,8 +111,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   label: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+    ...typography.label,
     textAlign: 'center',
   },
 });

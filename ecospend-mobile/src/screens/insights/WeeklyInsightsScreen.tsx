@@ -197,7 +197,7 @@ export default function WeeklyInsightsScreen() {
                   title="Spending Trend"
                 />
                 <View style={[styles.trendPill, { backgroundColor: `${trendColor}18` }]}>
-                  <Ionicons name={trendIcon} size={14} color={trendColor} />
+                  <Ionicons name={trendIcon} size={14}  color={trendColor} />
                   <Text style={[styles.trendPillText, { color: trendColor }]}>
                     {trendLabel}
                   </Text>
@@ -634,9 +634,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   trendHeaderRow: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    width: '100%',
+    gap: spacing.xs,
   },
   trendPill: {
     alignItems: 'center',

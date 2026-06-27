@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, radius, spacing, typography } from '../../theme';
 import type { VaultStatus } from '../../types/vault';
 import type { VaultThemeColors } from './vaultTheme';
 
@@ -32,6 +32,11 @@ const statusConfig: Record<
     label: 'Pending',
     background: 'rgba(21, 101, 192, 0.14)',
     text: '#1565C0',
+  },
+  withdrawn: {
+    label: 'Withdrawn',
+    background: colors.chipBg,
+    text: colors.textGrey,
   },
 };
 
@@ -65,8 +70,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   label: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
+    ...typography.overline,
     textTransform: 'uppercase',
   },
 });

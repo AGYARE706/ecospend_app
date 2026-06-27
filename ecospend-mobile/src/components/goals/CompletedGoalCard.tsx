@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import GhsText from '../ui/GhsText';
+import { Icon } from '../ui/icons';
 import GoalDeadlineBadge from './GoalDeadlineBadge';
 import GoalProgressBar from './GoalProgressBar';
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { cardShadow, colors, radius, spacing, typography } from '../../theme';
 import {
   formatCompletedDate,
   getGoalAccentColors,
@@ -40,7 +40,7 @@ export default function CompletedGoalCard({ goal, index }: CompletedGoalCardProp
     <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
       <View style={styles.topRow}>
         <View style={[styles.goalIcon, { backgroundColor: colors.successLight }]}>
-          <Ionicons name="trophy-outline" size={18} color={colors.success} />
+          <Icon name="trophy-outline" size={18} color={colors.success} />
         </View>
         <View style={styles.titleBlock}>
           <Text style={styles.name} numberOfLines={1}>
@@ -62,7 +62,7 @@ export default function CompletedGoalCard({ goal, index }: CompletedGoalCardProp
       />
 
       <View style={[styles.completedBanner, { backgroundColor: accent.background }]}>
-        <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+        <Icon name="checkmark-circle" size={16} color={colors.success} />
         <Text style={styles.completedDate}>
           Completed on {formatCompletedDate(completedDate)}
         </Text>
@@ -98,9 +98,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
+    ...typography.subheading,
     color: colors.textDark,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
     marginBottom: spacing.xs,
   },
   amountRow: {
@@ -108,9 +107,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   savedLabel: {
+    ...typography.label,
     color: colors.primary,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
   },
   completedBanner: {
     alignItems: 'center',
@@ -122,8 +120,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   completedDate: {
+    ...typography.bodySm,
     color: colors.textGrey,
     flex: 1,
-    fontSize: fontSize.sm,
   },
 });

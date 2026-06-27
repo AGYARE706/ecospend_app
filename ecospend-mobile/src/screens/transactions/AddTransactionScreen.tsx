@@ -1,6 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
 
 import AmountDisplayInput from '../../components/finance/AmountDisplayInput';
 import CategoryChipGrid from '../../components/finance/CategoryChipGrid';
@@ -11,11 +10,13 @@ import TypeToggle from '../../components/finance/TypeToggle';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
+import IconButton from '../../components/ui/IconButton';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { Icon } from '../../components/ui/icons';
 import { useAddTransaction } from '../../hooks/useAddTransaction';
 import type { AppStackParamList } from '../../navigation/types';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, radius, spacing, typography } from '../../theme';
 import { formatHeaderDate } from '../../utils/formatDate';
 import type { Provider, TransactionCategory } from '../../types';
 
@@ -49,9 +50,12 @@ export default function AddTransactionScreen({
         title="Add Transaction"
         subtitle="Record income or expense"
         right={
-          <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <Ionicons name="close" size={fontSize.xl} color={colors.textDark} />
-          </Pressable>
+          <IconButton
+            icon="x"
+            variant="soft"
+            onPress={() => navigation.goBack()}
+            accessibilityLabel="Close"
+          />
         }
         style={styles.header}
       />
@@ -116,11 +120,7 @@ export default function AddTransactionScreen({
         />
 
         <View style={styles.dateField}>
-          <Ionicons
-            name="calendar-outline"
-            size={fontSize.lg}
-            color={colors.textMuted}
-          />
+          <Icon name="calendar" size={18} color={colors.textMuted} />
           <Text style={styles.dateText}>{formatHeaderDate(formState.date)}</Text>
         </View>
       </Card>
@@ -149,16 +149,12 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.md,
   },
-  closeButton: {
-    padding: spacing.xs,
-  },
   amountSection: {
     marginBottom: spacing.lg,
   },
   sectionTitle: {
+    ...typography.subheading,
     color: colors.textDark,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
     marginBottom: spacing.sm,
   },
   detailsCard: {
@@ -168,15 +164,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   fieldLabel: {
+    ...typography.overline,
     color: colors.textMuted,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
     marginBottom: spacing.sm,
     textTransform: 'uppercase',
   },
   errorText: {
+    ...typography.bodySm,
     color: colors.error,
-    fontSize: fontSize.sm,
     marginBottom: spacing.sm,
   },
   dateField: {
@@ -184,15 +179,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.chipBg,
     borderRadius: radius.md,
     flexDirection: 'row',
+    gap: spacing.sm,
     marginTop: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
   dateText: {
+    ...typography.label,
     color: colors.textDark,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    marginLeft: spacing.sm,
   },
   saveButton: {
     marginBottom: spacing.xl,

@@ -1,41 +1,172 @@
+/**
+ * EcoSpend color system.
+ *
+ * The design language is a premium eco-fintech identity anchored on a refined
+ * emerald-forest green. Colors are organized into tonal palettes (25 → 900)
+ * so elevation, states, and accents stay internally consistent.
+ *
+ * `palette` holds the raw scales. `colors` exposes semantic, intent-based
+ * tokens plus backwards-compatible flat aliases used across existing screens —
+ * never hard-code hex values in components, always reference a token here.
+ */
+
+export const palette = {
+  // Brand — emerald / forest green
+  green: {
+    25: '#F4FDF7',
+    50: '#E7F8EE',
+    100: '#C7EED7',
+    200: '#97DFB6',
+    300: '#5FC98D',
+    400: '#33B06C',
+    500: '#159A54',
+    600: '#0B7E43', // primary action
+    700: '#0A6638',
+    800: '#0A5230',
+    900: '#073B23',
+  },
+
+  // Neutral — cool slate
+  neutral: {
+    0: '#FFFFFF',
+    25: '#FCFCFD',
+    50: '#F8F9FB',
+    100: '#F1F3F6',
+    200: '#E6E9EE',
+    300: '#D2D7DF',
+    400: '#9BA3B0',
+    500: '#69707E',
+    600: '#4B515E',
+    700: '#343A45',
+    800: '#1E232C',
+    900: '#11151B',
+  },
+
+  // Accent — teal, used for secondary highlights & data viz
+  teal: {
+    50: '#E6F8FA',
+    100: '#C2EDF2',
+    300: '#6FD3DE',
+    500: '#119CAD',
+    600: '#0C7E8C',
+    700: '#0A636E',
+  },
+
+  // Accent — gold, used for rewards, streaks & gamification
+  gold: {
+    50: '#FEF7E6',
+    100: '#FBE9BE',
+    300: '#F4CC63',
+    500: '#E2A914',
+    600: '#BE8A09',
+    700: '#946B07',
+  },
+
+  success: {
+    50: '#E7F8EE',
+    100: '#C7EED7',
+    500: '#159A54',
+    600: '#0B7E43',
+    700: '#0A6638',
+  },
+  warning: {
+    50: '#FEF4E6',
+    100: '#FBE2BE',
+    500: '#F2920C',
+    600: '#D17609',
+    700: '#A05705',
+  },
+  error: {
+    50: '#FDECEC',
+    100: '#F9CFCF',
+    500: '#E5484D',
+    600: '#CE2C31',
+    700: '#A81F23',
+  },
+  info: {
+    50: '#EAF2FE',
+    100: '#CADEFC',
+    500: '#2E7CF6',
+    600: '#1862DD',
+    700: '#124BAE',
+  },
+} as const;
+
 export const colors = {
-  primary: '#2E7D32',
-  primaryLight: '#4CAF50',
-  primaryBackground: '#F1F8E9',
-  white: '#FFFFFF',
-  cardBackground: '#FFFFFF',
-  cardBorder: '#F0F1F3',
-  pageBackground: '#F6F7F9',
-  textDark: '#1A1A1A',
-  textGrey: '#757575',
-  textLight: '#BDBDBD',
-  error: '#C62828',
-  errorLight: '#FFEBEE',
-  success: '#2E7D32',
-  successLight: '#E8F5E9',
-  warning: '#F57F17',
-  warningLight: '#FFF8E1',
-  blue: '#1565C0',
-  blueLight: '#E3F2FD',
-  border: '#E0E0E0',
-  borderSubtle: '#EEF0F3',
-  divider: '#F0F0F0',
-  buttonText: '#FFFFFF',
-  progressLow: '#EF9A9A',
-  progressMid: '#FFD54F',
-  goalCompletedTint: '#F9FBF9',
-  orangeLight: '#FFF3E0',
-  overlay: 'rgba(0,0,0,0.5)',
-  primaryDark: '#1B5E20',
-  healthy: '#4CAF50',
-  atRisk: '#FFC107',
-  critical: '#FF7043',
-  exhausted: '#E53935',
+  // ---- Brand ----
+  primary: palette.green[600],
+  primaryHover: palette.green[700],
+  primaryPressed: palette.green[800],
+  primaryLight: palette.green[500],
+  primaryDark: palette.green[700],
+  primaryBackground: palette.green[50],
+  primarySubtle: palette.green[25],
+  onPrimary: palette.neutral[0],
+
+  // ---- Accents ----
+  accent: palette.teal[600],
+  accentLight: palette.teal[50],
+  gold: palette.gold[600],
+  goldLight: palette.gold[50],
+
+  // ---- Surfaces ----
+  white: palette.neutral[0],
+  cardBackground: palette.neutral[0],
+  surfaceRaised: palette.neutral[0],
+  surfaceSunken: palette.neutral[50],
+  pageBackground: palette.neutral[50],
+  cardBorder: palette.neutral[200],
+  border: palette.neutral[200],
+  borderStrong: palette.neutral[300],
+  borderSubtle: palette.neutral[100],
+  divider: palette.neutral[100],
+  chipBg: palette.neutral[100],
+  overlay: 'rgba(17, 21, 27, 0.55)',
+  scrim: 'rgba(17, 21, 27, 0.32)',
+
+  // ---- Text ----
+  textDark: palette.neutral[900],
+  textPrimary: palette.neutral[900],
+  textSecondary: palette.neutral[600],
+  textGrey: palette.neutral[500],
+  textMuted: palette.neutral[500],
+  textLight: palette.neutral[400],
+  textDisabled: palette.neutral[400],
+  buttonText: palette.neutral[0],
+
+  // ---- Semantic ----
+  success: palette.success[600],
+  successLight: palette.success[50],
+  successStrong: palette.success[700],
+  warning: palette.warning[600],
+  warningLight: palette.warning[50],
+  warningStrong: palette.warning[700],
+  error: palette.error[600],
+  errorLight: palette.error[50],
+  errorStrong: palette.error[700],
+  blue: palette.info[600],
+  blueLight: palette.info[50],
+  info: palette.info[600],
+  infoLight: palette.info[50],
+
+  // ---- Budget / health states ----
+  healthy: palette.success[500],
+  atRisk: palette.warning[500],
+  critical: palette.warning[600],
+  exhausted: palette.error[600],
+  progressLow: palette.error[100],
+  progressMid: palette.gold[300],
+  goalCompletedTint: palette.green[25],
+  orangeLight: palette.warning[50],
+
+  // ---- Mobile money providers ----
   providerMtn: '#FFCC00',
   providerTelecel: '#E53935',
   providerAt: '#1565C0',
-  heroOverlay: 'rgba(255,255,255,0.3)',
-  heroDivider: 'rgba(255,255,255,0.25)',
-  chipBg: '#F3F4F6',
-  textMuted: '#757575',
+
+  // ---- Hero / on-color overlays ----
+  heroOverlay: 'rgba(255,255,255,0.16)',
+  heroDivider: 'rgba(255,255,255,0.22)',
 } as const;
+
+export type ColorToken = keyof typeof colors;

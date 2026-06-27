@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 
 import GhsText from '../ui/GhsText';
-import { colors, fontSize, fontWeight, radius, shadowMd, spacing } from '../../theme';
+import { Icon } from '../ui/icons';
+import { colors, radius, shadowMd, spacing, typography } from '../../theme';
 
 /**
  * Summary stat card showing active goal count and total saved amount.
@@ -28,7 +28,7 @@ export default function GoalsSummaryBar({
 
       <View style={styles.headerRow}>
         <View style={styles.iconBadge}>
-          <Ionicons name="flag" size={16} color={colors.white} />
+          <Icon name="flag" size={16} color={colors.white} filled />
         </View>
         <Text style={styles.headerLabel}>Your savings progress</Text>
       </View>
@@ -88,9 +88,8 @@ const styles = StyleSheet.create({
     width: 28,
   },
   headerLabel: {
+    ...typography.label,
     color: colors.white,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
     opacity: 0.92,
   },
   totalSaved: {
@@ -115,14 +114,13 @@ const styles = StyleSheet.create({
     width: 1,
   },
   statLabel: {
+    ...typography.caption,
     color: colors.white,
-    fontSize: fontSize.xs,
     marginBottom: spacing.xs,
     opacity: 0.82,
   },
   statValue: {
+    ...typography.subheading,
     color: colors.white,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
   },
 });

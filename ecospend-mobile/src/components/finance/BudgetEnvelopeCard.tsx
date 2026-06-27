@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 
 import GhsText from '../ui/GhsText';
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { Icon } from '../ui/icons';
+import { getCategoryVisual } from '../../constants/categories';
+import { colors, radius, shadowSm, spacing, typography } from '../../theme';
 import type { BudgetEnvelope } from '../../types';
 
 /**
@@ -32,6 +34,7 @@ export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps
   const ratio = envelope.limit > 0 ? envelope.spent / envelope.limit : 0;
   const progressPercent = Math.min(ratio * 100, 100);
   const fillColor = getStatusColor(ratio);
+  const visual = getCategoryVisual(envelope.category);
 
   useEffect(() => {
     if (trackWidth <= 0) {
@@ -54,8 +57,8 @@ export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps
     <View style={styles.card}>
       <View style={[styles.accentStrip, { backgroundColor: fillColor }]} />
 
-      <View style={styles.emojiCircle}>
-        <Text style={styles.emoji}>{envelope.emoji}</Text>
+      <View style={[styles.iconCircle, { backgroundColor: visual.background }]}>
+        <Icon name={visual.icon} size={20} color={visual.tint} strokeWidth={1.9} />
       </View>
 
       <Text style={styles.name} numberOfLines={1}>
@@ -91,7 +94,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: spacing.md,
     width: 172,
-    ...cardShadow,
+    ...shadowSm,
   },
   accentStrip: {
     height: 3,
@@ -100,22 +103,18 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
-  emojiCircle: {
+  iconCircle: {
     alignItems: 'center',
-    backgroundColor: colors.chipBg,
     borderRadius: radius.full,
-    height: 40,
+    height: 42,
     justifyContent: 'center',
     marginBottom: spacing.sm,
-    width: 40,
-  },
-  emoji: {
-    fontSize: fontSize.lg,
+    width: 42,
   },
   name: {
+    ...typography.subheading,
     color: colors.textDark,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
+    fontSize: 15,
     marginBottom: spacing.sm,
   },
   track: {
@@ -135,14 +134,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   ofText: {
+    ...typography.bodySm,
     color: colors.textMuted,
-    fontSize: fontSize.sm,
   },
   limitAmount: {
     color: colors.textMuted,
   },
   percentLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
+    ...typography.caption,
+    fontWeight: typography.label.fontWeight,
   },
 });

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
+import { Icon } from '../ui/icons';
 import GhsText from '../ui/GhsText';
 import type { Vault } from '../../types/vault';
 import {
@@ -9,7 +9,7 @@ import {
   getDaysRemaining,
   getVaultProgress,
 } from '../../utils/vault';
-import { fontSize, fontWeight, radius, shadowSm, spacing } from '../../theme';
+import { radius, shadowSm, spacing, typography } from '../../theme';
 import VaultProgressBar from './VaultProgressBar';
 import VaultStatusBadge from './VaultStatusBadge';
 import type { VaultThemeColors } from './vaultTheme';
@@ -75,26 +75,31 @@ export default function VaultCard({ vault, theme, onPress }: VaultCardProps) {
 
       <View style={styles.footerRow}>
         <View style={styles.footerItem}>
-          <Ionicons
-            name="calendar-outline"
-            size={14}
-            color={theme.textMuted}
-          />
-          <Text style={[styles.footerText, { color: theme.textMuted }]}>
+          <Icon name="calendar-outline" size={14} color={theme.textMuted} />
+          <Text
+            style={[styles.footerText, { color: theme.textMuted }]}
+            numberOfLines={1}
+          >
             {formatDaysRemaining(daysRemaining)}
           </Text>
         </View>
 
         <View style={styles.footerItem}>
-          <Ionicons name="time-outline" size={14} color={theme.textMuted} />
-          <Text style={[styles.footerText, { color: theme.textMuted }]}>
+          <Icon name="time-outline" size={14} color={theme.textMuted} />
+          <Text
+            style={[styles.footerText, { color: theme.textMuted }]}
+            numberOfLines={1}
+          >
             {formatVaultDate(vault.maturityDate)}
           </Text>
         </View>
 
         <View style={styles.footerItem}>
-          <Ionicons name="cash-outline" size={14} color={theme.textMuted} />
-          <Text style={[styles.footerText, { color: theme.textMuted }]}>
+          <Icon name="cash-outline" size={14} color={theme.textMuted} />
+          <Text
+            style={[styles.footerText, { color: theme.textMuted }]}
+            numberOfLines={1}
+          >
             Fee GH₵ {vault.estimatedWithdrawalFee.toFixed(2)}
           </Text>
         </View>
@@ -134,9 +139,9 @@ const styles = StyleSheet.create({
     width: 10,
   },
   name: {
+    ...typography.subheading,
     flex: 1,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
+    fontWeight: '700',
   },
   balanceRow: {
     flexDirection: 'row',
@@ -147,8 +152,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   metaLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
+    ...typography.caption,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
   },
@@ -163,8 +167,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   footerText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
+    ...typography.caption,
     marginLeft: spacing.xs,
   },
 });

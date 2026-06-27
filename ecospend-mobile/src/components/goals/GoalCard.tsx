@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import GhsText from '../ui/GhsText';
+import { Icon } from '../ui/icons';
 import GoalDeadlineBadge from './GoalDeadlineBadge';
 import GoalProgressBar from './GoalProgressBar';
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { cardShadow, colors, fontSize, radius, spacing, typography } from '../../theme';
 import {
   formatMonthYear,
   getGoalAccentColors,
@@ -52,7 +52,7 @@ export default function GoalCard({
 
       <View style={styles.topRow}>
         <View style={[styles.goalIcon, { backgroundColor: accent.background }]}>
-          <Ionicons name="flag-outline" size={18} color={accent.accent} />
+          <Icon name="flag-outline" size={18} color={accent.accent} />
         </View>
         <View style={styles.titleBlock}>
           <Text style={styles.name} numberOfLines={1}>
@@ -71,7 +71,7 @@ export default function GoalCard({
 
       {weeklyTarget !== null && goal.deadline ? (
         <View style={[styles.weeklyRow, { backgroundColor: accent.background }]}>
-          <Ionicons name="calendar-outline" size={fontSize.sm} color={accent.accent} />
+          <Icon name="calendar-outline" size={fontSize.sm} color={accent.accent} />
           <Text
             style={[
               styles.weeklyText,
@@ -93,7 +93,7 @@ export default function GoalCard({
           ]}
           onPress={() => onAddMoney(goal)}
         >
-          <Ionicons name="add" size={18} color={colors.white} />
+          <Icon name="add" size={18} color={colors.white} />
           <Text style={styles.primaryActionText}>Add Money</Text>
         </Pressable>
 
@@ -102,7 +102,7 @@ export default function GoalCard({
           onPress={() => onDetails(goal)}
         >
           <Text style={styles.secondaryActionText}>Details</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          <Icon name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
       </View>
     </Animated.View>
@@ -144,9 +144,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
+    ...typography.subheading,
     color: colors.textDark,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
     marginBottom: spacing.xs,
   },
   targetRow: {
@@ -154,8 +153,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   targetLabel: {
+    ...typography.bodySm,
     color: colors.textGrey,
-    fontSize: fontSize.sm,
   },
   targetAmount: {
     color: colors.textGrey,
@@ -168,9 +167,9 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   weeklyText: {
+    ...typography.caption,
     color: colors.textGrey,
     flex: 1,
-    fontSize: fontSize.xs,
     lineHeight: 18,
     marginLeft: spacing.sm,
   },
@@ -192,9 +191,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   primaryActionText: {
+    ...typography.label,
     color: colors.white,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
   },
   secondaryAction: {
     alignItems: 'center',
@@ -206,9 +204,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   secondaryActionText: {
+    ...typography.label,
     color: colors.textDark,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
   },
   actionPressed: {
     opacity: 0.9,

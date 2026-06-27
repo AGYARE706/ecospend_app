@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { Icon } from '../ui/icons';
+import { colors, radius, spacing, typography } from '../../theme';
 import {
   getDaysRemaining,
   getDeadlineBadgeType,
@@ -21,7 +21,7 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
   if (badgeType === 'completed') {
     return (
       <View style={[styles.badge, styles.completedBadge]}>
-        <Ionicons name="checkmark" size={12} color={colors.white} />
+        <Icon name="checkmark" size={12} color={colors.white} strokeWidth={2.4} />
         <Text style={styles.completedText}>Done</Text>
       </View>
     );
@@ -38,7 +38,7 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
   if (badgeType === 'overdue') {
     return (
       <View style={[styles.badge, styles.overdueBadge]}>
-        <Ionicons name="alert-circle" size={12} color={colors.error} />
+        <Icon name="alert-circle" size={12} color={colors.error} />
         <Text style={styles.overdueText}>Overdue</Text>
       </View>
     );
@@ -49,7 +49,7 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
 
   return (
     <View style={[styles.badge, styles.daysBadge]}>
-      <Ionicons name="time-outline" size={12} color={colors.warning} />
+      <Icon name="time-outline" size={12} color={colors.warning} />
       <Text style={styles.daysText}>{label}</Text>
     </View>
   );
@@ -68,32 +68,31 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orangeLight,
   },
   daysText: {
+    ...typography.overline,
     color: colors.warning,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
+    letterSpacing: 0,
   },
   neutralBadge: {
     backgroundColor: colors.chipBg,
   },
   neutralText: {
+    ...typography.caption,
     color: colors.textGrey,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
   },
   overdueBadge: {
     backgroundColor: colors.errorLight,
   },
   overdueText: {
+    ...typography.overline,
     color: colors.error,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
+    letterSpacing: 0,
   },
   completedBadge: {
     backgroundColor: colors.primary,
   },
   completedText: {
+    ...typography.overline,
     color: colors.white,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
+    letterSpacing: 0,
   },
 });
