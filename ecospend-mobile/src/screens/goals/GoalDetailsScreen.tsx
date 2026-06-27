@@ -21,7 +21,7 @@ interface Milestone {
 
 export default function GoalDetailsScreen() {
   const { params } = useRoute<GoalDetailsRouteProp>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
   // Mock data - replace with actual data from params/hook
   const goal = {
@@ -151,13 +151,13 @@ export default function GoalDetailsScreen() {
             <View style={styles.amountDetails}>
               <View style={styles.amountRow}>
                 <Text style={[typography.bodySm, styles.amountLabel]}>Saved</Text>
-                <Text style={[typography.bodyMd, styles.amountValue]}>
+                <Text style={[typography.body, styles.amountValue]}>
                   GH¢ {goal.currentAmount.toLocaleString()}
                 </Text>
               </View>
               <View style={styles.amountRow}>
                 <Text style={[typography.bodySm, styles.amountLabel]}>Target</Text>
-                <Text style={[typography.bodyMd, styles.amountValue]}>
+                <Text style={[typography.body, styles.amountValue]}>
                   GH¢ {goal.targetAmount.toLocaleString()}
                 </Text>
               </View>
@@ -170,22 +170,22 @@ export default function GoalDetailsScreen() {
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>💰</Text>
             <Text style={[typography.label, styles.statLabel]}>Avg. Contribution</Text>
-            <Text style={[typography.bodyMd, styles.statValue]}>GH¢ {goal.avgContribution}</Text>
+            <Text style={[typography.body, styles.statValue]}>GH¢ {goal.avgContribution}</Text>
           </Card>
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>📅</Text>
             <Text style={[typography.label, styles.statLabel]}>Days Remaining</Text>
-            <Text style={[typography.bodyMd, styles.statValue]}>{goal.daysRemaining} Days</Text>
+            <Text style={[typography.body, styles.statValue]}>{goal.daysRemaining} Days</Text>
           </Card>
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>📈</Text>
             <Text style={[typography.label, styles.statLabel]}>Est. Weekly Saving</Text>
-            <Text style={[typography.bodyMd, styles.statValue]}>GH¢ {goal.weeklyProjection}</Text>
+            <Text style={[typography.body, styles.statValue]}>GH¢ {goal.weeklyProjection}</Text>
           </Card>
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>✨</Text>
             <Text style={[typography.label, styles.statLabel]}>Projected Finish</Text>
-            <Text style={[typography.bodyMd, styles.statValue]}>{goal.projectedFinish}</Text>
+            <Text style={[typography.body, styles.statValue]}>{goal.projectedFinish}</Text>
           </Card>
         </View>
       </View>
