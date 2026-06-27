@@ -1,6 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import FloatingActionButton from '../../components/finance/FloatingActionButton';
@@ -9,12 +8,13 @@ import VaultEmptyState from '../../components/vault/VaultEmptyState';
 import VaultQuickActions from '../../components/vault/VaultQuickActions';
 import VaultSummaryCard from '../../components/vault/VaultSummaryCard';
 import { useVaultTheme } from '../../components/vault/vaultTheme';
+import IconButton from '../../components/ui/IconButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useVaultDashboard } from '../../hooks/useVaultDashboard';
 import { navigateApp } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import type { Vault } from '../../types/vault';
-import { fontSize, fontWeight, spacing } from '../../theme';
+import { spacing, typography } from '../../theme';
 
 type VaultDashboardNavigationProp = StackNavigationProp<
   VaultStackParamList,
@@ -63,17 +63,21 @@ export default function VaultDashboardScreen() {
             </View>
 
             <View style={styles.headerActions}>
-              <HeaderIconButton
+              <IconButton
                 icon="notifications-outline"
-                themeBackground={theme.chipBg}
-                themeText={theme.text}
+                variant="ghost"
+                color={theme.text}
                 onPress={openNotifications}
+                accessibilityLabel="Notifications"
+                style={{ backgroundColor: theme.chipBg }}
               />
-              <HeaderIconButton
+              <IconButton
                 icon="add"
-                themeBackground={theme.chipBg}
-                themeText={theme.text}
+                variant="ghost"
+                color={theme.text}
                 onPress={openCreateVault}
+                accessibilityLabel="Create vault"
+                style={{ backgroundColor: theme.chipBg }}
               />
             </View>
           </View>
@@ -118,39 +122,12 @@ export default function VaultDashboardScreen() {
   );
 }
 
-interface HeaderIconButtonProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  themeBackground: string;
-  themeText: string;
-  onPress: () => void;
-}
-
-function HeaderIconButton({
-  icon,
-  themeBackground,
-  themeText,
-  onPress,
-}: HeaderIconButtonProps) {
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.iconButton,
-        { backgroundColor: themeBackground },
-        pressed && styles.iconButtonPressed,
-      ]}
-      onPress={onPress}
-    >
-      <Ionicons name={icon} size={22} color={themeText} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: spacing.xxxl + spacing.xxl,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
@@ -165,28 +142,15 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   title: {
-    fontSize: fontSize.xxxl,
-    fontWeight: fontWeight.bold,
+    ...typography.h1,
     marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: fontSize.sm,
-    lineHeight: 20,
+    ...typography.bodySm,
   },
   headerActions: {
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  iconButton: {
-    alignItems: 'center',
-    borderRadius: 999,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  iconButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
   },
   sectionHeader: {
     alignItems: 'center',
@@ -195,11 +159,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
+    ...typography.subheading,
+    fontWeight: '700',
   },
   sectionMeta: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    ...typography.bodySm,
+    fontWeight: '500',
   },
 });

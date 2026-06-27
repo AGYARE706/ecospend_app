@@ -7,9 +7,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { Icon } from './icons';
+import type { IconName } from './icons';
 
 /**
  * label — field label displayed above the input
@@ -19,18 +20,24 @@ import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
  * keyboardType — keyboard type (e.g. 'phone-pad', 'default')
  * secureTextEntry — hides text for password fields
  * error — validation error message shown below the field
- * showToggle — shows eye icon to toggle password visibility
+ * success — success hint shown below the field (with check affordance)
+ * hint — neutral helper text shown when there's no error/success
+ * leadingIcon — optional SVG icon rendered before the input
+ * showToggle — shows an eye icon to toggle password visibility
  * multiline — enables multiline text input
  * numberOfLines — visible lines when multiline is enabled
  */
 export interface AppInputProps {
-  label: string;
+  label?: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
   keyboardType?: KeyboardTypeOptions;
   secureTextEntry?: boolean;
   error?: string;
+  success?: string;
+  hint?: string;
+  leadingIcon?: IconName | (string & {});
   showToggle?: boolean;
   multiline?: boolean;
   numberOfLines?: number;
@@ -44,6 +51,9 @@ export default function AppInput({
   keyboardType = 'default',
   secureTextEntry = false,
   error,
+  success,
+  hint,
+  leadingIcon,
   showToggle = false,
   multiline = false,
   numberOfLines = 1,
@@ -52,20 +62,25 @@ export default function AppInput({
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const isSecure = secureTextEntry && !isPasswordVisible;
-
-  const wrapperStyle = [
-    styles.inputWrapper,
-    error
-      ? styles.inputWrapperError
+  const state: 'error' | 'success' | 'focused' | 'default' = error
+    ? 'error'
+    : success
+      ? 'success'
       : isFocused
-        ? styles.inputWrapperFocused
-        : styles.inputWrapperDefault,
-  ];
+        ? 'focused'
+        : 'default';
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={wrapperStyle}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+      <View style={[styles.inputWrapper, wrapperState[state]]}>
+        {leadingIcon ? (
+          <Icon
+            name={leadingIcon}
+            size={20}
+            color={isFocused ? colors.primary : colors.textLight}
+          />
+        ) : null}
         <TextInput
           style={[styles.input, multiline && styles.inputMultiline]}
           value={value}
@@ -83,24 +98,54 @@ export default function AppInput({
           numberOfLines={numberOfLines}
           textAlignVertical={multiline ? 'top' : 'center'}
         />
+
         {showToggle && secureTextEntry ? (
           <Pressable
             onPress={() => setIsPasswordVisible((prev) => !prev)}
-            style={styles.toggleButton}
+            style={styles.trailing}
             hitSlop={spacing.sm}
+            accessibilityRole="button"
+            accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
           >
-            <Ionicons
-              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-              size={fontSize.xl}
+            <Icon
+              name={isPasswordVisible ? 'eye-off' : 'eye'}
+              size={20}
               color={colors.textGrey}
             />
           </Pressable>
+        ) : state === 'error' ? (
+          <Icon name="alert-circle" size={20} color={colors.error} />
+        ) : state === 'success' ? (
+          <Icon name="check-circle" size={20} color={colors.success} />
         ) : null}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      {error ? (
+        <View style={styles.helperRow}>
+          <Icon name="alert-circle" size={14} color={colors.error} />
+          <Text style={[styles.helperText, { color: colors.error }]}>{error}</Text>
+        </View>
+      ) : success ? (
+        <View style={styles.helperRow}>
+          <Icon name="check-circle" size={14} color={colors.success} />
+          <Text style={[styles.helperText, { color: colors.success }]}>{success}</Text>
+        </View>
+      ) : hint ? (
+        <Text style={[styles.helperText, styles.hint]}>{hint}</Text>
+      ) : null}
     </View>
   );
 }
+
+const wrapperState = {
+  default: { borderColor: colors.border },
+  focused: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySubtle,
+  },
+  error: { borderColor: colors.error, backgroundColor: colors.errorLight },
+  success: { borderColor: colors.success },
+} as const;
 
 const styles = StyleSheet.create({
   container: {
@@ -109,44 +154,45 @@ const styles = StyleSheet.create({
   label: {
     color: colors.textDark,
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
     marginBottom: spacing.sm,
   },
   inputWrapper: {
     alignItems: 'center',
     backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    borderRadius: radius.input,
     borderWidth: 1.5,
     flexDirection: 'row',
+    gap: spacing.sm,
     minHeight: 54,
     paddingHorizontal: spacing.md,
-  },
-  inputWrapperDefault: {
-    borderColor: colors.borderSubtle,
-  },
-  inputWrapperFocused: {
-    backgroundColor: colors.primaryBackground,
-    borderColor: colors.primary,
-  },
-  inputWrapperError: {
-    borderColor: colors.error,
   },
   input: {
     color: colors.textDark,
     flex: 1,
     fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
     paddingVertical: spacing.sm,
   },
   inputMultiline: {
-    minHeight: 80,
-    paddingTop: spacing.sm,
+    minHeight: 92,
+    paddingTop: spacing.smd,
   },
-  toggleButton: {
-    marginLeft: spacing.sm,
+  trailing: {
+    marginLeft: spacing.xs,
   },
-  errorText: {
-    color: colors.error,
+  helperRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  helperText: {
     fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  hint: {
+    color: colors.textGrey,
     marginTop: spacing.xs,
   },
 });

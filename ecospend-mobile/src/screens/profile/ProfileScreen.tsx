@@ -1,9 +1,10 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { Icon } from '../../components/ui/icons';
+import type { IconName } from '../../components/ui/icons';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../hooks/useProfile';
@@ -25,7 +26,7 @@ type MenuRoute = Exclude<keyof ProfileStackParamList, 'Profile'>;
 const menuItems: Array<{
   label: string;
   route: MenuRoute;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName | (string & {});
 }> = [
   { label: 'Edit Profile', route: 'EditProfile', icon: 'person-outline' },
   { label: 'Subscription', route: 'Subscription', icon: 'star-outline' },
@@ -74,13 +75,13 @@ export default function ProfileScreen() {
                 <Text style={styles.avatarText}>{getInitials(name)}</Text>
               </LinearGradient>
               <View style={styles.avatarBadge}>
-                <Ionicons name="checkmark" size={12} color={colors.white} />
+                <Icon name="checkmark" size={12} color={colors.white} />
               </View>
             </View>
 
             <Text style={styles.name}>{name}</Text>
             <View style={styles.phoneRow}>
-              <Ionicons name="call-outline" size={14} color={colors.textMuted} />
+              <Icon name="call-outline" size={14} color={colors.textMuted} />
               <Text style={styles.phone}>{formattedPhone}</Text>
             </View>
           </View>
@@ -96,7 +97,7 @@ export default function ProfileScreen() {
               <View style={styles.membershipGlow} />
               <View style={styles.membershipTop}>
                 <View style={styles.membershipIconRing}>
-                  <Ionicons name="star" size={18} color={colors.white} />
+                  <Icon name="star" size={18} color={colors.white} />
                 </View>
                 <View style={styles.membershipTextBlock}>
                   <Text style={styles.membershipLabel}>Membership</Text>
@@ -114,7 +115,7 @@ export default function ProfileScreen() {
             <View style={styles.freeCard}>
               <View style={styles.membershipTop}>
                 <View style={[styles.membershipIconRing, styles.freeIconRing]}>
-                  <Ionicons name="leaf-outline" size={18} color={colors.primary} />
+                  <Icon name="leaf-outline" size={18} color={colors.primary} />
                 </View>
                 <View style={styles.membershipTextBlock}>
                   <Text style={styles.freeLabel}>Membership</Text>
@@ -131,7 +132,7 @@ export default function ProfileScreen() {
                   pressed && styles.upgradeBtnPressed,
                 ]}
               >
-                <Ionicons name="arrow-up-circle-outline" size={16} color={colors.white} />
+                <Icon name="arrow-up-circle-outline" size={16} color={colors.white} />
                 <Text style={styles.upgradeBtnText}>Upgrade to Plus</Text>
               </Pressable>
             </View>
@@ -185,7 +186,7 @@ export default function ProfileScreen() {
                 pressed && styles.logoutButtonPressed,
               ]}
             >
-              <Ionicons name="log-out-outline" size={18} color={colors.error} />
+              <Icon name="log-out-outline" size={18} color={colors.error} />
               <Text style={styles.logoutButtonText}>Log Out</Text>
             </Pressable>
             <Text style={styles.logoutHint}>
@@ -205,11 +206,11 @@ function SectionLabel({
   icon,
 }: {
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName | (string & {});
 }) {
   return (
     <View style={labelStyles.row}>
-      <Ionicons name={icon} size={14} color={colors.primary} />
+      <Icon name={icon} size={14} color={colors.primary} />
       <Text style={labelStyles.text}>{title}</Text>
     </View>
   );
@@ -221,7 +222,7 @@ function StatItem({
   label,
   value,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName | (string & {});
   iconColor: string;
   label: string;
   value: string;
@@ -229,7 +230,7 @@ function StatItem({
   return (
     <View style={statStyles.item}>
       <View style={[statStyles.iconRing, { backgroundColor: `${iconColor}18` }]}>
-        <Ionicons name={icon} size={16} color={iconColor} />
+        <Icon name={icon} size={16} color={iconColor} />
       </View>
       <Text style={statStyles.value}>{value}</Text>
       <Text style={statStyles.label}>{label}</Text>
@@ -244,7 +245,7 @@ function MenuRow({
   onPress,
 }: {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName | (string & {});
   isLast: boolean;
   onPress: () => void;
 }) {
@@ -258,10 +259,10 @@ function MenuRow({
       ]}
     >
       <View style={menuStyles.iconRing}>
-        <Ionicons name={icon} size={18} color={colors.primary} />
+        <Icon name={icon} size={18} color={colors.primary} />
       </View>
       <Text style={menuStyles.label}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color={colors.textLight} />
+      <Icon name="chevron-forward" size={18} color={colors.textLight} />
     </Pressable>
   );
 }

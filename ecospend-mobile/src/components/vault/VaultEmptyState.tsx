@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
+import { Icon } from '../ui/icons';
 import AppButton from '../ui/AppButton';
-import { fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, radius, spacing, typography } from '../../theme';
 import type { VaultThemeColors } from './vaultTheme';
 
 export interface VaultEmptyStateProps {
@@ -18,7 +18,7 @@ export default function VaultEmptyState({
     <View style={styles.container}>
       <View style={[styles.illustration, { backgroundColor: theme.chipBg }]}>
         <View style={styles.iconRing}>
-          <Ionicons name="lock-closed" size={42} color="#2E7D32" />
+          <Icon name="lock-closed" size={42} color={colors.primary} />
         </View>
         <View style={[styles.orbit, styles.orbitOne]} />
         <View style={[styles.orbit, styles.orbitTwo]} />
@@ -80,14 +80,12 @@ const styles = StyleSheet.create({
     width: 150,
   },
   title: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
+    ...typography.h3,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: fontSize.md,
-    lineHeight: 22,
+    ...typography.body,
     marginBottom: spacing.lg,
     textAlign: 'center',
   },

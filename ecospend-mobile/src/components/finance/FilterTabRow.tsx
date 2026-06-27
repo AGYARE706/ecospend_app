@@ -1,15 +1,10 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { ALL_CATEGORIES } from '../../constants/categories';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, radius, shadowXs, spacing, typography } from '../../theme';
 import type { TransactionFilter } from '../../types';
 
-const FILTERS: TransactionFilter[] = [
-  'All',
-  'Income',
-  'Expense',
-  ...ALL_CATEGORIES,
-];
+const FILTERS: TransactionFilter[] = ['All', 'Income', 'Expense', ...ALL_CATEGORIES];
 
 /**
  * Horizontal filter chips for transaction list filtering.
@@ -19,10 +14,7 @@ export interface FilterTabRowProps {
   onFilterChange: (filter: TransactionFilter) => void;
 }
 
-export default function FilterTabRow({
-  activeFilter,
-  onFilterChange,
-}: FilterTabRowProps) {
+export default function FilterTabRow({ activeFilter, onFilterChange }: FilterTabRowProps) {
   return (
     <ScrollView
       horizontal
@@ -35,14 +27,18 @@ export default function FilterTabRow({
         return (
           <Pressable
             key={filter}
-            style={[styles.tab, isActive ? styles.tabActive : styles.tabInactive]}
+            style={({ pressed }) => [
+              styles.tab,
+              isActive ? styles.tabActive : styles.tabInactive,
+              pressed && styles.tabPressed,
+            ]}
             onPress={() => onFilterChange(filter)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isActive }}
           >
             <Text
-              style={[
-                styles.tabText,
-                isActive ? styles.tabTextActive : styles.tabTextInactive,
-              ]}
+              style={[styles.tabText, isActive ? styles.tabTextActive : styles.tabTextInactive]}
+              numberOfLines={1}
             >
               {filter}
             </Text>
@@ -60,24 +56,34 @@ const styles = StyleSheet.create({
     paddingRight: spacing.lg,
   },
   tab: {
-    borderRadius: radius.full,
+    alignItems: 'center',
+    borderRadius: radius.chip,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 38,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   tabActive: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    ...shadowXs,
   },
   tabInactive: {
-    backgroundColor: colors.chipBg,
+    backgroundColor: colors.white,
+    borderColor: colors.border,
+  },
+  tabPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.97 }],
   },
   tabText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    ...typography.label,
   },
   tabTextActive: {
     color: colors.white,
   },
   tabTextInactive: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
 });

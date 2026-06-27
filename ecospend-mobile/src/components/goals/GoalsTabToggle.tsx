@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fontSize, fontWeight, radius, spacing, subtleShadow } from '../../theme';
+import { Icon } from '../ui/icons';
+import { colors, radius, spacing, subtleShadow, typography } from '../../theme';
 import type { GoalsTabMode } from '../../types';
 
 /**
@@ -22,7 +22,7 @@ export default function GoalsTabToggle({
         style={[styles.tab, activeTab === 'active' ? styles.activeTab : styles.inactiveTab]}
         onPress={() => onTabChange('active')}
       >
-        <Ionicons
+        <Icon
           name="flag-outline"
           size={16}
           color={activeTab === 'active' ? colors.primary : colors.textMuted}
@@ -44,7 +44,7 @@ export default function GoalsTabToggle({
         ]}
         onPress={() => onTabChange('completed')}
       >
-        <Ionicons
+        <Icon
           name="trophy-outline"
           size={16}
           color={activeTab === 'completed' ? colors.primary : colors.textMuted}
@@ -87,8 +87,7 @@ const styles = StyleSheet.create({
   },
   inactiveTab: {},
   tabText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+    ...typography.label,
   },
   activeText: {
     color: colors.textDark,

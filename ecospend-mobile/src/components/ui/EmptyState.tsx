@@ -1,26 +1,55 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, radius, spacing, typography } from '../../theme';
+import AppButton from './AppButton';
+import { Icon } from './icons';
+import type { IconName } from './icons';
 
 /**
- * emoji — large emoji displayed inside a tinted medallion
+ * icon — preferred: an SVG icon rendered inside a tinted medallion
+ * emoji — legacy fallback medallion glyph (used when no icon is provided)
  * title — primary empty state message
  * subtitle — secondary helper text below the title
+ * actionLabel / onAction — optional call-to-action button
  */
 export interface EmptyStateProps {
-  emoji: string;
+  icon?: IconName | (string & {});
+  emoji?: string;
   title: string;
   subtitle: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
-export default function EmptyState({ emoji, title, subtitle }: EmptyStateProps) {
+export default function EmptyState({
+  icon,
+  emoji,
+  title,
+  subtitle,
+  actionLabel,
+  onAction,
+}: EmptyStateProps) {
   return (
     <View style={styles.container}>
       <View style={styles.medallion}>
-        <Text style={styles.emoji}>{emoji}</Text>
+        {icon ? (
+          <Icon name={icon} size={34} color={colors.primary} strokeWidth={1.6} />
+        ) : (
+          <Text style={styles.emoji}>{emoji ?? '✨'}</Text>
+        )}
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
+      {actionLabel && onAction ? (
+        <AppButton
+          title={actionLabel}
+          onPress={onAction}
+          variant="secondary"
+          size="md"
+          fullWidth={false}
+          style={styles.action}
+        />
+      ) : null}
     </View>
   );
 }
@@ -34,27 +63,28 @@ const styles = StyleSheet.create({
   },
   medallion: {
     alignItems: 'center',
-    backgroundColor: colors.chipBg,
+    backgroundColor: colors.primaryBackground,
     borderRadius: radius.full,
-    height: 88,
+    height: 84,
     justifyContent: 'center',
     marginBottom: spacing.lg,
-    width: 88,
+    width: 84,
   },
   emoji: {
-    fontSize: fontSize.xxxl,
+    fontSize: 34,
   },
   title: {
+    ...typography.subheading,
     color: colors.textDark,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     textAlign: 'center',
   },
   subtitle: {
+    ...typography.body,
     color: colors.textMuted,
-    fontSize: fontSize.md,
-    lineHeight: 22,
     textAlign: 'center',
+  },
+  action: {
+    marginTop: spacing.lg,
   },
 });

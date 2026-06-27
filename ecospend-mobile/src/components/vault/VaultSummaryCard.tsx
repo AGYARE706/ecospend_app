@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 
+import { Icon } from '../ui/icons';
 import GhsText from '../ui/GhsText';
 import type { VaultSummary } from '../../types/vault';
 import { formatVaultDate } from '../../utils/vault';
-import { fontSize, fontWeight, radius, shadowMd, spacing } from '../../theme';
+import { colors, radius, shadowMd, spacing, typography } from '../../theme';
 import type { VaultThemeColors } from './vaultTheme';
 
 export interface VaultSummaryCardProps {
@@ -28,7 +28,7 @@ export default function VaultSummaryCard({
 
       <View style={styles.headerRow}>
         <View style={styles.iconBadge}>
-          <Ionicons name="shield-checkmark" size={18} color="#FFFFFF" />
+          <Icon name="shield-checkmark" size={18} color={colors.white} />
         </View>
         <Text style={styles.headerLabel}>Total Vault Balance</Text>
       </View>
@@ -95,9 +95,9 @@ const styles = StyleSheet.create({
     width: 32,
   },
   headerLabel: {
-    color: '#FFFFFF',
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    ...typography.label,
+    color: colors.white,
+    fontWeight: '500',
     opacity: 0.92,
   },
   balance: {
@@ -125,14 +125,14 @@ const styles = StyleSheet.create({
     width: 1,
   },
   statLabel: {
-    color: '#FFFFFF',
-    fontSize: fontSize.xs,
+    ...typography.caption,
+    color: colors.white,
     marginBottom: spacing.xs,
     opacity: 0.82,
   },
   statValue: {
-    color: '#FFFFFF',
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+    ...typography.subheading,
+    fontSize: 15,
+    color: colors.white,
   },
 });

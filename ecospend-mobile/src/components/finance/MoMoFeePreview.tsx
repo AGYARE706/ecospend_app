@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import GhsText from '../ui/GhsText';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { Icon } from '../ui/icons';
+import { colors, radius, spacing, typography } from '../../theme';
 
 /**
  * providerFee — calculated provider fee amount
@@ -19,12 +19,9 @@ export default function MoMoFeePreview({
 }: MoMoFeePreviewProps) {
   return (
     <View style={styles.container}>
-      <Ionicons
-        name="information-circle-outline"
-        size={fontSize.lg}
-        color={colors.warning}
-        style={styles.icon}
-      />
+      <View style={styles.icon}>
+        <Icon name="info" size={20} color={colors.warning} />
+      </View>
       <View style={styles.content}>
         <View style={styles.row}>
           <Text style={styles.label}>Provider fee: </Text>
@@ -50,7 +47,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: spacing.sm,
-    marginTop: spacing.xs,
+    marginTop: spacing.xxs,
   },
   content: {
     flex: 1,
@@ -61,8 +58,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   label: {
+    ...typography.bodySm,
     color: colors.textGrey,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
   },
 });

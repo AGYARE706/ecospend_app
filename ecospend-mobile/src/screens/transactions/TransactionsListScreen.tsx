@@ -90,7 +90,7 @@ export default function TransactionsListScreen() {
 
         {!loading && isEmpty ? (
           <EmptyState
-            emoji="🔍"
+            icon="search"
             title="No transactions found"
             subtitle="Try adjusting your search or filter"
           />

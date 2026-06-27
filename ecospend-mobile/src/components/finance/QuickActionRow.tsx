@@ -1,41 +1,46 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fontSize, fontWeight, radius, shadowSm, spacing } from '../../theme';
+import { colors, radius, shadowXs, spacing, typography } from '../../theme';
+import { Icon } from '../ui/icons';
+import type { IconName } from '../ui/icons';
 
-type QuickActionIcon = 'add' | 'transfer' | 'goals' | 'more';
+type QuickActionKey = 'add' | 'transfer' | 'goals' | 'more';
 
 /**
- * Row of quick action shortcuts on the dashboard.
+ * Row of quick-action shortcuts on the dashboard. Each action gets a tinted
+ * SVG medallion drawn from the semantic palette for a cohesive, scannable row.
  */
 export interface QuickActionRowProps {
   onAddPress: () => void;
   onGoalsPress: () => void;
   onTransferPress?: () => void;
+  onMorePress?: () => void;
 }
 
 const ACTIONS: {
-  key: QuickActionIcon;
+  key: QuickActionKey;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
+  icon: IconName;
+  tint: string;
+  bg: string;
 }[] = [
-  { key: 'add', label: 'Add', icon: 'add-circle-outline', iconColor: colors.primary },
-  { key: 'transfer', label: 'Transfer', icon: 'swap-horizontal', iconColor: colors.blue },
-  { key: 'goals', label: 'Goals', icon: 'flag-outline', iconColor: '#6A1B9A' },
-  { key: 'more', label: 'More', icon: 'grid-outline', iconColor: colors.warning },
+  { key: 'add', label: 'Add', icon: 'plus', tint: colors.primary, bg: colors.primaryBackground },
+  { key: 'transfer', label: 'Transfer', icon: 'transfer', tint: colors.accent, bg: colors.accentLight },
+  { key: 'goals', label: 'Goals', icon: 'flag', tint: colors.gold, bg: colors.goldLight },
+  { key: 'more', label: 'More', icon: 'grid', tint: colors.textSecondary, bg: colors.chipBg },
 ];
 
 export default function QuickActionRow({
   onAddPress,
   onGoalsPress,
   onTransferPress,
+  onMorePress,
 }: QuickActionRowProps) {
-  const handlers: Record<QuickActionIcon, () => void> = {
+  const handlers: Record<QuickActionKey, () => void> = {
     add: onAddPress,
     transfer: onTransferPress ?? (() => undefined),
     goals: onGoalsPress,
-    more: () => undefined,
+    more: onMorePress ?? (() => undefined),
   };
 
   return (
@@ -45,11 +50,15 @@ export default function QuickActionRow({
           key={action.key}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
           onPress={handlers[action.key]}
+          accessibilityRole="button"
+          accessibilityLabel={action.label}
         >
-          <View style={styles.iconCircle}>
-            <Ionicons name={action.icon} size={20} color={action.iconColor} />
+          <View style={[styles.iconCircle, { backgroundColor: action.bg }]}>
+            <Icon name={action.icon} size={22} color={action.tint} strokeWidth={2} />
           </View>
-          <Text style={styles.label}>{action.label}</Text>
+          <Text style={styles.label} numberOfLines={1}>
+            {action.label}
+          </Text>
         </Pressable>
       ))}
     </View>
@@ -59,37 +68,36 @@ export default function QuickActionRow({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.smd,
     marginBottom: spacing.xl,
   },
   action: {
     alignItems: 'center',
     backgroundColor: colors.white,
     borderColor: colors.borderSubtle,
-    borderRadius: radius.card,
+    borderRadius: radius.lg,
     borderWidth: 1,
     flex: 1,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.md,
-    ...shadowSm,
+    ...shadowXs,
   },
   pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.92,
+    transform: [{ scale: 0.97 }],
   },
   iconCircle: {
     alignItems: 'center',
-    backgroundColor: colors.chipBg,
     borderRadius: radius.full,
-    height: 40,
+    height: 46,
     justifyContent: 'center',
     marginBottom: spacing.sm,
-    width: 40,
+    width: 46,
   },
   label: {
+    ...typography.caption,
     color: colors.textDark,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
+    fontWeight: typography.label.fontWeight,
     textAlign: 'center',
   },
 });

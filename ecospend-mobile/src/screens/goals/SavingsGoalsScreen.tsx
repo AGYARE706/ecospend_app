@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import AddGoalSheet from '../../components/goals/AddGoalSheet';
@@ -12,12 +11,14 @@ import GoalsSummaryBar from '../../components/goals/GoalsSummaryBar';
 import GoalsTabToggle from '../../components/goals/GoalsTabToggle';
 import GoalToast from '../../components/goals/GoalToast';
 import EmptyState from '../../components/ui/EmptyState';
+import IconButton from '../../components/ui/IconButton';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SkeletonBox from '../../components/ui/SkeletonBox';
 import { useSavingsGoals } from '../../hooks/useSavingsGoals';
 import { navigateApp } from '../../navigation/navigationRef';
 import type { GoalsStackParamList } from '../../navigation/types';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { spacing } from '../../theme';
 import type { SavingsGoal } from '../../types';
 
 type SavingsGoalsNavigationProp = StackNavigationProp<
@@ -53,37 +54,26 @@ export default function SavingsGoalsScreen() {
   const listHeader = useMemo(
     () => (
       <View>
-        <View style={styles.header}>
-          <View style={styles.headerTextBlock}>
-            <Text style={styles.title}>Savings Goals</Text>
-            <Text style={styles.subtitle}>Save towards what matters</Text>
-          </View>
-
-          <View style={styles.headerActions}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.iconButton,
-                pressed && styles.iconButtonPressed,
-              ]}
-              onPress={() => navigateApp('Notifications')}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color={colors.textDark}
+        <ScreenHeader
+          title="Savings Goals"
+          subtitle="Save towards what matters"
+          right={
+            <>
+              <IconButton
+                icon="notifications-outline"
+                variant="soft"
+                onPress={() => navigateApp('Notifications')}
+                accessibilityLabel="Notifications"
               />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.addButton,
-                pressed && styles.iconButtonPressed,
-              ]}
-              onPress={() => navigateApp('CreateGoal')}
-            >
-              <Ionicons name="add" size={24} color={colors.white} />
-            </Pressable>
-          </View>
-        </View>
+              <IconButton
+                icon="add"
+                variant="solid"
+                onPress={() => navigateApp('CreateGoal')}
+                accessibilityLabel="Create goal"
+              />
+            </>
+          }
+        />
 
         <GoalsSummaryBar
           activeGoalCount={activeGoalCount}
@@ -185,51 +175,6 @@ export default function SavingsGoalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  headerTextBlock: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  title: {
-    color: colors.textDark,
-    fontSize: fontSize.xxxl,
-    fontWeight: fontWeight.bold,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
-    lineHeight: 20,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  iconButton: {
-    alignItems: 'center',
-    backgroundColor: colors.chipBg,
-    borderRadius: radius.full,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  addButton: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radius.full,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  iconButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
-  },
   skeletonGap: {
     marginBottom: spacing.md,
   },

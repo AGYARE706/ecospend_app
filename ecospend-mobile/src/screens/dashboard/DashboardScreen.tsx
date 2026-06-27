@@ -5,9 +5,10 @@ import {
 } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { Icon } from '../../components/ui/icons';
+import IconButton from '../../components/ui/IconButton';
 import AvatarInitials from '../../components/finance/AvatarInitials';
 import BalanceCard from '../../components/finance/BalanceCard';
 import BudgetEnvelopeCard from '../../components/finance/BudgetEnvelopeCard';
@@ -25,7 +26,7 @@ import type {
   DashboardStackParamList,
   TabParamList,
 } from '../../navigation/types';
-import { cardShadow, colors, fontSize, fontWeight, radius, shadowMd, spacing } from '../../theme';
+import { cardShadow, colors, radius, shadowMd, spacing, typography } from '../../theme';
 
 type DashboardNavigationProp = CompositeNavigationProp<
   StackNavigationProp<DashboardStackParamList, 'Dashboard'>,
@@ -38,9 +39,11 @@ function getGreeting(date = new Date()): string {
   if (hour < 12) {
     return 'Good Morning';
   }
-   if (hour < 15) {
+
+  if (hour < 16) {
     return 'Good Afternoon';
   }
+
   return 'Good Evening';
 }
 
@@ -81,24 +84,19 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <View style={styles.headerTextBlock}>
               <Text style={styles.greeting}>{`${getGreeting()},`}</Text>
-              <Text style={styles.userName}>{userName}</Text>
+              <Text style={styles.userName} numberOfLines={1}>
+                {userName}
+              </Text>
               <Text style={styles.dateLabel}>{todayLabel}</Text>
             </View>
 
             <View style={styles.headerActions}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.iconButton,
-                  pressed && styles.iconButtonPressed,
-                ]}
+              <IconButton
+                icon="bell"
+                variant="soft"
                 onPress={() => navigateApp('Notifications')}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={22}
-                  color={colors.textDark}
-                />
-              </Pressable>
+                accessibilityLabel="Notifications"
+              />
               <AvatarInitials name={fullName} />
             </View>
           </View>
@@ -179,7 +177,7 @@ export default function DashboardScreen() {
             >
               <View style={styles.insightRow}>
                 <View style={styles.insightIconCircle}>
-                  <Ionicons name="bulb-outline" size={22} color={colors.primary} />
+                  <Icon name="bulb" size={22} color={colors.primary} />
                 </View>
                 <View style={styles.insightContent}>
                   <Text style={styles.insightEyebrow}>Weekly insight</Text>
@@ -191,7 +189,7 @@ export default function DashboardScreen() {
               </View>
               <View style={styles.insightFooter}>
                 <Text style={styles.insightLink}>View full report</Text>
-                <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+                <Icon name="arrow-right" size={16} color={colors.primary} strokeWidth={2.2} />
               </View>
             </LinearGradient>
           </Pressable>
@@ -225,36 +223,23 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   greeting: {
+    ...typography.bodySm,
     color: colors.textMuted,
-    fontSize: fontSize.sm,
     marginBottom: 2,
   },
   userName: {
+    ...typography.h1,
     color: colors.textDark,
-    fontSize: fontSize.xxxl,
-    fontWeight: fontWeight.bold,
     marginBottom: spacing.xs,
   },
   dateLabel: {
+    ...typography.bodySm,
     color: colors.textMuted,
-    fontSize: fontSize.sm,
   },
   headerActions: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  iconButton: {
-    alignItems: 'center',
-    backgroundColor: colors.chipBg,
-    borderRadius: radius.full,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  iconButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
   },
   budgetScroll: {
     paddingBottom: spacing.sm,

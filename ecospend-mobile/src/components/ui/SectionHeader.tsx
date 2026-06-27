@@ -1,16 +1,18 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, fontSize, fontWeight, radius, spacing, typography } from '../../theme';
+import { Icon } from './icons';
+import type { IconName } from './icons';
 
 /**
- * Section heading with optional action link on the right.
+ * Section heading with optional leading icon medallion and a right-aligned
+ * action link.
  */
 export interface SectionHeaderProps {
   title: string;
   actionLabel?: string;
   onActionPress?: () => void;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IconName | (string & {});
 }
 
 export default function SectionHeader({
@@ -24,15 +26,19 @@ export default function SectionHeader({
       <View style={styles.titleRow}>
         {icon ? (
           <View style={styles.iconBadge}>
-            <Ionicons name={icon} size={16} color={colors.primary} />
+            <Icon name={icon} size={16} color={colors.primary} />
           </View>
         ) : null}
         <Text style={styles.title}>{title}</Text>
       </View>
       {actionLabel ? (
-        <Pressable onPress={onActionPress} style={styles.actionButton}>
+        <Pressable
+          onPress={onActionPress}
+          style={({ pressed }) => [styles.actionButton, pressed && styles.actionPressed]}
+          hitSlop={spacing.sm}
+        >
           <Text style={styles.action}>{actionLabel}</Text>
-          <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+          <Icon name="chevron-right" size={15} color={colors.primary} strokeWidth={2.2} />
         </Pressable>
       ) : null}
     </View>
@@ -51,25 +57,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     flex: 1,
-    gap: spacing.sm,
+    gap: spacing.smd,
   },
   iconBadge: {
     alignItems: 'center',
     backgroundColor: colors.primaryBackground,
-    borderRadius: radius.full,
-    height: 28,
+    borderRadius: radius.md,
+    height: 30,
     justifyContent: 'center',
-    width: 28,
+    width: 30,
   },
   title: {
+    ...typography.subheading,
     color: colors.textDark,
-    fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
   },
   actionButton: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 2,
+  },
+  actionPressed: {
+    opacity: 0.6,
   },
   action: {
     color: colors.primary,

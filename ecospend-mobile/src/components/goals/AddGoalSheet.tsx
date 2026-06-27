@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import AppButton from '../ui/AppButton';
 import AppInput from '../ui/AppInput';
+import { Icon } from '../ui/icons';
 import GoalSheetContainer from './GoalSheetContainer';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { colors, fontSize, radius, spacing, typography } from '../../theme';
 import { getProjectedWeekly } from '../../utils/goals';
 import type { AddGoalFormErrors, AddGoalPayload } from '../../types';
 

@@ -1,13 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import GhsText from '../ui/GhsText';
-import { CATEGORY_CONFIG } from '../../constants/categories';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { Icon } from '../ui/icons';
+import { getCategoryVisual } from '../../constants/categories';
+import { colors, radius, spacing, typography } from '../../theme';
 import { formatTime } from '../../utils/formatDate';
 import type { Transaction } from '../../types';
 
 /**
- * Transaction row for list display — flat variant for grouped sections or card variant.
+ * Transaction row — flat variant for grouped sections, card variant standalone.
+ * Each row leads with the category's SVG medallion and a small in/out badge.
  */
 export interface TransactionListItemProps {
   transaction: Transaction;
@@ -22,28 +24,43 @@ export default function TransactionListItem({
   onPress,
   showDivider = false,
 }: TransactionListItemProps) {
-  const config = CATEGORY_CONFIG[transaction.category];
-  const amountVariant = transaction.type === 'income' ? 'income' : 'expense';
+  const visual = getCategoryVisual(transaction.category);
+  const isIncome = transaction.type === 'income';
 
   const content = (
     <View style={styles.row}>
-      <View
-        style={[styles.emojiCircle, { backgroundColor: config.circleBackground }]}
-      >
-        <Text style={styles.emoji}>{config.emoji}</Text>
+      <View style={[styles.iconCircle, { backgroundColor: visual.background }]}>
+        <Icon name={visual.icon} size={20} color={visual.tint} strokeWidth={1.9} />
+        <View
+          style={[
+            styles.badge,
+            { backgroundColor: isIncome ? colors.success : colors.error },
+          ]}
+        >
+          <Icon
+            name={isIncome ? 'arrow-down' : 'arrow-up'}
+            size={9}
+            color={colors.white}
+            strokeWidth={3}
+          />
+        </View>
       </View>
 
       <View style={styles.center}>
-        <Text style={styles.category}>{transaction.category}</Text>
-        <Text style={styles.meta}>
+        <Text style={styles.category} numberOfLines={1}>
+          {transaction.category}
+        </Text>
+        <Text style={styles.meta} numberOfLines={1}>
           {transaction.provider ?? transaction.type}
           {transaction.notes ? ` · ${transaction.notes}` : ''}
         </Text>
       </View>
 
       <View style={styles.right}>
-        <GhsText amount={transaction.amount} variant={amountVariant} size="sm" />
-        <Text style={styles.time}>{formatTime(transaction.date)}</Text>
+        <GhsText amount={transaction.amount} variant={isIncome ? 'income' : 'expense'} size="sm" />
+        <Text style={styles.time} numberOfLines={1}>
+          {formatTime(transaction.date)}
+        </Text>
       </View>
     </View>
   );
@@ -51,11 +68,7 @@ export default function TransactionListItem({
   if (variant === 'card') {
     return (
       <View style={styles.cardWrapper}>
-        {onPress ? (
-          <Pressable onPress={onPress}>{content}</Pressable>
-        ) : (
-          content
-        )}
+        {onPress ? <Pressable onPress={onPress}>{content}</Pressable> : content}
       </View>
     );
   }
@@ -63,7 +76,10 @@ export default function TransactionListItem({
   return (
     <View>
       {onPress ? (
-        <Pressable style={styles.flatRow} onPress={onPress}>
+        <Pressable
+          style={({ pressed }) => [styles.flatRow, pressed && styles.pressed]}
+          onPress={onPress}
+        >
           {content}
         </Pressable>
       ) : (
@@ -77,11 +93,16 @@ export default function TransactionListItem({
 const styles = StyleSheet.create({
   flatRow: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.smd,
+  },
+  pressed: {
+    backgroundColor: colors.surfaceSunken,
   },
   cardWrapper: {
     backgroundColor: colors.white,
+    borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
+    borderWidth: 1,
     marginBottom: spacing.sm,
     padding: spacing.md,
   },
@@ -89,41 +110,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
-  emojiCircle: {
+  iconCircle: {
     alignItems: 'center',
     borderRadius: radius.full,
-    height: 44,
+    height: 46,
     justifyContent: 'center',
     marginRight: spacing.md,
-    width: 44,
+    width: 46,
   },
-  emoji: {
-    fontSize: fontSize.lg,
+  badge: {
+    alignItems: 'center',
+    borderColor: colors.white,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    bottom: -2,
+    height: 18,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -2,
+    width: 18,
   },
   center: {
     flex: 1,
+    marginRight: spacing.sm,
   },
   category: {
+    ...typography.label,
     color: colors.textDark,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+    fontSize: 15,
     marginBottom: 2,
   },
   meta: {
+    ...typography.bodySm,
     color: colors.textMuted,
-    fontSize: fontSize.sm,
   },
   right: {
     alignItems: 'flex-end',
+    flexShrink: 0,
   },
   time: {
+    ...typography.caption,
     color: colors.textLight,
-    fontSize: fontSize.xs,
     marginTop: spacing.xs,
   },
   hairline: {
     backgroundColor: colors.divider,
     height: 1,
-    marginLeft: spacing.md + 44 + spacing.md,
+    marginLeft: spacing.md + 46 + spacing.md,
   },
 });

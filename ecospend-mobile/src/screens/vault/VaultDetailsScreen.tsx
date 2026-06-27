@@ -1,11 +1,13 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
+import IconButton from '../../components/ui/IconButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { Icon } from '../../components/ui/icons';
+import type { IconName } from '../../components/ui/icons';
 import { useVaultDetails } from '../../hooks/useVaultDetails';
 import { navigateApp } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
@@ -17,6 +19,7 @@ import {
   shadowMd,
   shadowSm,
   spacing,
+  typography,
 } from '../../theme';
 import type { VaultContribution, VaultStatus } from '../../types/vault';
 import { formatVaultDate } from '../../utils/vault';
@@ -40,7 +43,7 @@ function ghs(amount: number, decimals = 2): string {
 
 function statusMeta(
   status: VaultStatus,
-): { label: string; color: string; bg: string } {
+): { label: string, color: string, bg: string } {
   switch (status) {
     case 'active':
       return { label: 'Active', color: colors.success, bg: colors.successLight };
@@ -51,6 +54,8 @@ function statusMeta(
     case 'pending':
       return { label: 'Pending', color: colors.textGrey, bg: colors.chipBg };
   }
+
+  return { label: 'Pending', color: colors.textGrey, bg: colors.chipBg };
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────

@@ -1,7 +1,9 @@
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fontSize } from '../../theme';
+import { Icon } from '../../components/ui/icons';
+import type { IconName } from '../../components/ui/icons';
+import { colors, fontWeight, shadowSm } from '../../theme';
 import type { TabParamList } from '../types';
 import DashboardStack from './stacks/DashboardStack';
 import GoalsStack from './stacks/GoalsStack';
@@ -11,19 +13,17 @@ import VaultStack from './stacks/VaultStack';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
-type TabIconName = keyof typeof Ionicons.glyphMap;
-
-const tabIcons: Record<keyof TabParamList, TabIconName> = {
-  DashboardTab: 'home-outline',
-  TransactionsTab: 'list-outline',
-  GoalsTab: 'flag-outline',
-  VaultTab: 'lock-closed-outline',
-  ProfileTab: 'person-outline',
+const tabIcons: Record<keyof TabParamList, IconName> = {
+  DashboardTab: 'home',
+  TransactionsTab: 'list',
+  GoalsTab: 'flag',
+  VaultTab: 'lock',
+  ProfileTab: 'user',
 };
 
 const tabLabels: Record<keyof TabParamList, string> = {
-  DashboardTab: 'Dashboard',
-  TransactionsTab: 'Transactions',
+  DashboardTab: 'Home',
+  TransactionsTab: 'Activity',
   GoalsTab: 'Goals',
   VaultTab: 'Vault',
   ProfileTab: 'Profile',
@@ -36,11 +36,32 @@ export default function TabNavigator() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textGrey,
-        tabBarLabelStyle: {
-          fontSize: fontSize.xs,
+        tabBarStyle: {
+          backgroundColor: colors.white,
+          borderTopColor: colors.borderSubtle,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 88 : 66,
+          paddingTop: 8,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          ...shadowSm,
         },
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name={tabIcons[route.name]} size={size} color={color} />
+        tabBarItemStyle: {
+          paddingTop: 2,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: fontWeight.semibold,
+          letterSpacing: 0.1,
+          marginTop: 2,
+        },
+        tabBarIcon: ({ color, focused }) => (
+          <Icon
+            name={tabIcons[route.name]}
+            size={24}
+            color={color}
+            filled={focused}
+            strokeWidth={focused ? 2 : 1.8}
+          />
         ),
         tabBarLabel: tabLabels[route.name],
       })}

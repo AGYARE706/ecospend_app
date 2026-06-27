@@ -1,10 +1,12 @@
 import { Pressable, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, radius, shadowLg, spacing } from '../../theme';
+import { Icon } from '../ui/icons';
+import { palette, radius, shadowBrand, spacing } from '../../theme';
 
 /**
- * Floating action button for primary add actions.
+ * Floating action button for primary add actions — a gradient pill with a
+ * brand-tinted glow that lifts it off the content beneath.
  */
 export interface FloatingActionButtonProps {
   onPress: () => void;
@@ -13,29 +15,40 @@ export interface FloatingActionButtonProps {
 export default function FloatingActionButton({ onPress }: FloatingActionButtonProps) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Add transaction"
     >
-      <Ionicons name="add" size={28} color={colors.white} />
+      <LinearGradient
+        colors={[palette.green[500], palette.green[700]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.button}
+      >
+        <Icon name="plus" size={28} color="#FFFFFF" strokeWidth={2.4} />
+      </LinearGradient>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
+  wrap: {
     borderRadius: radius.full,
     bottom: spacing.lg,
-    height: 60,
-    justifyContent: 'center',
     position: 'absolute',
     right: spacing.lg,
+    ...shadowBrand,
+  },
+  button: {
+    alignItems: 'center',
+    borderRadius: radius.full,
+    height: 60,
+    justifyContent: 'center',
     width: 60,
-    ...shadowLg,
   },
   pressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.95 }],
+    opacity: 0.95,
+    transform: [{ scale: 0.94 }],
   },
 });

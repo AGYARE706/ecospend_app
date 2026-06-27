@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { fontSize, fontWeight, radius, spacing } from '../../theme';
+import { radius, spacing, typography } from '../../theme';
 import type { VaultThemeColors } from './vaultTheme';
 
 export interface VaultProgressBarProps {
@@ -46,13 +46,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   label: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
+    ...typography.caption,
     textTransform: 'uppercase',
   },
   percent: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
+    ...typography.label,
+    fontWeight: '700',
   },
   track: {
     borderRadius: radius.full,
