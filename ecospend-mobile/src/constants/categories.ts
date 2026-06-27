@@ -76,3 +76,22 @@ export const ALL_CATEGORIES: TransactionCategory[] = [
 ];
 
 export const PROVIDERS = ['MTN MoMo', 'Telecel Cash', 'AT Money'] as const;
+
+/**
+ * Goal categories for savings goals
+ */
+export interface GoalCategoryConfig {
+  emoji: string;
+  label: string;
+}
+
+export const GOAL_CATEGORIES: Record<string, GoalCategoryConfig> = {
+  emergency: { emoji: '🚨', label: 'Emergency Fund' },
+  vacation: { emoji: '✈️', label: 'Vacation' },
+  education: { emoji: '🎓', label: 'Education' },
+  home: { emoji: '🏠', label: 'Home' },
+  car: { emoji: '🚗', label: 'Vehicle' },
+  debt: { emoji: '💳', label: 'Debt Payment' },
+  investment: { emoji: '📈', label: 'Investment' },
+  other: { emoji: '🎯', label: 'Other' },
+};
