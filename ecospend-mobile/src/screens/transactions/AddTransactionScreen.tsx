@@ -121,7 +121,9 @@ export default function AddTransactionScreen({
 
         <View style={styles.dateField}>
           <Icon name="calendar" size={18} color={colors.textMuted} />
-          <Text style={styles.dateText}>{formatHeaderDate(formState.date)}</Text>
+          <Text style={styles.dateText} numberOfLines={1}>
+            {formatHeaderDate(formState.date)}
+          </Text>
         </View>
       </Card>
 
@@ -187,6 +189,7 @@ const styles = StyleSheet.create({
   dateText: {
     ...typography.label,
     color: colors.textDark,
+    flex: 1,
   },
   saveButton: {
     marginBottom: spacing.xl,

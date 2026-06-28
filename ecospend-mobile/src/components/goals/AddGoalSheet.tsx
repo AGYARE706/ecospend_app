@@ -5,7 +5,7 @@ import AppButton from '../ui/AppButton';
 import AppInput from '../ui/AppInput';
 import { Icon } from '../ui/icons';
 import GoalSheetContainer from './GoalSheetContainer';
-import { colors, fontSize, radius, spacing, typography } from '../../theme';
+import { colors, fontSize, fontWeight, radius, spacing, typography } from '../../theme';
 import { getProjectedWeekly } from '../../utils/goals';
 import type { AddGoalFormErrors, AddGoalPayload } from '../../types';
 
@@ -114,15 +114,15 @@ export default function AddGoalSheet({
       <Text style={styles.dateLabel}>Target Date (optional)</Text>
       <Text style={styles.dateHint}>(leave blank for open-ended)</Text>
       <Pressable style={styles.dateRow}>
-        <Ionicons
+        <Icon
           name="calendar-outline"
           size={fontSize.lg}
           color={colors.textGrey}
         />
-        <Text style={styles.datePlaceholder}>
+        <Text style={styles.datePlaceholder} numberOfLines={1}>
           {selectedDeadline ? 'June 2026' : 'Select a date'}
         </Text>
-        <Ionicons
+        <Icon
           name="chevron-forward"
           size={fontSize.lg}
           color={colors.textGrey}
@@ -153,9 +153,8 @@ export default function AddGoalSheet({
 
 const styles = StyleSheet.create({
   title: {
+    ...typography.h3,
     color: colors.textDark,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
     marginBottom: spacing.lg,
   },
   fieldGap: {
@@ -210,7 +209,9 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     alignItems: 'center',
-    marginTop: spacing.md,
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    minHeight: 44,
   },
   cancelText: {
     color: colors.textGrey,

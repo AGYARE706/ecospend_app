@@ -59,6 +59,8 @@ export default function TransactionsListScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={styles.paddedTop}>
           <ScreenHeader
@@ -129,7 +131,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxl,
+    // Clear the floating action button (60px + 24px offset) so the last row stays tappable.
+    paddingBottom: spacing.xxxl + spacing.xl,
   },
   paddedTop: {
     paddingHorizontal: spacing.lg,

@@ -1,6 +1,7 @@
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 
 import type { GoalsStackParamList } from '../../navigation/types';
@@ -78,6 +79,7 @@ export default function GoalDetailsScreen() {
   };
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
@@ -91,7 +93,7 @@ export default function GoalDetailsScreen() {
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{goal.title}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{goal.title}</Text>
         <TouchableOpacity style={styles.notificationButton}>
           <Text style={styles.notificationIcon}>🔔</Text>
         </TouchableOpacity>
@@ -150,14 +152,14 @@ export default function GoalDetailsScreen() {
             {/* Amount Details */}
             <View style={styles.amountDetails}>
               <View style={styles.amountRow}>
-                <Text style={[typography.bodySm, styles.amountLabel]}>Saved</Text>
-                <Text style={[typography.body, styles.amountValue]}>
+                <Text style={[typography.bodySm, styles.amountLabel]} numberOfLines={1}>Saved</Text>
+                <Text style={[typography.body, styles.amountValue]} numberOfLines={1}>
                   GH¢ {goal.currentAmount.toLocaleString()}
                 </Text>
               </View>
               <View style={styles.amountRow}>
-                <Text style={[typography.bodySm, styles.amountLabel]}>Target</Text>
-                <Text style={[typography.body, styles.amountValue]}>
+                <Text style={[typography.bodySm, styles.amountLabel]} numberOfLines={1}>Target</Text>
+                <Text style={[typography.body, styles.amountValue]} numberOfLines={1}>
                   GH¢ {goal.targetAmount.toLocaleString()}
                 </Text>
               </View>
@@ -169,23 +171,23 @@ export default function GoalDetailsScreen() {
         <View style={styles.statsGrid}>
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>💰</Text>
-            <Text style={[typography.label, styles.statLabel]}>Avg. Contribution</Text>
-            <Text style={[typography.body, styles.statValue]}>GH¢ {goal.avgContribution}</Text>
+            <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Avg. Contribution</Text>
+            <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>GH¢ {goal.avgContribution}</Text>
           </Card>
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>📅</Text>
-            <Text style={[typography.label, styles.statLabel]}>Days Remaining</Text>
-            <Text style={[typography.body, styles.statValue]}>{goal.daysRemaining} Days</Text>
+            <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Days Remaining</Text>
+            <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{goal.daysRemaining} Days</Text>
           </Card>
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>📈</Text>
-            <Text style={[typography.label, styles.statLabel]}>Est. Weekly Saving</Text>
-            <Text style={[typography.body, styles.statValue]}>GH¢ {goal.weeklyProjection}</Text>
+            <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Est. Weekly Saving</Text>
+            <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>GH¢ {goal.weeklyProjection}</Text>
           </Card>
           <Card variant="default" padding="md" style={styles.statCard}>
             <Text style={styles.statIcon}>✨</Text>
-            <Text style={[typography.label, styles.statLabel]}>Projected Finish</Text>
-            <Text style={[typography.body, styles.statValue]}>{goal.projectedFinish}</Text>
+            <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Projected Finish</Text>
+            <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{goal.projectedFinish}</Text>
           </Card>
         </View>
       </View>
@@ -283,10 +285,15 @@ export default function GoalDetailsScreen() {
       {/* Bottom spacing */}
       <View style={styles.bottomSpacer} />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.pageBackground,
@@ -303,8 +310,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.lg,
     backgroundColor: colors.chipBg,
     alignItems: 'center',
@@ -320,11 +327,12 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     flex: 1,
+    marginHorizontal: spacing.sm,
     textAlign: 'center',
   },
   notificationButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.lg,
     backgroundColor: colors.chipBg,
     alignItems: 'center',
@@ -403,12 +411,11 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
     justifyContent: 'space-between',
+    rowGap: spacing.md,
   },
   statCard: {
-    flex: 1,
-    minWidth: '48%',
+    width: '48%',
     alignItems: 'center',
   },
   statIcon: {

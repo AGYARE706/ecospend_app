@@ -53,8 +53,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   chip: {
+    alignItems: 'center',
     borderRadius: radius.full,
     borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },

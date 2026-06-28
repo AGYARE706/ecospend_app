@@ -79,10 +79,10 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.name} numberOfLines={1}>{name}</Text>
             <View style={styles.phoneRow}>
               <Icon name="call-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.phone}>{formattedPhone}</Text>
+              <Text style={styles.phone} numberOfLines={1}>{formattedPhone}</Text>
             </View>
           </View>
 
@@ -232,8 +232,8 @@ function StatItem({
       <View style={[statStyles.iconRing, { backgroundColor: `${iconColor}18` }]}>
         <Icon name={icon} size={16} color={iconColor} />
       </View>
-      <Text style={statStyles.value}>{value}</Text>
-      <Text style={statStyles.label}>{label}</Text>
+      <Text style={statStyles.value} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+      <Text style={statStyles.label} numberOfLines={2}>{label}</Text>
     </View>
   );
 }
@@ -504,6 +504,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: radius.button,
     flexDirection: 'row',
+    minHeight: 44,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },

@@ -38,6 +38,8 @@ export default function VaultSummaryCard({
         variant="white"
         size="hero"
         style={styles.balance}
+        numberOfLines={1}
+        adjustsFontSizeToFit
       />
 
       <View style={styles.divider} />

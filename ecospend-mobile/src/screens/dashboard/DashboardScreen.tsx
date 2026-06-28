@@ -288,23 +288,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   insightEyebrow: {
+    ...typography.overline,
     color: colors.primary,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-    letterSpacing: 0.4,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
   },
   insightHeading: {
+    ...typography.subheading,
     color: colors.textDark,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
     marginBottom: spacing.xs,
   },
   insightMessage: {
+    ...typography.bodySm,
     color: colors.textMuted,
-    fontSize: fontSize.sm,
-    lineHeight: 20,
   },
   insightFooter: {
     alignItems: 'center',
@@ -313,8 +309,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   insightLink: {
+    ...typography.label,
     color: colors.primary,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
   },
 });

@@ -23,7 +23,7 @@ export default function SummaryChipRow({ summary }: SummaryChipRowProps) {
           <Icon name="arrow-down" size={12} color={colors.success} strokeWidth={2.4} />
           <Text style={styles.label}>Income</Text>
         </View>
-        <GhsText amount={summary.income} variant="income" size="sm" />
+        <GhsText amount={summary.income} variant="income" size="sm" numberOfLines={1} adjustsFontSizeToFit />
       </View>
 
       <View style={styles.divider} />
@@ -33,7 +33,7 @@ export default function SummaryChipRow({ summary }: SummaryChipRowProps) {
           <Icon name="arrow-up" size={12} color={colors.error} strokeWidth={2.4} />
           <Text style={styles.label}>Expenses</Text>
         </View>
-        <GhsText amount={summary.expense} variant="expense" size="sm" />
+        <GhsText amount={summary.expense} variant="expense" size="sm" numberOfLines={1} adjustsFontSizeToFit />
       </View>
 
       <View style={styles.divider} />
@@ -48,7 +48,7 @@ export default function SummaryChipRow({ summary }: SummaryChipRowProps) {
           />
           <Text style={styles.label}>Net</Text>
         </View>
-        <GhsText amount={summary.net} variant={netPositive ? 'income' : 'expense'} size="sm" />
+        <GhsText amount={summary.net} variant={netPositive ? 'income' : 'expense'} size="sm" numberOfLines={1} adjustsFontSizeToFit />
       </View>
     </View>
   );
@@ -62,12 +62,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
     ...shadowSm,
   },
   segment: {
     alignItems: 'center',
     flex: 1,
+    paddingHorizontal: spacing.xs,
   },
   labelRow: {
     alignItems: 'center',

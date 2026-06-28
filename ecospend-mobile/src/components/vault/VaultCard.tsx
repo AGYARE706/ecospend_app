@@ -49,11 +49,11 @@ export default function VaultCard({ vault, theme, onPress }: VaultCardProps) {
       </View>
 
       <View style={styles.balanceRow}>
-        <View>
+        <View style={styles.balanceBlock}>
           <Text style={[styles.metaLabel, { color: theme.textMuted }]}>
             Current Balance
           </Text>
-          <GhsText amount={vault.currentBalance} size="md" style={{ color: theme.text }} />
+          <GhsText amount={vault.currentBalance} size="md" numberOfLines={1} adjustsFontSizeToFit style={{ color: theme.text }} />
         </View>
         <View style={styles.targetBlock}>
           <Text style={[styles.metaLabel, { color: theme.textMuted }]}>
@@ -62,6 +62,7 @@ export default function VaultCard({ vault, theme, onPress }: VaultCardProps) {
           <GhsText
             amount={vault.targetAmount}
             size="sm"
+            numberOfLines={1}
             style={{ color: theme.textSubtle }}
           />
         </View>
@@ -145,11 +146,16 @@ const styles = StyleSheet.create({
   },
   balanceRow: {
     flexDirection: 'row',
+    gap: spacing.sm,
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
   },
+  balanceBlock: {
+    flexShrink: 1,
+  },
   targetBlock: {
     alignItems: 'flex-end',
+    flexShrink: 1,
   },
   metaLabel: {
     ...typography.caption,
