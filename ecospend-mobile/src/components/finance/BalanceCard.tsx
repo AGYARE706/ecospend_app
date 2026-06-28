@@ -34,7 +34,14 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
           </View>
         </View>
 
-        <GhsText amount={balance} variant="white" size="hero" style={styles.balance} />
+        <GhsText
+          amount={balance}
+          variant="white"
+          size="hero"
+          style={styles.balance}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        />
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
@@ -42,9 +49,9 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
               <View style={styles.statIconCircle}>
                 <Icon name="arrow-down" size={13} color={colors.white} strokeWidth={2.4} />
               </View>
-              <Text style={styles.statLabel}>Income</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Income</Text>
             </View>
-            <GhsText amount={income} variant="white" size="sm" />
+            <GhsText amount={income} variant="white" size="sm" numberOfLines={1} adjustsFontSizeToFit />
           </View>
 
           <View style={styles.statDivider} />
@@ -54,9 +61,9 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
               <View style={styles.statIconCircle}>
                 <Icon name="arrow-up" size={13} color={colors.white} strokeWidth={2.4} />
               </View>
-              <Text style={styles.statLabel}>Expenses</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>Expenses</Text>
             </View>
-            <GhsText amount={expense} variant="white" size="sm" />
+            <GhsText amount={expense} variant="white" size="sm" numberOfLines={1} adjustsFontSizeToFit />
           </View>
         </View>
       </LinearGradient>

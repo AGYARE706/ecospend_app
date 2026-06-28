@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -40,10 +49,18 @@ export default function AddGoalContributionScreen() {
     };
 
     return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            enabled={Platform.OS === 'ios'}
+          >
         <ScrollView
             style={styles.container}
             contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
         >
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
@@ -74,8 +91,8 @@ export default function AddGoalContributionScreen() {
                 <Card variant="default" padding="lg" style={styles.goalCard}>
                     <View style={styles.goalTopRow}>
                         <View style={styles.goalCopy}>
-                            <Text style={[typography.overline, styles.goalEyebrow]}>{goalTitle.toUpperCase()}</Text>
-                            <Text style={[typography.h2, styles.goalAmount]}>
+                            <Text style={[typography.overline, styles.goalEyebrow]} numberOfLines={1}>{goalTitle.toUpperCase()}</Text>
+                            <Text style={[typography.h2, styles.goalAmount]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                                 GHS {baseAmount.toLocaleString()}{' '}
                                 <Text style={styles.goalDivider}>/ GHS {targetAmount.toLocaleString()}</Text>
                             </Text>
@@ -91,10 +108,10 @@ export default function AddGoalContributionScreen() {
                     </View>
 
                     <View style={styles.goalMetaRow}>
-                        <Text style={styles.goalMetaText}>
+                        <Text style={styles.goalMetaText} numberOfLines={1}>
                             GHS {Math.max(targetAmount - baseAmount, 0).toLocaleString()} remaining
                         </Text>
-                        <Text style={styles.goalMetaText}>Target: {targetDate}</Text>
+                        <Text style={[styles.goalMetaText, styles.goalMetaTextRight]} numberOfLines={1}>Target: {targetDate}</Text>
                     </View>
                 </Card>
             </View>
@@ -130,8 +147,8 @@ export default function AddGoalContributionScreen() {
                     </View>
 
                     <View style={styles.previewRow}>
-                        <Text style={styles.previewSubLabel}>New Balance</Text>
-                        <Text style={[typography.h3, styles.previewBalance]}>
+                        <Text style={styles.previewSubLabel} numberOfLines={1}>New Balance</Text>
+                        <Text style={[typography.h3, styles.previewBalance]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                             GHS {newBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Text>
                     </View>
@@ -156,10 +173,19 @@ export default function AddGoalContributionScreen() {
 
             <Text style={styles.hiddenGoalId}>Goal ID: {params.goalId}</Text>
         </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.pageBackground,
+    },
+    flex: {
+        flex: 1,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.pageBackground,
@@ -186,9 +212,9 @@ const styles = StyleSheet.create({
         borderColor: colors.border,
         borderRadius: radius.button,
         borderWidth: 1,
-        height: 42,
+        height: 44,
         justifyContent: 'center',
-        width: 42,
+        width: 44,
     },
     headerTitle: {
         color: colors.primary,
@@ -278,12 +304,17 @@ const styles = StyleSheet.create({
     },
     goalMetaRow: {
         flexDirection: 'row',
+        gap: spacing.sm,
         justifyContent: 'space-between',
     },
     goalMetaText: {
         color: colors.textSecondary,
+        flexShrink: 1,
         fontSize: fontSize.xs,
         fontWeight: fontWeight.medium,
+    },
+    goalMetaTextRight: {
+        textAlign: 'right',
     },
     chipsRow: {
         flexDirection: 'row',
@@ -297,6 +328,8 @@ const styles = StyleSheet.create({
         borderColor: colors.border,
         borderRadius: radius.full,
         borderWidth: 1,
+        justifyContent: 'center',
+        minHeight: 44,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
     },
@@ -332,11 +365,13 @@ const styles = StyleSheet.create({
     },
     previewSubLabel: {
         color: colors.textSecondary,
+        flexShrink: 0,
         fontSize: fontSize.sm,
         fontWeight: fontWeight.medium,
     },
     previewBalance: {
         color: colors.primary,
+        flexShrink: 1,
         textAlign: 'right',
     },
     previewBarTrack: {

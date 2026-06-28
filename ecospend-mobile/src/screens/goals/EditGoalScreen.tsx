@@ -1,5 +1,15 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
@@ -85,10 +95,18 @@ export default function EditGoalScreen() {
     };
 
     return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            enabled={Platform.OS === 'ios'}
+          >
         <ScrollView
             style={styles.container}
             contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
         >
             <View style={styles.header}>
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
@@ -209,33 +227,33 @@ export default function EditGoalScreen() {
 
                     <View style={styles.summaryRows}>
                         <View style={styles.summaryRow}>
-                            <Text style={[typography.bodySm, styles.summaryLabel]}>Current Estimate</Text>
-                            <Text style={[typography.label, styles.summaryValue]}>Dec 2026</Text>
+                            <Text style={[typography.bodySm, styles.summaryLabel]} numberOfLines={1}>Current Estimate</Text>
+                            <Text style={[typography.label, styles.summaryValue]} numberOfLines={1}>Dec 2026</Text>
                         </View>
                         <View style={styles.summaryRow}>
-                            <Text style={[typography.bodySm, styles.summaryLabel]}>Updated Estimate</Text>
-                            <Text style={[typography.label, styles.summaryValueEmphasis]}>Nov 2026</Text>
+                            <Text style={[typography.bodySm, styles.summaryLabel]} numberOfLines={1}>Updated Estimate</Text>
+                            <Text style={[typography.label, styles.summaryValueEmphasis]} numberOfLines={1}>Nov 2026</Text>
                         </View>
                     </View>
 
                     <View style={styles.savingsNeedCard}>
                         <View style={styles.savingsNeedLabelWrap}>
                             <Icon name="cash" size={18} color={colors.primary} />
-                            <Text style={[typography.label, styles.savingsNeedLabel]}>Weekly Savings Needs</Text>
+                            <Text style={[typography.label, styles.savingsNeedLabel]} numberOfLines={1}>Weekly Savings Needs</Text>
                         </View>
-                        <Text style={[typography.label, styles.savingsNeedValue]}>+ GHS {weeklySavingsNeed}</Text>
+                        <Text style={[typography.label, styles.savingsNeedValue]} numberOfLines={1}>+ GHS {weeklySavingsNeed}</Text>
                     </View>
 
                     <Text style={[typography.caption, styles.summaryCaption]}>{estimateLabel}</Text>
 
                     <View style={styles.summaryMetaRow}>
                         <View style={styles.metaPill}>
-                            <Text style={styles.metaLabel}>Category</Text>
-                            <Text style={styles.metaValue}>{selectedCategory.label}</Text>
+                            <Text style={styles.metaLabel} numberOfLines={1}>Category</Text>
+                            <Text style={styles.metaValue} numberOfLines={1}>{selectedCategory.label}</Text>
                         </View>
                         <View style={styles.metaPill}>
-                            <Text style={styles.metaLabel}>Remaining</Text>
-                            <Text style={styles.metaValue}>GHS {remainingAmount.toLocaleString()}</Text>
+                            <Text style={styles.metaLabel} numberOfLines={1}>Remaining</Text>
+                            <Text style={styles.metaValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>GHS {remainingAmount.toLocaleString()}</Text>
                         </View>
                     </View>
                 </Card>
@@ -265,10 +283,19 @@ export default function EditGoalScreen() {
             <View style={styles.bottomSpacer} />
             <Text style={styles.hiddenRouteLabel}>Goal ID: {params.goalId}</Text>
         </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.pageBackground,
+    },
+    flex: {
+        flex: 1,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.pageBackground,
@@ -290,9 +317,9 @@ const styles = StyleSheet.create({
         borderColor: colors.border,
         borderRadius: radius.button,
         borderWidth: 1,
-        height: 42,
+        height: 44,
         justifyContent: 'center',
-        width: 42,
+        width: 44,
     },
     headerTextWrap: {
         alignItems: 'center',
@@ -445,13 +472,16 @@ const styles = StyleSheet.create({
     summaryRow: {
         alignItems: 'center',
         flexDirection: 'row',
+        gap: spacing.sm,
         justifyContent: 'space-between',
     },
     summaryLabel: {
         color: colors.textSecondary,
+        flexShrink: 1,
     },
     summaryValue: {
         color: colors.textPrimary,
+        flexShrink: 0,
     },
     summaryValueEmphasis: {
         color: colors.primary,
@@ -461,6 +491,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primaryBackground,
         borderRadius: radius.card,
         flexDirection: 'row',
+        gap: spacing.sm,
         justifyContent: 'space-between',
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.md,
@@ -468,6 +499,7 @@ const styles = StyleSheet.create({
     savingsNeedLabelWrap: {
         alignItems: 'center',
         flexDirection: 'row',
+        flexShrink: 1,
         gap: spacing.xs,
     },
     savingsNeedLabel: {

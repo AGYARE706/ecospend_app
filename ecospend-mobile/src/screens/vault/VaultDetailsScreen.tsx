@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
@@ -129,10 +130,10 @@ export default function VaultDetailsScreen({
             <View style={styles.heroGlow} />
 
             <View style={styles.heroTop}>
-              <View>
+              <View style={styles.heroBalanceBlock}>
                 <Text style={styles.heroLabel}>Current Balance</Text>
-                <Text style={styles.heroBalance}>{ghs(vault.currentBalance)}</Text>
-                <Text style={styles.heroTarget}>
+                <Text style={styles.heroBalance} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{ghs(vault.currentBalance)}</Text>
+                <Text style={styles.heroTarget} numberOfLines={1}>
                   of {ghs(vault.targetAmount)} target
                 </Text>
               </View>
@@ -162,10 +163,10 @@ export default function VaultDetailsScreen({
                 />
               </View>
               <View style={styles.heroProgressMeta}>
-                <Text style={styles.heroMetaText}>
+                <Text style={styles.heroMetaText} numberOfLines={1}>
                   {ghs(vault.currentBalance)} saved
                 </Text>
-                <Text style={styles.heroMetaText}>
+                <Text style={[styles.heroMetaText, styles.heroMetaTextRight]} numberOfLines={1}>
                   {ghs(stats.remainingAmount)} left
                 </Text>
               </View>
@@ -211,7 +212,7 @@ export default function VaultDetailsScreen({
                   color="rgba(255,255,255,0.8)"
                 />
                 <Text style={styles.countdownDateLabel}>Target Date</Text>
-                <Text style={styles.countdownDateValue}>{formattedMaturity}</Text>
+                <Text style={styles.countdownDateValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{formattedMaturity}</Text>
               </View>
 
               <View style={styles.countdownDivider} />
@@ -737,14 +738,14 @@ function TimelineItem({
       >
         <View style={tlStyles.contentRow}>
           <View style={tlStyles.contentText}>
-            <Text style={[tlStyles.label, highlight && tlStyles.labelHighlight]}>
+            <Text style={[tlStyles.label, highlight && tlStyles.labelHighlight]} numberOfLines={2}>
               {label}
             </Text>
-            <Text style={tlStyles.date}>{date}</Text>
+            <Text style={tlStyles.date} numberOfLines={1}>{date}</Text>
           </View>
           {amount !== undefined ? (
             <View style={tlStyles.amountChip}>
-              <Text style={tlStyles.amountText}>+ {ghs(amount, 0)}</Text>
+              <Text style={tlStyles.amountText} numberOfLines={1}>+ {ghs(amount, 0)}</Text>
             </View>
           ) : null}
         </View>
@@ -798,6 +799,7 @@ const tlStyles = StyleSheet.create({
   contentRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
+    gap: spacing.sm,
     justifyContent: 'space-between',
   },
   contentText: {
@@ -819,6 +821,7 @@ const tlStyles = StyleSheet.create({
   amountChip: {
     backgroundColor: colors.primaryBackground,
     borderRadius: radius.full,
+    flexShrink: 0,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
@@ -847,9 +850,9 @@ const styles = StyleSheet.create({
   backBtn: {
     alignItems: 'center',
     borderRadius: radius.full,
-    height: 40,
+    height: 44,
     justifyContent: 'center',
-    width: 40,
+    width: 44,
   },
   backBtnPressed: {
     backgroundColor: colors.chipBg,
@@ -893,8 +896,12 @@ const styles = StyleSheet.create({
   heroTop: {
     alignItems: 'center',
     flexDirection: 'row',
+    gap: spacing.md,
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
+  },
+  heroBalanceBlock: {
+    flex: 1,
   },
   heroLabel: {
     color: 'rgba(255,255,255,0.75)',
@@ -946,12 +953,17 @@ const styles = StyleSheet.create({
   },
   heroProgressMeta: {
     flexDirection: 'row',
+    gap: spacing.sm,
     justifyContent: 'space-between',
     marginTop: spacing.sm,
   },
   heroMetaText: {
     color: 'rgba(255,255,255,0.72)',
+    flexShrink: 1,
     fontSize: fontSize.xs,
+  },
+  heroMetaTextRight: {
+    textAlign: 'right',
   },
   trackBadge: {
     alignItems: 'center',

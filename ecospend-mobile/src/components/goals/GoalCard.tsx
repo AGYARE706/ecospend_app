@@ -59,9 +59,9 @@ export default function GoalCard({
             {goal.name}
           </Text>
           <View style={styles.targetRow}>
-            <GhsText amount={goal.currentAmount} variant="income" size="sm" />
+            <GhsText amount={goal.currentAmount} variant="income" size="sm" numberOfLines={1} style={styles.targetCurrent} />
             <Text style={styles.targetLabel}> of </Text>
-            <GhsText amount={goal.targetAmount} size="sm" style={styles.targetAmount} />
+            <GhsText amount={goal.targetAmount} size="sm" numberOfLines={1} style={styles.targetAmount} />
           </View>
         </View>
         <GoalDeadlineBadge goal={goal} />
@@ -152,12 +152,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
+  targetCurrent: {
+    flexShrink: 1,
+  },
   targetLabel: {
     ...typography.bodySm,
     color: colors.textGrey,
   },
   targetAmount: {
     color: colors.textGrey,
+    flexShrink: 1,
   },
   weeklyRow: {
     alignItems: 'flex-start',
@@ -188,6 +192,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
     justifyContent: 'center',
+    minHeight: 44,
     paddingVertical: spacing.sm,
   },
   primaryActionText: {
@@ -199,7 +204,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.chipBg,
     borderRadius: radius.md,
     flexDirection: 'row',
-    gap: 2,
+    gap: spacing.xxs,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },

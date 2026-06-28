@@ -72,9 +72,9 @@ export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps
       </View>
 
       <View style={styles.amountRow}>
-        <GhsText amount={envelope.spent} size="sm" />
+        <GhsText amount={envelope.spent} size="sm" numberOfLines={1} style={styles.spentAmount} />
         <Text style={styles.ofText}> of </Text>
-        <GhsText amount={envelope.limit} size="sm" style={styles.limitAmount} />
+        <GhsText amount={envelope.limit} size="sm" numberOfLines={1} style={styles.limitAmount} />
       </View>
 
       <Text style={[styles.percentLabel, { color: fillColor }]}>
@@ -114,7 +114,6 @@ const styles = StyleSheet.create({
   name: {
     ...typography.subheading,
     color: colors.textDark,
-    fontSize: 15,
     marginBottom: spacing.sm,
   },
   track: {
@@ -133,12 +132,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: spacing.xs,
   },
+  spentAmount: {
+    flexShrink: 1,
+  },
   ofText: {
     ...typography.bodySm,
     color: colors.textMuted,
   },
   limitAmount: {
     color: colors.textMuted,
+    flexShrink: 1,
   },
   percentLabel: {
     ...typography.caption,

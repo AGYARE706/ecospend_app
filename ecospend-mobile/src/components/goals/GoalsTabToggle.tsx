@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
     justifyContent: 'center',
+    minHeight: 44,
     paddingVertical: spacing.sm,
   },
   activeTab: {

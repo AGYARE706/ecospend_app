@@ -1,8 +1,15 @@
-import StubScreen from '../stubs/StubScreen';
-
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Card from '../../components/ui/Card';
 import AppButton from '../../components/ui/AppButton';
@@ -60,11 +67,19 @@ export default function CreateGoalScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled={Platform.OS === 'ios'}
+      >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -128,6 +143,7 @@ export default function CreateGoalScreen() {
                     formData.category === categoryId &&
                       styles.categoryLabelActive,
                   ]}
+                  numberOfLines={1}
                 >
                   {category.label}
                 </Text>
@@ -205,11 +221,20 @@ export default function CreateGoalScreen() {
 
       {/* Bottom spacing for scrolling comfort */}
       <View style={styles.bottomSpacer} />
-    </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.pageBackground,
+  },
+  flex: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.pageBackground,
@@ -226,8 +251,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.lg,
     backgroundColor: colors.chipBg,
     alignItems: 'center',
@@ -246,7 +271,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headerSpacer: {
-    width: 40,
+    width: 44,
   },
   heroSection: {
     alignItems: 'center',
@@ -289,6 +314,7 @@ const styles = StyleSheet.create({
   categoryButton: {
     alignItems: 'center',
     gap: spacing.smd,
+    maxWidth: 80,
   },
   categoryButtonActive: {
     opacity: 1,

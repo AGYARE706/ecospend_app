@@ -25,11 +25,11 @@ export default function MoMoFeePreview({
       <View style={styles.content}>
         <View style={styles.row}>
           <Text style={styles.label}>Provider fee: </Text>
-          <GhsText amount={providerFee} size="sm" />
+          <GhsText amount={providerFee} size="sm" numberOfLines={1} style={styles.amount} />
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Total cost: </Text>
-          <GhsText amount={totalCost} size="sm" />
+          <GhsText amount={totalCost} size="sm" numberOfLines={1} style={styles.amount} />
         </View>
       </View>
     </View>
@@ -60,5 +60,8 @@ const styles = StyleSheet.create({
   label: {
     ...typography.bodySm,
     color: colors.textGrey,
+  },
+  amount: {
+    flexShrink: 1,
   },
 });

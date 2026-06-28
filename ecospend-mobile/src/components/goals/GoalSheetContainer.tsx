@@ -8,6 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing } from '../../theme';
 
@@ -25,6 +26,8 @@ export default function GoalSheetContainer({
   onClose,
   children,
 }: GoalSheetContainerProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={visible}
@@ -45,7 +48,10 @@ export default function GoalSheetContainer({
               keyboardShouldPersistTaps="always"
               keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.content}
+              contentContainerStyle={[
+                styles.content,
+                { paddingBottom: insets.bottom + spacing.xl },
+              ]}
             >
               {children}
             </ScrollView>

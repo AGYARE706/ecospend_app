@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '../../components/ui/icons';
 import type { IconName } from '../../components/ui/icons';
@@ -30,6 +31,10 @@ const tabLabels: Record<keyof TabParamList, string> = {
 };
 
 export default function TabNavigator() {
+  const insets = useSafeAreaInsets();
+  // Reserve room for the system gesture/nav bar so tab items never sit under it.
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 28 : 10);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -40,9 +45,9 @@ export default function TabNavigator() {
           backgroundColor: colors.white,
           borderTopColor: colors.borderSubtle,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 66,
+          height: 58 + bottomInset,
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          paddingBottom: bottomInset,
           ...shadowSm,
         },
         tabBarItemStyle: {

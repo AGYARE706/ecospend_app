@@ -132,8 +132,8 @@ export default function WeeklyInsightsScreen() {
                       </Text>
                     </View>
                     <View style={styles.categoryTextBlock}>
-                      <Text style={styles.categoryName}>{topCategory.category}</Text>
-                      <GhsText amount={topCategory.amount} size="md" />
+                      <Text style={styles.categoryName} numberOfLines={1}>{topCategory.category}</Text>
+                      <GhsText amount={topCategory.amount} size="md" numberOfLines={1} adjustsFontSizeToFit />
                     </View>
                   </View>
                   <View style={styles.progressTrack}>
@@ -171,8 +171,10 @@ export default function WeeklyInsightsScreen() {
                     amount={largestTransaction.amount}
                     size="hero"
                     style={styles.largestAmount}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
                   />
-                  <Text style={styles.largestCategory}>
+                  <Text style={styles.largestCategory} numberOfLines={1}>
                     {CATEGORY_CONFIG[largestTransaction.category].emoji}{' '}
                     {largestTransaction.category}
                   </Text>
@@ -198,7 +200,7 @@ export default function WeeklyInsightsScreen() {
                 />
                 <View style={[styles.trendPill, { backgroundColor: `${trendColor}18` }]}>
                   <Ionicons name={trendIcon} size={14}  color={trendColor} />
-                  <Text style={[styles.trendPillText, { color: trendColor }]}>
+                  <Text style={[styles.trendPillText, { color: trendColor }]} numberOfLines={1}>
                     {trendLabel}
                   </Text>
                 </View>
@@ -422,9 +424,9 @@ const styles = StyleSheet.create({
   backBtn: {
     alignItems: 'center',
     borderRadius: radius.full,
-    height: 40,
+    height: 44,
     justifyContent: 'center',
-    width: 40,
+    width: 44,
   },
   backBtnPressed: {
     backgroundColor: colors.chipBg,
@@ -444,7 +446,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headerRight: {
-    width: 40,
+    width: 44,
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,
@@ -547,7 +549,7 @@ const styles = StyleSheet.create({
     ...cardShadow,
   },
   gridCard: {
-    width: '48.5%',
+    width: '48%',
   },
   fullWidthCard: {
     width: '100%',
@@ -644,7 +646,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.full,
     flexDirection: 'row',
-    gap: 4,
+    flexShrink: 1,
+    gap: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
