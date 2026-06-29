@@ -9,5 +9,6 @@ import java.util.List;
 
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
-    List<Expense> findByUserId(Long userId); // Keeps Long here
+    // Swapped Long to UUID to match the entity definition
+    List<Expense> findByUserId(UUID userId); 
 }

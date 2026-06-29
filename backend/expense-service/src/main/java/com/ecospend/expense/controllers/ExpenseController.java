@@ -8,19 +8,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
-@RequestMapping("/api/expenses")
+@RequestMapping("/api/v1/expenses") // Standardized prefix
 @RequiredArgsConstructor
 public class ExpenseController {
 
     private final ExpenseService expenseService;
 
     @PostMapping
-    public ResponseEntity<Expense> createExpense(@RequestBody ExpenseRequest request) {
-        // Using a temporary hardcoded Long User ID matching your system
-        Long temporaryUserId = 1L;
+    public ResponseEntity<Expense> createExpense(
+            @RequestHeader("X-User-Id") UUID userId,
+            @RequestBody ExpenseRequest request) {
 
-        Expense createdExpense = expenseService.createExpense(request, temporaryUserId);
+        Expense createdExpense = expenseService.createExpense(request, userId);
         return new ResponseEntity<>(createdExpense, HttpStatus.CREATED);
     }
 }

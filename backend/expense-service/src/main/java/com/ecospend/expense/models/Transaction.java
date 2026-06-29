@@ -15,8 +15,9 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // Aligned to UUID to capture identity-service users mapped through the API Gateway
     @Column(name = "user_id", nullable = false)
-    private Long userId; // Now it matches app_users perfectly
+    private UUID userId; 
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
