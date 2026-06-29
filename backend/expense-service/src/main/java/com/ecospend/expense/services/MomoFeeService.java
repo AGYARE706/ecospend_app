@@ -2,35 +2,21 @@ package com.ecospend.expense.services;
 
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Map;
 
 @Service
 public class MomoFeeService {
 
-    public Map<String, Object> calculateFee(String provider, BigDecimal amount) {
-        BigDecimal fee = BigDecimal.ZERO;
-        
-        if (amount.compareTo(new BigDecimal("50")) <= 0) {
-            fee = new BigDecimal("0.75");
-        } else if (amount.compareTo(new BigDecimal("100")) <= 0) {
-            fee = new BigDecimal("1.00");
-        } else if (amount.compareTo(new BigDecimal("300")) <= 0) {
-            fee = new BigDecimal("1.50");
-        } else if (amount.compareTo(new BigDecimal("1000")) <= 0) {
-            fee = amount.multiply(new BigDecimal("0.02")).min(new BigDecimal("20.00"));
-        } else {
-            fee = amount.multiply(new BigDecimal("0.02"));
+    public BigDecimal calculateFee(BigDecimal amount, String provider) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
         }
 
-        fee = fee.setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalCost = amount.add(fee);
+        if ("MTN".equalsIgnoreCase(provider) || "TELECEL".equalsIgnoreCase(provider)) {
+            BigDecimal fee = amount.multiply(new BigDecimal("0.01"));
+            BigDecimal maxCap = new BigDecimal("10.00");
+            return fee.compareTo(maxCap) > 0 ? maxCap : fee;
+        }
 
-        return Map.of(
-            "provider", provider.toUpperCase(),
-            "baseAmount", amount,
-            "fee", fee,
-            "totalCost", totalCost
-        );
+        return BigDecimal.ZERO;
     }
 }
