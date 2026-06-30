@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/finance") // Aligned with context-path requirements
+@RequestMapping("/api/v1/finance")
 public class FinanceController {
 
     private final TransactionRepository transactionRepository;
@@ -24,9 +24,9 @@ public class FinanceController {
     private final MomoFeeService momoFeeService;
 
     public FinanceController(TransactionRepository transactionRepository,
-                             SavingsGoalRepository savingsGoalRepository,
-                             BudgetEnvelopeRepository budgetEnvelopeRepository,
-                             MomoFeeService momoFeeService) {
+            SavingsGoalRepository savingsGoalRepository,
+            BudgetEnvelopeRepository budgetEnvelopeRepository,
+            MomoFeeService momoFeeService) {
         this.transactionRepository = transactionRepository;
         this.savingsGoalRepository = savingsGoalRepository;
         this.budgetEnvelopeRepository = budgetEnvelopeRepository;
@@ -47,10 +47,10 @@ public class FinanceController {
             @RequestHeader("X-User-Id") UUID userId,
             @RequestBody Transaction transaction) {
         transaction.setUserId(userId);
-        
+
         BigDecimal fee = momoFeeService.calculateFee(transaction.getAmount(), transaction.getProvider());
         transaction.setMomoFee(fee);
-        
+
         return ResponseEntity.ok(transactionRepository.save(transaction));
     }
 
@@ -73,6 +73,7 @@ public class FinanceController {
         return ResponseEntity.ok(savingsGoalRepository.findByUserId(userId));
     }
 
+    // FIXED: Updated to use the correct fields 'name' and 'currentAmount'
     @PutMapping("/goals/{id}")
     public ResponseEntity<SavingsGoal> updateGoal(
             @PathVariable UUID id,
@@ -81,9 +82,9 @@ public class FinanceController {
         return savingsGoalRepository.findById(id)
                 .filter(goal -> goal.getUserId().equals(userId))
                 .map(goal -> {
-                    goal.setTargetName(details.getTargetName());
+                    goal.setName(details.getName());
                     goal.setTargetAmount(details.getTargetAmount());
-                    goal.setCurrentBalance(details.getCurrentBalance());
+                    goal.setCurrentAmount(details.getCurrentAmount());
                     return ResponseEntity.ok(savingsGoalRepository.save(goal));
                 })
                 .orElse(ResponseEntity.notFound().build());
