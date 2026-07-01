@@ -1,53 +1,49 @@
 package com.ecospend.expense.models;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "expenses")
+@Table(name = "transactions") // Maps to the correct V1 schema table name
+@Data
 public class Expense {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private UUID userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 10)
+    private String type; // Handles 'INCOME' or 'EXPENSE'
+
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
+    private String provider; // e.g., MTN, TELECEL, AT_MONEY
+
+    @Column(nullable = false, length = 50)
     private String category;
 
-    private String description;
+    @Column(name = "momo_fee", precision = 10, scale = 2)
+    private BigDecimal momoFee = BigDecimal.ZERO; // Added to match schema logic
 
-    @Column(name = "spent_at", nullable = false)
-    private LocalDate spentAt;
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private OffsetDateTime createdAt;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
-
-    public BigDecimal getAmount() { return amount; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
-
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public LocalDate getSpentAt() { return spentAt; }
-    public void setSpentAt(LocalDate spentAt) { this.spentAt = spentAt; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = OffsetDateTime.now();
+        if (this.momoFee == null) {
+            this.momoFee = BigDecimal.ZERO;
+        }
+    }
 }

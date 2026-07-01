@@ -1,28 +1,28 @@
 package com.ecospend.expense.controllers;
 
+import com.ecospend.expense.dto.ExpenseRequest;
 import com.ecospend.expense.models.Expense;
 import com.ecospend.expense.services.ExpenseService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/expenses")
+@RequestMapping("/api/v1/expenses") // Standardized prefix
+@RequiredArgsConstructor
 public class ExpenseController {
 
     private final ExpenseService expenseService;
 
-    public ExpenseController(ExpenseService expenseService) {
-        this.expenseService = expenseService;
-    }
-
-    @GetMapping
-    public List<Expense> getAll(@RequestParam(required = false) Long userId) {
-        return expenseService.findAll(userId);
-    }
-
     @PostMapping
-    public Expense create(@RequestBody Expense expense) {
-        return expenseService.create(expense);
+    public ResponseEntity<Expense> createExpense(
+            @RequestHeader("X-User-Id") UUID userId,
+            @RequestBody ExpenseRequest request) {
+
+        Expense createdExpense = expenseService.createExpense(request, userId);
+        return new ResponseEntity<>(createdExpense, HttpStatus.CREATED);
     }
 }

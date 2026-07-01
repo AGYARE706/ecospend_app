@@ -19,6 +19,12 @@ docker compose up --build
 Auth smoke test (gateway on :8080):
 
 ```bash
+./scripts/smoke-test.sh
+```
+
+Or register only:
+
+```bash
 curl -s -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","phoneNumber":"0241111111","pin":"1234"}'

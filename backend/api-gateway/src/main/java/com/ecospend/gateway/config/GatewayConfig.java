@@ -34,7 +34,7 @@ public class GatewayConfig {
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
-                        .uri("http://finance-service:8082"))
+                        .uri("http://expense-service:8082"))
                 .route("vault-service", r -> r
                         .path("/api/vault/**")
                         .filters(f -> f.stripPrefix(1)
