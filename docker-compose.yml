@@ -35,5 +35,16 @@ services:
       postgres:
         condition: service_healthy
 
+  api-gateway:
+    build: ./backend/api-gateway
+    container_name: ecospend-api-gateway
+    env_file: .env
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - identity-service
+
 volumes:
   postgres_data:
