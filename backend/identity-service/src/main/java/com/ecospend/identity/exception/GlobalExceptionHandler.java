@@ -43,6 +43,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of("VALIDATION_ERROR", ex.getMessage(), 400);
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleUserNotFound(UserNotFoundException ex) {
+        return ErrorResponse.of("USER_NOT_FOUND", ex.getMessage(), 404);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {

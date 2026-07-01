@@ -1,3 +1,3 @@
--- This file runs once when the Postgres container is first created.
--- Table creation is handled by each service's own Flyway migrations.
+-- Runs once when the Postgres container is first created.
+-- Table creation is handled by each service's Flyway migrations.
 -- Intentionally left empty.
