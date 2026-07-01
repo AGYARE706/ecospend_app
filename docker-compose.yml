@@ -26,9 +26,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRY_MS: ${JWT_EXPIRY_MS}
-      JWT_REFRESH_EXPIRY_MS: ${JWT_REFRESH_EXPIRY_MS}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required — copy .env.example to .env and set a Base64 secret}
+      JWT_EXPIRY_MS: ${JWT_EXPIRY_MS:-900000}
+      JWT_REFRESH_EXPIRY_MS: ${JWT_REFRESH_EXPIRY_MS:-604800000}
     ports:
       - "${IDENTITY_SERVICE_PORT:-8081}:8081"
     depends_on:
@@ -40,7 +40,7 @@ services:
     container_name: ecospend-api-gateway
     env_file: .env
     environment:
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required — copy .env.example to .env and set a Base64 secret}
     ports:
       - "${API_GATEWAY_PORT:-8080}:8080"
     depends_on:
