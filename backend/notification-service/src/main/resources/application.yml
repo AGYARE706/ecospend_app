@@ -1,0 +1,31 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecospend}
+    username: ${DB_USER:ecospend}
+    password: ${DB_PASSWORD:ecospend_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# Expo Push API. access-token is optional — only required when the Expo
+# project has "Enhanced Security for Push Notifications" enabled.
+expo:
+  push:
+    url: ${EXPO_PUSH_URL:https://exp.host/--/api/v2/push/send}
+    access-token: ${EXPO_ACCESS_TOKEN:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
