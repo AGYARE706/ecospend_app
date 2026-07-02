@@ -41,6 +41,12 @@ public class GatewayConfig {
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://vault-service:8083"))
+                .route("notification-service", r -> r
+                        .path("/api/notifications/**")
+                        .filters(f -> f.stripPrefix(1)
+                                .filter(authenticationFilter.apply(
+                                        new AuthenticationFilter.Config())))
+                        .uri("http://notification-service:8084"))
                 .build();
     }
 }
