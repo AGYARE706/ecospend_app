@@ -114,7 +114,9 @@ public class NotificationService {
     public NotificationResponse send(SendNotificationRequest request) {
         String type = (request.type() == null || request.type().isBlank()) ? "SYSTEM" : request.type();
 
-        Notification notification = notificationRepository.save(Notification.builder()
+        // saveAndFlush so the @CreationTimestamp is populated before we map the
+        // response (a plain save() defers the insert and leaves createdAt null).
+        Notification notification = notificationRepository.saveAndFlush(Notification.builder()
                 .userId(request.userId())
                 .title(request.title())
                 .body(request.body())
