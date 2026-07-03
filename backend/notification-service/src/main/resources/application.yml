@@ -12,8 +12,15 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+    properties:
+      hibernate:
+        # Schema isolation — mirrors expense-service's expense_schema pattern
+        # so each service's Flyway history doesn't collide in `public`.
+        default_schema: notification_schema
   flyway:
     enabled: true
+    # Flyway creates and manages only this schema
+    schemas: notification_schema
     locations: classpath:db/migration
     baseline-on-migrate: true
 
