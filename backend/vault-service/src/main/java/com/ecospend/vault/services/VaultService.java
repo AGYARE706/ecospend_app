@@ -1,0 +1,139 @@
+package com.ecospend.vault.services;
+
+import com.ecospend.vault.dto.AmountRequest;
+import com.ecospend.vault.dto.CreateVaultRequest;
+import com.ecospend.vault.exceptions.VaultException;
+import com.ecospend.vault.models.Fees;
+import com.ecospend.vault.models.Vault;
+import com.ecospend.vault.models.VaultTransaction;
+import com.ecospend.vault.repository.VaultRepository;
+import com.ecospend.vault.repository.VaultTransactionRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class VaultService {
+
+    private final VaultRepository vaultRepository;
+    private final VaultTransactionRepository transactionRepository;
+
+    @Transactional
+    public Vault create(UUID userId, CreateVaultRequest request) {
+        Vault vault = new Vault();
+        vault.setUserId(userId);
+        vault.setName(request.name());
+        vault.setTargetAmount(request.targetAmount());
+        vault.setLockedUntil(request.lockedUntil());
+        return vaultRepository.save(vault);
+    }
+
+    public List<Vault> findAll(UUID userId) {
+        return vaultRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    public Vault findOne(UUID userId, UUID vaultId) {
+        return vaultRepository.findByIdAndUserId(vaultId, userId)
+                .orElseThrow(VaultException::notFound);
+    }
+
+    public List<VaultTransaction> findTransactions(UUID userId, UUID vaultId) {
+        findOne(userId, vaultId); // 404 if the vault isn't the caller's
+        return transactionRepository.findByVaultIdAndUserIdOrderByCreatedAtDesc(vaultId, userId);
+    }
+
+    @Transactional
+    public Vault deposit(UUID userId, UUID vaultId, AmountRequest request) {
+        Vault vault = findOne(userId, vaultId);
+        requireActive(vault);
+
+        vault.setBalance(vault.getBalance().add(request.amount()));
+        record(vault, VaultTransaction.Type.DEPOSIT, request.amount(), request.note());
+        return vaultRepository.save(vault);
+    }
+
+    @Transactional
+    public Vault withdraw(UUID userId, UUID vaultId, AmountRequest request) {
+        Vault vault = findOne(userId, vaultId);
+        requireActive(vault);
+
+        if (LocalDate.now().isBefore(vault.getLockedUntil())) {
+            throw VaultException.conflict(
+                    "Vault is locked until " + vault.getLockedUntil() + ". Use break to withdraw early with a penalty.");
+        }
+        if (vault.getBalance().compareTo(request.amount()) < 0) {
+            throw VaultException.badRequest("Insufficient vault balance");
+        }
+
+        // Platform sustainability fee on successful withdrawal
+        BigDecimal fee = Fees.feeOn(request.amount(), Fees.WITHDRAWAL_FEE_RATE);
+        BigDecimal payout = request.amount().subtract(fee);
+
+        vault.setBalance(vault.getBalance().subtract(request.amount()));
+        record(vault, VaultTransaction.Type.FEE, fee, "Platform sustainability fee (2%)");
+        record(vault, VaultTransaction.Type.WITHDRAWAL, payout,
+                request.note() != null ? request.note() : "Withdrawal payout");
+        return vaultRepository.save(vault);
+    }
+
+    /**
+     * Early break: withdraws the full balance before the unlock date,
+     * charging a penalty, and marks the vault BROKEN.
+     */
+    @Transactional
+    public Vault breakVault(UUID userId, UUID vaultId) {
+        Vault vault = findOne(userId, vaultId);
+        requireActive(vault);
+
+        if (!LocalDate.now().isBefore(vault.getLockedUntil())) {
+            throw VaultException.conflict("Vault is already unlocked; use a normal withdrawal");
+        }
+        if (vault.getBalance().compareTo(BigDecimal.ZERO) == 0) {
+            throw VaultException.badRequest("Vault balance is zero; nothing to break");
+        }
+
+        BigDecimal penalty = Fees.feeOn(vault.getBalance(), Fees.EARLY_EXIT_FEE_RATE);
+        BigDecimal payout = vault.getBalance().subtract(penalty);
+
+        record(vault, VaultTransaction.Type.PENALTY, penalty, "Early break penalty (5%)");
+        record(vault, VaultTransaction.Type.WITHDRAWAL, payout, "Early break payout");
+
+        vault.setBalance(BigDecimal.ZERO);
+        vault.setStatus(Vault.Status.BROKEN);
+        return vaultRepository.save(vault);
+    }
+
+    @Transactional
+    public void delete(UUID userId, UUID vaultId) {
+        Vault vault = findOne(userId, vaultId);
+        if (vault.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+            throw VaultException.conflict("Vault still holds funds; withdraw or break it first");
+        }
+        vaultRepository.delete(vault);
+    }
+
+    private void requireActive(Vault vault) {
+        if (vault.getStatus() != Vault.Status.ACTIVE) {
+            throw VaultException.conflict("Vault is " + vault.getStatus() + " and no longer accepts operations");
+        }
+    }
+
+    private void record(Vault vault, VaultTransaction.Type type, BigDecimal amount, String note) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return; // fees on tiny amounts can round to 0.00; nothing to record
+        }
+        VaultTransaction tx = new VaultTransaction();
+        tx.setVaultId(vault.getId());
+        tx.setUserId(vault.getUserId());
+        tx.setType(type);
+        tx.setAmount(amount);
+        tx.setNote(note);
+        transactionRepository.save(tx);
+    }
+}
