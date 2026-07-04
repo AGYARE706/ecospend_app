@@ -2,7 +2,7 @@
 
 **Audience:** Mobile (React Native / Expo) engineers wiring Axios, Zustand, and React Query to the backend.  
 **Baseline branch:** `develop` (backend) + frontend UI on `feature/auth-screens`, `feature/finance-screens`, `feature/vault-profile-screens`.  
-**Last updated:** 2026-07-02
+**Last updated:** 2026-07-04
 
 > This document describes the backend **as the frontend must consume it**, including gaps where UI was built against mocks or assumptions that the backend does not yet satisfy.
 
@@ -11,9 +11,11 @@
 > Parts of this doc were first drafted against an earlier branch lineage. The **authoritative** state on `origin/develop` is:
 >
 > - **The API Gateway is live and enforces JWT.** Routing is defined in Java (`api-gateway/.../config/GatewayConfig.java`), **not** in `application.yml`. Protected routes run an `AuthenticationFilter` that validates the Bearer token and **injects `X-User-Id` and `X-User-Tier` headers** downstream. So when calling through the gateway you send only `Authorization: Bearer <token>` — you do **not** set `X-User-Id` yourself; the gateway does.
-> - **Gateway routes:** `/api/auth/**` → identity (open), `/api/users/**` → identity (auth), `/api/finance/**` → expense-service (auth), `/api/vault/**` → vault-service `:8083` (auth, planned), `/api/notifications/**` → notification-service `:8084` (auth).
-> - **Ports:** gateway `8080`, identity `8081`, expense/finance `8082`, **vault `8083` (reserved)**, **notification `8084`**.
-> - **Compose** runs postgres + identity + expense + api-gateway + notification.
+> - **Gateway routes:** `/api/auth/**` → identity (open), `/api/users/**` → identity (auth), `/api/finance/**` → expense-service (auth), `/api/vault/**` → vault-service `:8083` (auth), `/api/notifications/**` → notification-service `:8084` (auth).
+> - **Ports:** gateway `8080`, identity `8081`, expense/finance `8082`, **vault `8083` (live)**, **notification `8084`**.
+> - **Compose** runs postgres + identity + expense + vault + api-gateway + notification.
+>
+> **Update (2026-07-04): the vault-service is implemented and merged to `develop`.** Personal locked vaults and Group Vaults (Digital Susu) are live behind the gateway at `/api/vault/**`, including the 2% withdrawal fee, 5% early-exit fee, fee/maturity transparency fields, majority-vote group withdrawals, and **Plus/Premium tier gating** (FREE tier gets `403`). Sections that previously said "vault not implemented" are superseded — see [§3.6](#36-vault-service--apivault) for the real contract.
 >
 > Where older sections below say "no JWT validation on the gateway", "auth not routed", or list notification on `8083`, this banner supersedes them. The identity/finance/vault DTO shapes below remain the contract reference.
 
@@ -42,7 +44,7 @@
 > docker compose up --build
 > ```
 >
-> `docker-compose.yml` currently starts **PostgreSQL**, **identity-service**, and **notification-service**. The other microservices have Dockerfiles under `backend/` and will be added to Compose as they are completed. Until then, run gateway/user/expense manually or extend Compose locally.
+> `docker-compose.yml` currently starts **PostgreSQL**, **identity-service**, **expense-service**, **vault-service**, **notification-service**, and the **API Gateway**. Only user-service remains outside Compose (its port conflicts with identity-service).
 
 ### Microservices
 
@@ -53,7 +55,7 @@
 | 3 | **User Service** | `8081` ⚠️ | *(planned)* `ecospend-user-service` | No — Dockerfile at `backend/user-service/Dockerfile` | Email-based user CRUD scaffold (`Long` id). **Port conflicts with identity-service** — must use a different host port in Compose. |
 | 4 | **Expense Service** | `8082` | *(planned)* `ecospend-expense-service` | No — Dockerfile at `backend/expense-service/Dockerfile` | Personal expense CRUD (`/expenses`). Hosts **Finance API** (`/api/v1/finance/*`) on `feature/finance-service` branch. |
 | 5 | **Notification Service** | `8084` | `ecospend-notification-service` | **Yes** | Expo push delivery + in-app notification inbox (`/notifications/*`). Stores device tokens; called service-to-service via `POST /notifications/send`. See [§9](#9-notification-service-expo-push). |
-| 6 | **Vault Service** | `8083` *(reserved)* | — | **Not implemented** | Personal vaults, group vaults (susu), withdrawal penalties. **No code yet**, but the gateway already routes `/api/vault/**` → `vault-service:8083`. Vault UI uses mocks. |
+| 6 | **Vault Service** | `8083` | `ecospend-vault-service` | **Yes** | Personal locked vaults + Group Vaults (Digital Susu). 2% withdrawal fee, 5% early-exit fee, majority-vote group withdrawals, fee/maturity transparency. **Plus/Premium tiers only** — FREE gets `403`. See [§3.6](#36-vault-service--apivault). |
 
 **Infrastructure (Docker):**
 
@@ -70,7 +72,7 @@
 | User Service | `http://localhost:8081` ⚠️ | `/api/users/**` → strips `/api` |
 | Expense / Finance | `http://localhost:8082` | `/api/expenses/**` → strips `/api`; finance at `/api/v1/finance/*` *(branch only, not routed)* |
 | Notification Service | `http://localhost:8084` | `/api/notifications/**` → strips `/api` |
-| Vault Service | — | `/api/v1/vault/**` *(planned)* |
+| Vault Service | `http://localhost:8083` | `/api/vault/**` → strips `/api` |
 
 ### Recommended frontend base URL
 
@@ -528,26 +530,99 @@ Base path on expense-service: `http://localhost:8082/api/v1/finance`
 
 ---
 
-### 3.6 Vault Service — **NOT IMPLEMENTED**
+### 3.6 Vault Service — `/api/vault/**`
 
-The frontend on `feature/vault-profile-screens` expects the endpoints below. **None exist in any backend branch.**
+> **Live on `develop`.** Routed: `{GATEWAY}/api/vault/**` → `http://vault-service:8083/vault/**` (StripPrefix=1, JWT-protected). Direct base: `http://localhost:8083/vault` (supply `X-User-Id` **and `X-User-Tier`** yourself when bypassing the gateway).
+>
+> **Tier gating:** every `/vault/**` route requires `X-User-Tier` of `PLUS` or `PREMIUM` (the gateway injects it from the JWT `tier` claim). FREE or missing tier → `403 { "error": "Vaults require a Plus or Premium subscription" }`. Handle this in the UI as an upgrade prompt.
+>
+> The endpoint paths differ from what the vault UI mocks assumed (`/vaults`, `/group-vaults`) — an adapter layer is needed. See mapping table in [§8.4](#84-endpoints-ui-expects-but-backend-lacks).
 
-| Expected endpoint | Used by |
-|-------------------|---------|
-| `GET /vaults` | `useVaultDashboard` |
-| `GET /vaults/{id}` | `useVaultDetails` |
-| `POST /vaults` | `useCreateVault` |
-| `POST /vaults/{id}/contributions` | Create/top-up flows |
-| `POST /vaults/{id}/withdraw` | `useWithdrawVault` |
-| `GET /vaults/{id}/history` | `useVaultHistory` |
-| `GET /group-vaults` | `useGroupVaultDashboard` |
-| `GET /group-vaults/{id}` | `useGroupVaultDetails` |
-| `POST /group-vaults` | `useCreateGroupVault` |
-| `POST /group-vaults/join` | `JoinGroupVaultScreen` |
-| `GET /group-vaults/withdrawal-requests` | `WithdrawalApprovalScreen` |
-| `POST /group-vaults/withdrawal-requests/{id}/vote` | Approval flow |
+#### Personal vaults
 
-See [§5](#5-vault-specific-business-logic) for the data shapes the UI expects.
+| Method | Path (gateway) | Body | Success | Notes |
+|--------|----------------|------|---------|-------|
+| `POST` | `/api/vault` | `{ name, targetAmount?, lockedUntil }` | `201` `Vault` | `lockedUntil` must be a future date (`YYYY-MM-DD`) |
+| `GET` | `/api/vault` | — | `200` `Vault[]` | Caller's vaults, newest first |
+| `GET` | `/api/vault/{id}` | — | `200` `Vault` | `404` if not the caller's |
+| `GET` | `/api/vault/{id}/transactions` | — | `200` `VaultTransaction[]` | Newest first |
+| `POST` | `/api/vault/{id}/deposit` | `{ amount, note? }` | `200` `Vault` | `409` if vault is `BROKEN`/`CLOSED` |
+| `POST` | `/api/vault/{id}/withdraw` | `{ amount, note? }` | `200` `Vault` | **`409` while locked**; after maturity charges **2% fee** (records `FEE` + `WITHDRAWAL` transactions) |
+| `POST` | `/api/vault/{id}/break` | — | `200` `Vault` | Early exit: pays out full balance minus **5% penalty**, sets status `BROKEN` |
+| `DELETE` | `/api/vault/{id}` | — | `204` | `409` if the vault still holds funds |
+
+**`Vault` response shape:**
+
+```json
+{
+  "id": "b297192a-7238-4430-b508-1ea8d18f4178",
+  "userId": "…",
+  "name": "Emergency Fund",
+  "balance": 200.50,
+  "targetAmount": 500.00,
+  "lockedUntil": "2026-09-01",
+  "status": "ACTIVE",
+  "createdAt": "2026-07-04T02:10:00+00:00",
+  "daysToMaturity": 59,
+  "withdrawalFeeGhs": 4.01,
+  "earlyExitFeeGhs": 10.03
+}
+```
+
+`daysToMaturity`, `withdrawalFeeGhs` (2% of balance) and `earlyExitFeeGhs` (5% of balance) are computed server-side on **every** response — this is the "fees permanently visible before any withdrawal" guarantee. `status`: `ACTIVE | BROKEN | CLOSED`.
+
+**`VaultTransaction`:** `{ id, vaultId, userId, type, amount, note?, createdAt }` with `type`: `DEPOSIT | WITHDRAWAL | PENALTY | FEE`.
+
+#### Group vaults (Digital Susu)
+
+2–8 members pool savings toward a shared goal. Each member's contributions are tracked on **their own balance**; withdrawals need **majority approval** of active members; a member who exits early pays the 5% fee **only on their own balance**.
+
+| Method | Path (gateway) | Body | Success | Notes |
+|--------|----------------|------|---------|-------|
+| `POST` | `/api/vault/groups` | `{ name, targetAmount?, lockedUntil, maxMembers? }` | `201` `GroupVaultView` | `maxMembers` 2–8, default 8; creator becomes first member |
+| `GET` | `/api/vault/groups` | — | `200` `GroupVaultView[]` | Groups the caller belongs to |
+| `GET` | `/api/vault/groups/{id}` | — | `200` `GroupVaultView` | `404` for non-members |
+| `GET` | `/api/vault/groups/{id}/transactions` | — | `200` `GroupVaultTransaction[]` | |
+| `POST` | `/api/vault/groups/{id}/join` | — | `200` `GroupVaultView` | `409` if already a member or group is full |
+| `POST` | `/api/vault/groups/{id}/deposit` | `{ amount, note? }` | `200` `GroupVaultView` | Adds to the caller's own balance |
+| `POST` | `/api/vault/groups/{id}/exit` | — | `200` `GroupVaultView` | No approval needed. Before maturity: 5% fee on own balance; after: 2% fee. Marks member `EXITED`, voids their pending requests |
+| `POST` | `/api/vault/groups/{id}/withdrawals` | `{ amount, note? }` | `201` `WithdrawalRequestView` | `400` if amount exceeds own balance; `409` if a pending request exists. Requester counts as one approval |
+| `GET` | `/api/vault/groups/{id}/withdrawals` | — | `200` `WithdrawalRequestView[]` | |
+| `POST` | `/api/vault/groups/{id}/withdrawals/{requestId}/vote` | `{ approve: boolean }` | `200` `WithdrawalRequestView` | `409` on double-vote. Executes automatically (with 2% fee) once approvals form a strict majority; rejects once majority becomes impossible |
+
+**`GroupVaultView`:**
+
+```json
+{
+  "group": {
+    "id": "…", "name": "Family Susu", "creatorId": "…",
+    "targetAmount": 1000.00, "lockedUntil": "2026-12-01",
+    "maxMembers": 3, "status": "ACTIVE", "createdAt": "…",
+    "daysToMaturity": 150
+  },
+  "members": [
+    { "id": "…", "groupId": "…", "userId": "…", "balance": 300.00,
+      "status": "ACTIVE", "joinedAt": "…",
+      "withdrawalFeeGhs": 6.00, "earlyExitFeeGhs": 15.00 }
+  ],
+  "totalBalance": 600.00
+}
+```
+
+**`WithdrawalRequestView`:**
+
+```json
+{
+  "request": { "id": "…", "groupId": "…", "requesterId": "…",
+               "amount": 100.00, "status": "PENDING", "createdAt": "…" },
+  "approvals": 1,
+  "rejections": 0,
+  "activeMembers": 3,
+  "approvalsNeeded": 2
+}
+```
+
+`request.status`: `PENDING | EXECUTED | REJECTED`. Member `status`: `ACTIVE | EXITED`.
 
 ---
 
@@ -693,9 +768,9 @@ Stored in identity DB; useful for future `GET /users/me`.
 
 ---
 
-### 4.8 Vault — Frontend types *(no backend yet)*
+### 4.8 Vault — Frontend types vs. backend DTOs
 
-These are the exact TypeScript interfaces from `feature/vault-profile-screens` that future vault-service DTOs should match.
+These are the exact TypeScript interfaces from `feature/vault-profile-screens`. The backend is now live (see [§3.6](#36-vault-service--apivault) for the authoritative DTOs) but its field names differ — the mapping table at the end of this section lists every rename the frontend adapter must handle.
 
 #### `Vault`
 
@@ -783,13 +858,33 @@ These are the exact TypeScript interfaces from `feature/vault-profile-screens` t
 | `activeGroups` | number | no |
 | `pendingApprovals` | number | no |
 
+#### Frontend ↔ backend vault field mapping (adapter required)
+
+| Frontend field | Backend field | Notes |
+|----------------|---------------|-------|
+| `Vault.currentBalance` | `balance` | |
+| `Vault.maturityDate` | `lockedUntil` | `YYYY-MM-DD` |
+| `Vault.createdDate` | `createdAt` | offset datetime |
+| `Vault.estimatedWithdrawalFee` | `withdrawalFeeGhs` / `earlyExitFeeGhs` | pick by maturity (`daysToMaturity === 0`) |
+| `Vault.status` `"active"/"locked"/"matured"/"withdrawn"` | `status` `ACTIVE/BROKEN/CLOSED` | derive `matured` = `ACTIVE && daysToMaturity === 0`; `withdrawn` ≈ `BROKEN` (early) or emptied `ACTIVE`; no backend `locked`/`pending` |
+| `Vault.contributions` | `GET /api/vault/{id}/transactions` | filter `type === "DEPOSIT"` |
+| `Vault.accentColor` | — | client-only |
+| `VaultSummary` | — | compute client-side from `GET /api/vault` |
+| `GroupVault.amountSaved` | `GroupVaultView.totalBalance` | |
+| `GroupVault.myContribution` | `members[me].balance` | match on `userId` |
+| `GroupVault.members[].name/initials/role` | only `userId` | backend stores no display names/roles; resolve names client-side, `role`: creator = `group.creatorId` |
+| `WithdrawalRequest.votesFor/votesAgainst/requiredVotes` | `approvals/rejections/approvalsNeeded` | |
+| `WithdrawalRequest.status` `"pending"/"approved"/"rejected"` | `PENDING/EXECUTED/REJECTED` | case + `approved`→`EXECUTED` |
+| `WithdrawalRequest.hasVoted` | — | derive: `409` on double-vote, or track locally |
+| `WithdrawalRequest.reason` | `note` (request body) | not echoed back on the request object |
+
 ---
 
 ## 5. Vault-Specific Business Logic
 
-### 5.1 Status — **backend not implemented**
+### 5.1 Status — **backend live**
 
-All penalty and vault logic currently lives **client-side** in `feature/vault-profile-screens`. The backend must eventually own authoritative calculations on withdrawal; until then, the frontend preview logic below is the product spec.
+The vault-service now owns the authoritative fee calculations (same 2%/5% rates the UI previews used). The frontend preview logic below stays useful for pre-submit estimates, but on confirm the app must display the server's numbers: fees are returned on every vault response as `withdrawalFeeGhs` / `earlyExitFeeGhs` alongside `daysToMaturity`, and each executed withdrawal records explicit `FEE`/`PENALTY` transactions.
 
 ### 5.2 Personal vault penalty fees
 
@@ -811,23 +906,9 @@ const feeAmount = vault.currentBalance * feeRate;
 const netAmount = vault.currentBalance - feeAmount;
 ```
 
-**What backend must eventually return on withdraw:**
+**What the backend actually returns:** `POST /api/vault/{id}/withdraw` and `POST /api/vault/{id}/break` return the updated `Vault` (with recomputed `balance`, `status`, and fee fields); the exact fee charged and net payout appear as `FEE`/`PENALTY` and `WITHDRAWAL` rows on `GET /api/vault/{id}/transactions`. There is no dedicated withdrawal-receipt object — build the confirmation screen from the returned `Vault` plus the two newest transactions.
 
-```json
-{
-  "vaultId": "vault-emergency",
-  "withdrawalType": "early",
-  "balance": 8500,
-  "feeRate": 0.05,
-  "feeAmount": 425,
-  "netAmount": 8075,
-  "status": "withdrawn",
-  "withdrawalDate": "2026-07-02",
-  "feeCharged": 425
-}
-```
-
-**What frontend should do now:** Keep client-side preview; when API exists, **display backend numbers on confirm** and treat server response as source of truth.
+**What frontend should do:** Keep the client-side preview for instant estimates, but **display backend numbers on confirm** (`withdrawalFeeGhs`/`earlyExitFeeGhs` from the latest `Vault` response) and treat the server as source of truth.
 
 ### 5.3 Vault statuses
 
@@ -839,9 +920,9 @@ const netAmount = vault.currentBalance - feeAmount;
 | `pending` | Reserved for in-flight operations |
 | `withdrawn` | Closed; `withdrawalDate` + `feeCharged` populated |
 
-### 5.4 Group vault (susu) mechanics — UI representation
+### 5.4 Group vault (susu) mechanics
 
-No backend implementation. The UI models susu as:
+**Backend live** — and it matches the UI's approval-voting model (not rotation-based): 2–8 members, per-member balances, majority-vote withdrawals, 5% early-exit on own balance only. See [§3.6](#36-vault-service--apivault). The UI models susu as:
 
 **Contributions:** Aggregated into `amountSaved` (group total) and `myContribution` (current user). Per-member `lastContribution` date on `GroupVaultMember`.
 
@@ -854,16 +935,9 @@ No backend implementation. The UI models susu as:
 - `votesFor` / `votesAgainst` / `hasVoted` drive approval screens
 - No turn-order / slot rotation field exists in frontend types
 
-**When backend implements group vaults**, recommended additions to API responses:
+The backend implements exactly this: the requester counts as one approval; the request auto-executes (with the 2% fee) once approvals form a **strict majority of active members**, and auto-rejects once a majority becomes impossible. Rotation-order susu (`rotationOrder`, `contributionSchedule`, etc.) remains unimplemented on both sides.
 
-```typescript
-// Suggested future fields (not in current UI types)
-rotationOrder?: number;        // member's payout slot
-currentPayoutMemberId?: string;
-contributionSchedule?: 'daily' | 'weekly' | 'monthly';
-```
-
-Until then, wire UI to mock data in `ecospend-mobile/src/data/mock/groupVaults.ts`.
+The vault UI can now be wired to the live API (replacing `ecospend-mobile/src/data/mock/groupVaults.ts`) using the adapter mappings in [§4.8](#48-vault--frontend-types-vs-backend-dtos).
 
 ### 5.5 MoMo fee calculator — finance screens
 
@@ -937,7 +1011,22 @@ function mapAuthError(error: ErrorResponse, field: string): string | undefined {
 
 There is **no** `errors[]` array. Do not expect RFC 7807 Problem Details.
 
-### 6.3 User / expense / finance services
+### 6.3 Vault service — simple envelope
+
+All handled vault-service errors return a single-field envelope (different from identity's):
+
+```json
+{ "error": "Vault is locked until 2026-09-01. Use break to withdraw early with a penalty." }
+```
+
+| HTTP | When |
+|------|------|
+| 400 | Validation failure (message is `"field message"`, first error only), overdraw, zero-balance break |
+| 403 | Tier gate — FREE or missing `X-User-Tier` |
+| 404 | Vault/group/request not found **or not the caller's** (no distinction) |
+| 409 | Locked withdrawal, funded delete, non-ACTIVE vault, duplicate join/vote, pending request exists, group full |
+
+### 6.4 User / expense / finance services
 
 No `GlobalExceptionHandler` on `develop`. Unhandled errors return Spring Boot default:
 
@@ -978,6 +1067,7 @@ POSTGRES_PASSWORD=ecospend_dev
 POSTGRES_PORT=5432
 USER_SERVICE_PORT=8081
 EXPENSE_SERVICE_PORT=8082
+VAULT_SERVICE_PORT=8083
 NOTIFICATION_SERVICE_PORT=8084
 USER_SERVICE_URL=http://localhost:8081
 EXPENSE_SERVICE_URL=http://localhost:8082
@@ -1001,8 +1091,8 @@ IDENTITY_SERVICE_PORT=8081
 
 | Environment | Gateway | Identity | User | Expense | Vault | Notification |
 |-------------|---------|----------|------|---------|-------|--------------|
-| Local dev | `:8080` | `:8081` | `:8081` ⚠️ | `:8082` | `:8083` *(reserved)* | `:8084` |
-| Docker Compose (`develop`) | `:8080` | `:8081` | not included | `:8082` | not built | `:8084` |
+| Local dev | `:8080` | `:8081` | `:8081` ⚠️ | `:8082` | `:8083` | `:8084` |
+| Docker Compose (`develop`) | `:8080` | `:8081` | not included | `:8082` | `:8083` | `:8084` |
 
 Staging/prod URLs are **not defined in this repository**.
 
@@ -1014,7 +1104,7 @@ Staging/prod URLs are **not defined in this repository**.
 
 | Gap | Impact | Workaround |
 |-----|--------|------------|
-| **Vault service missing entirely** | All vault/group-vault screens use mocks | Keep mock hooks until vault-service ships; types in §4.8 are the contract target |
+| **Vault UI still on mocks** | Vault screens don't call the live API yet | Backend is live (§3.6) — wire hooks to `/api/vault/**` using the §4.8 adapter table; handle `403` (tier) as an upgrade prompt |
 | **Auth not routed through gateway** | `EXPO_PUBLIC_API_URL` cannot reach `/auth/*` | Use separate `EXPO_PUBLIC_AUTH_URL` or add gateway route |
 | **No JWT validation on gateway** | `Authorization` header ignored | Still send it — prepare interceptors now; enforcement coming |
 | **Port 8081 conflict** | identity-service and user-service cannot co-run | Change one port locally; only run the service you need |
@@ -1054,11 +1144,13 @@ Staging/prod URLs are **not defined in this repository**.
 | `useSavingsGoals` | Goals CRUD | ⏳ Branch only |
 | `useBudgetEnvelopes` | Envelopes CRUD | ⏳ Branch only; no PUT/DELETE yet |
 | `useMoMoCalculator` | `GET /api/v1/finance/momo-fee` | ⏳ Branch only; fee logic differs from UI |
-| `useVaultDashboard` | `GET /vaults` | ❌ Not implemented |
-| `useCreateVault` | `POST /vaults` | ❌ Not implemented |
-| `useWithdrawVault` | `POST /vaults/{id}/withdraw` | ❌ Not implemented |
-| `useGroupVaultDashboard` | `GET /group-vaults` | ❌ Not implemented |
-| `WithdrawalApprovalScreen` | Withdrawal request + vote APIs | ❌ Not implemented |
+| `useVaultDashboard` | `GET /vaults` | ✅ **`GET /api/vault`** — path differs from mock assumption |
+| `useCreateVault` | `POST /vaults` | ✅ **`POST /api/vault`** |
+| `useWithdrawVault` | `POST /vaults/{id}/withdraw` | ✅ **`POST /api/vault/{id}/withdraw`** (matured, 2% fee) / **`/break`** (early, 5%) |
+| `useVaultHistory` | `GET /vaults/{id}/history` | ✅ **`GET /api/vault/{id}/transactions`** |
+| `useGroupVaultDashboard` | `GET /group-vaults` | ✅ **`GET /api/vault/groups`** |
+| `useCreateGroupVault`, join flow | `POST /group-vaults`, `/join` | ✅ **`POST /api/vault/groups`**, **`/{id}/join`** (by group id — no invite codes) |
+| `WithdrawalApprovalScreen` | Withdrawal request + vote APIs | ✅ **`POST /api/vault/groups/{id}/withdrawals`**, **`…/withdrawals/{reqId}/vote`** |
 | Profile screen | `GET /users/me` | ❌ Not implemented |
 | Push token registration, notification inbox | `POST /notifications/tokens`, `GET /notifications`, … | ✅ Backend ready (notification-service) — see [§9](#9-notification-service-expo-push) |
 
@@ -1084,12 +1176,13 @@ Set in `.env` before running identity-service.
 ['envelopes', userId, month, year]
 ['momo-fee', amount, provider]
 
-// Vault (future)
+// Vault (live — §3.6)
 ['vaults', userId]
 ['vault', vaultId]
+['vault-transactions', vaultId]
 ['group-vaults', userId]
 ['group-vault', groupVaultId]
-['withdrawal-requests', userId]
+['withdrawal-requests', groupVaultId]
 ```
 
 ---
@@ -1302,7 +1395,7 @@ Routing is defined **in Java** (`backend/api-gateway/src/main/java/com/ecospend/
 /api/auth/**          → identity-service:8081       (open — no JWT)
 /api/users/**         → identity-service:8081       (JWT)
 /api/finance/**       → expense-service:8082        (JWT)
-/api/vault/**         → vault-service:8083           (JWT — planned, not built)
+/api/vault/**         → vault-service:8083           (JWT + Plus/Premium tier gate)
 /api/notifications/** → notification-service:8084    (JWT)
 ```
 
@@ -1356,4 +1449,4 @@ is_read DEFAULT false, created_at
 
 ---
 
-*For questions about backend implementation status, check branch `develop` for merged code and `feature/finance-service` for in-progress finance APIs. Vault APIs are spec-only until vault-service is built.*
+*For questions about backend implementation status, check branch `develop` for merged code and `feature/finance-service` for in-progress finance APIs. Vault APIs are live on `develop` as of 2026-07-04 — see §3.6.*
