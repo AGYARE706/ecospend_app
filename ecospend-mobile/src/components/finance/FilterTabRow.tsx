@@ -1,7 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { ALL_CATEGORIES } from '../../constants/categories';
-import { colors, radius, shadowXs, spacing, typography } from '../../theme';
+import { radius, shadowXs, spacing, typography, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { TransactionFilter } from '../../types';
 
 const FILTERS: TransactionFilter[] = ['All', 'Income', 'Expense', ...ALL_CATEGORIES];
@@ -15,6 +16,7 @@ export interface FilterTabRowProps {
 }
 
 export default function FilterTabRow({ activeFilter, onFilterChange }: FilterTabRowProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView
       horizontal
@@ -49,7 +51,8 @@ export default function FilterTabRow({ activeFilter, onFilterChange }: FilterTab
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     gap: spacing.sm,
     marginBottom: spacing.md,
@@ -70,7 +73,7 @@ const styles = StyleSheet.create({
     ...shadowXs,
   },
   tabInactive: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.border,
   },
   tabPressed: {

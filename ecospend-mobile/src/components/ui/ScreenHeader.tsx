@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import IconButton from './IconButton';
 
 /**
@@ -24,6 +25,7 @@ export default function ScreenHeader({
   onCalculatorPress,
   style,
 }: ScreenHeaderProps) {
+  const styles = useThemedStyles(createStyles);
   const showActions =
     onNotificationPress !== undefined || onCalculatorPress !== undefined || right;
 
@@ -58,7 +60,8 @@ export default function ScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'flex-start',
     flexDirection: 'row',

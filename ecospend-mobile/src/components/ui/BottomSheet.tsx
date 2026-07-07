@@ -9,7 +9,16 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, duration, easing, radius, shadowLg, spacing, typography } from '../../theme';
+import {
+  duration,
+  easing,
+  radius,
+  shadowLg,
+  spacing,
+  typography,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import IconButton from './IconButton';
 
 /**
@@ -35,6 +44,7 @@ export default function BottomSheet({
   children,
   hideClose = false,
 }: BottomSheetProps) {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(40)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -95,7 +105,8 @@ export default function BottomSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -105,7 +116,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   sheet: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     paddingHorizontal: spacing.lg,

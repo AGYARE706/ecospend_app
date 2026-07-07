@@ -21,17 +21,21 @@ import {
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   cardShadow,
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type AboutNavProp = StackNavigationProp<ProfileStackParamList, 'About'>;
 
 export default function AboutScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<AboutNavProp>();
   const {
     buildLabel,
@@ -70,7 +74,7 @@ export default function AboutScreen() {
           <View style={styles.logoSection}>
             <View style={styles.logoRing}>
               <LinearGradient
-                colors={[colors.primaryDark, colors.primary, '#0D9488']}
+                colors={[colors.primaryDark, colors.primary, colors.tealDeep]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.logoGradient}
@@ -112,8 +116,8 @@ export default function AboutScreen() {
             <LegalLinkRow
               title="Terms of Service"
               icon="reader-outline"
-              iconColor="#6A1B9A"
-              iconBackground="#F3E5F5"
+              iconColor={colors.purple}
+              iconBackground={colors.purpleLight}
               onPress={openTermsSheet}
               isLast
             />
@@ -154,6 +158,8 @@ function ContentBlock({
   title: string;
   body: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.contentBlock}>
       <View style={styles.contentHeader}>
@@ -182,6 +188,8 @@ function LegalLinkRow({
   onPress: () => void;
   isLast?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -211,6 +219,7 @@ function LegalDocumentSheet({
   content: string;
   onClose: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -230,7 +239,8 @@ function LegalDocumentSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -306,7 +316,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   contentCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -351,7 +361,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   linksCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -412,7 +422,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   sheetLarge: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     maxHeight: '82%',

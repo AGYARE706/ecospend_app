@@ -6,7 +6,8 @@ import AppButton from '../ui/AppButton';
 import GhsText from '../ui/GhsText';
 import GoalProgressBar from './GoalProgressBar';
 import GoalSheetContainer from './GoalSheetContainer';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import {
   capContributionAmount,
   getGoalProgress,
@@ -32,6 +33,7 @@ export default function ContributeSheet({
   onClose,
   onContribute,
 }: ContributeSheetProps) {
+  const styles = useThemedStyles(createStyles);
   const [amount, setAmount] = useState('');
 
   const parsedAmount = parseFloat(amount) || 0;
@@ -115,7 +117,8 @@ export default function ContributeSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   title: {
     color: colors.textDark,
     fontSize: fontSize.xl,

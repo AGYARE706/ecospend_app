@@ -1,4 +1,4 @@
-import { colors } from '../theme';
+import type { ThemeColors } from '../theme';
 import type { Envelope, EnvelopeFilter, EnvelopeStatus, TransactionCategory } from '../types';
 
 export type StatusColorKey =
@@ -52,7 +52,7 @@ export function getStatusColorKey(status: EnvelopeStatus): StatusColorKey {
   return status;
 }
 
-export function getStatusColor(status: EnvelopeStatus): string {
+export function getStatusColor(status: EnvelopeStatus, colors: ThemeColors): string {
   const map: Record<EnvelopeStatus, string> = {
     healthy: colors.healthy,
     atRisk: colors.atRisk,

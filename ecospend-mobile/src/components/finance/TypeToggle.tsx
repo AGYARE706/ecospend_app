@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { TransactionType } from '../../types';
 
 /**
@@ -12,6 +13,7 @@ export interface TypeToggleProps {
 }
 
 export default function TypeToggle({ selectedType, onSelect }: TypeToggleProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.track}>
       <Pressable
@@ -51,7 +53,8 @@ export default function TypeToggle({ selectedType, onSelect }: TypeToggleProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   track: {
     backgroundColor: colors.chipBg,
     borderRadius: radius.full,

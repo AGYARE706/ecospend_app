@@ -10,14 +10,16 @@ import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useEditProfile } from '../../hooks/useEditProfile';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type EditProfileNavProp = StackNavigationProp<
   ProfileStackParamList,
@@ -33,6 +35,8 @@ function getInitials(name: string): string {
 }
 
 export default function EditProfileScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<EditProfileNavProp>();
   const {
     fullName,
@@ -185,13 +189,14 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -232,7 +237,7 @@ const styles = StyleSheet.create({
   },
   photoSection: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -261,7 +266,7 @@ const styles = StyleSheet.create({
   cameraBtn: {
     alignItems: 'center',
     backgroundColor: colors.primary,
-    borderColor: colors.white,
+    borderColor: colors.cardBackground,
     borderRadius: radius.full,
     borderWidth: 3,
     bottom: 0,
@@ -306,7 +311,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   formCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -347,7 +352,7 @@ const styles = StyleSheet.create({
   },
   readonlyBadge: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.full,
     borderWidth: 1,
@@ -387,7 +392,7 @@ const styles = StyleSheet.create({
     height: spacing.xl,
   },
   footer: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
     paddingBottom: spacing.lg,

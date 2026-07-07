@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import GhsText from '../ui/GhsText';
 import { CATEGORY_CONFIG } from '../../constants/categories';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { formatShortDate } from '../../utils/formatDate';
 import type { Transaction } from '../../types';
 
@@ -19,6 +20,8 @@ export default function DashboardTransactionRow({
   transaction,
   onPress,
 }: DashboardTransactionRowProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const config = CATEGORY_CONFIG[transaction.category];
   const amountVariant = transaction.type === 'income' ? 'income' : 'expense';
 
@@ -27,7 +30,7 @@ export default function DashboardTransactionRow({
       <View
         style={[
           styles.emojiCircle,
-          { backgroundColor: config.circleBackground },
+          { backgroundColor: colors[config.circleBackground] },
         ]}
       >
         <Text style={styles.emoji}>{config.emoji}</Text>
@@ -48,7 +51,8 @@ export default function DashboardTransactionRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     flexDirection: 'row',

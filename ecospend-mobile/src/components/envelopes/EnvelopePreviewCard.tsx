@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { Envelope } from '../../types';
 import {
   getEnvelopePercent,
@@ -25,6 +26,8 @@ export default function EnvelopePreviewCard({
   emoji,
   monthlyLimit,
 }: EnvelopePreviewCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const previewEnvelope: Envelope = {
     id: 'preview',
     category: 'Other',
@@ -47,7 +50,7 @@ export default function EnvelopePreviewCard({
         </View>
         <View style={styles.headerText}>
           <Text style={styles.category}>{category}</Text>
-          <View style={[styles.statusPill, { backgroundColor: getStatusColor(status) }]}>
+          <View style={[styles.statusPill, { backgroundColor: getStatusColor(status, colors) }]}>
             <Text style={styles.statusText}>{getStatusLabel(status)}</Text>
           </View>
         </View>
@@ -66,7 +69,8 @@ export default function EnvelopePreviewCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     backgroundColor: colors.pageBackground,
     borderRadius: radius.md,
@@ -80,7 +84,7 @@ const styles = StyleSheet.create({
   },
   emojiCircle: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.full,
     height: 40,
     justifyContent: 'center',

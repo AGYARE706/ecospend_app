@@ -4,7 +4,15 @@ import { Animated, LayoutChangeEvent, StyleSheet, Text, View } from 'react-nativ
 import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
 import { getCategoryVisual } from '../../constants/categories';
-import { colors, radius, shadowSm, spacing, typography } from '../../theme';
+import {
+  radius,
+  shadowSm,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { BudgetEnvelope } from '../../types';
 
 /**
@@ -14,7 +22,7 @@ export interface BudgetEnvelopeCardProps {
   envelope: BudgetEnvelope;
 }
 
-function getStatusColor(ratio: number): string {
+function getStatusColor(ratio: number, colors: ThemeColors): string {
   if (ratio >= 1) {
     return colors.exhausted;
   }
@@ -28,12 +36,14 @@ function getStatusColor(ratio: number): string {
 }
 
 export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const fillAnim = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
   const ratio = envelope.limit > 0 ? envelope.spent / envelope.limit : 0;
   const progressPercent = Math.min(ratio * 100, 100);
-  const fillColor = getStatusColor(ratio);
+  const fillColor = getStatusColor(ratio, colors);
   const visual = getCategoryVisual(envelope.category);
 
   useEffect(() => {
@@ -57,8 +67,8 @@ export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps
     <View style={styles.card}>
       <View style={[styles.accentStrip, { backgroundColor: fillColor }]} />
 
-      <View style={[styles.iconCircle, { backgroundColor: visual.background }]}>
-        <Icon name={visual.icon} size={20} color={visual.tint} strokeWidth={1.9} />
+      <View style={[styles.iconCircle, { backgroundColor: colors[visual.background] }]}>
+        <Icon name={visual.icon} size={20} color={colors[visual.tint]} strokeWidth={1.9} />
       </View>
 
       <Text style={styles.name} numberOfLines={1}>
@@ -84,9 +94,10 @@ export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,

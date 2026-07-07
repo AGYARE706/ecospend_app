@@ -4,7 +4,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useSplash } from '../../hooks/useSplash';
 import type { AuthStackParamList } from '../../navigation/types';
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type SplashScreenNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -16,6 +17,7 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({ navigation }: SplashScreenProps) {
+  const styles = useThemedStyles(createStyles);
   const { logoOpacity, taglineOpacity } = useSplash(navigation);
 
   return (
@@ -33,7 +35,8 @@ export default function SplashScreen({ navigation }: SplashScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   content: {
     alignItems: 'center',
     flex: 1,

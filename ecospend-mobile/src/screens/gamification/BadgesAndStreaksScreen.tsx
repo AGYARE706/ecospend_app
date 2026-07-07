@@ -11,12 +11,14 @@ import { useBadgesAndStreaks } from '../../hooks/useBadgesAndStreaks';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   cardShadow,
-  colors,
   fontSize,
   fontWeight,
   radius,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type BadgesNavProp = StackNavigationProp<
   ProfileStackParamList,
@@ -24,6 +26,8 @@ type BadgesNavProp = StackNavigationProp<
 >;
 
 export default function BadgesAndStreaksScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<BadgesNavProp>();
   const {
     streak,
@@ -117,6 +121,7 @@ function SummaryStrip({
   unlockedCount: number;
   totalAchievements: number;
 }) {
+  const styles = useThemedStyles(createStyles);
   const completionPercent =
     totalAchievements > 0
       ? Math.round((unlockedCount / totalAchievements) * 100)
@@ -153,6 +158,8 @@ function SectionLabel({
   subtitle: string;
   muted?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionTitleRow}>
@@ -179,7 +186,8 @@ function SectionLabel({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -224,7 +232,7 @@ const styles = StyleSheet.create({
   },
   summaryStrip: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,

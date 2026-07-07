@@ -1,7 +1,9 @@
-import { colors } from '../theme';
+import type { ThemeColors } from '../theme';
 import type { AchievementDefinition, AchievementId } from '../types/achievement';
 
-export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
+export const getAchievementDefinitions = (
+  colors: ThemeColors,
+): AchievementDefinition[] => [
   {
     id: 'first_goal_achieved',
     title: 'First Goal Achieved',
@@ -27,9 +29,9 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     title: 'First Vault Matured',
     description: 'Reach maturity on a vault for the first time.',
     icon: 'shield-checkmark',
-    iconColor: '#0D9488',
-    iconBackground: '#E0F2F1',
-    accentColor: '#0D9488',
+    iconColor: colors.tealDeep,
+    iconBackground: colors.tealDeepLight,
+    accentColor: colors.tealDeep,
     target: 1,
   },
   {
@@ -47,9 +49,9 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     title: '100 Transactions Logged',
     description: 'Track 100 income or expense transactions.',
     icon: 'receipt',
-    iconColor: '#6A1B9A',
-    iconBackground: '#F3E5F5',
-    accentColor: '#6A1B9A',
+    iconColor: colors.purple,
+    iconBackground: colors.purpleLight,
+    accentColor: colors.purple,
     target: 100,
   },
 ];

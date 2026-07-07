@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Shared modal shell for goal bottom sheets with overlay and keyboard handling.
@@ -26,6 +27,7 @@ export default function GoalSheetContainer({
   onClose,
   children,
 }: GoalSheetContainerProps) {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -62,7 +64,8 @@ export default function GoalSheetContainer({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     maxHeight: '90%',

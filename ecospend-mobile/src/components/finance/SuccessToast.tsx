@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * message — success message text to display
@@ -10,6 +11,7 @@ export interface SuccessToastProps {
 }
 
 export default function SuccessToast({ message }: SuccessToastProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.message}>{message}</Text>
@@ -17,7 +19,8 @@ export default function SuccessToast({ message }: SuccessToastProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     backgroundColor: colors.successLight,
     borderRadius: radius.md,

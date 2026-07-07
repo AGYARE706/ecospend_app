@@ -1,6 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing, typography } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { Icon } from './icons';
 import type { IconName } from './icons';
 
@@ -21,6 +30,8 @@ export default function SectionHeader({
   onActionPress,
   icon,
 }: SectionHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.titleRow}>
@@ -45,7 +56,8 @@ export default function SectionHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     flexDirection: 'row',

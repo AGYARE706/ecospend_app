@@ -11,7 +11,7 @@
  */
 import Svg from 'react-native-svg';
 
-import { colors } from '../../../theme';
+import { useTheme } from '../../../theme';
 import { iconAliases } from './aliases';
 import { outlineIcons, solidIcons } from './paths';
 
@@ -31,10 +31,12 @@ export interface IconProps {
 export default function Icon({
   name,
   size = 24,
-  color = colors.textDark,
+  color,
   filled,
   strokeWidth,
 }: IconProps) {
+  const { colors } = useTheme();
+  const resolvedColor = color ?? colors.textDark;
   const alias = iconAliases[name as string];
   const canonical = alias?.name ?? (name as string);
   const useSolid = filled ?? alias?.solid ?? false;
@@ -53,12 +55,12 @@ export default function Icon({
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke={color}
+      stroke={resolvedColor}
       strokeWidth={stroke}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {renderer(color)}
+      {renderer(resolvedColor)}
     </Svg>
   );
 }

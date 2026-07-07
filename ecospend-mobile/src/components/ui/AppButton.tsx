@@ -1,14 +1,24 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowBrand,
   shadowXs,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { Icon } from './icons';
 import type { IconName } from './icons';
 
@@ -47,7 +57,7 @@ export interface AppButtonProps {
   iconPosition?: 'left' | 'right';
   /** Stretch to fill the parent width. Defaults to true for primary CTAs. */
   fullWidth?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 type Resolved =
@@ -81,14 +91,14 @@ const SIZES: Record<
 };
 
 /** Foreground (label + icon) color per resolved variant. */
-const foreground: Record<Resolved, string> = {
+const getForeground = (colors: ThemeColors): Record<Resolved, string> => ({
   primary: colors.onPrimary,
   secondary: colors.primary,
   tertiary: colors.textSecondary,
   destructive: colors.onPrimary,
   success: colors.onPrimary,
   link: colors.primary,
-};
+});
 
 export default function AppButton({
   title,
@@ -102,6 +112,8 @@ export default function AppButton({
   fullWidth,
   style,
 }: AppButtonProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const resolved = resolveVariant(variant);
   const isDisabled = disabled || loading;
 
@@ -131,7 +143,9 @@ export default function AppButton({
     );
   }
 
-  const fg = foreground[resolved];
+  const fg = getForeground(colors)[resolved];
+  const variantContainer = getVariantContainer(colors);
+  const variantPressed = getVariantPressed(colors);
 
   return (
     <Pressable
@@ -171,10 +185,10 @@ export default function AppButton({
   );
 }
 
-const variantContainer: Record<Resolved, ViewStyle> = {
+const getVariantContainer = (colors: ThemeColors): Record<Resolved, ViewStyle> => ({
   primary: { backgroundColor: colors.primary },
   secondary: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderWidth: 1.5,
     borderColor: colors.border,
   },
@@ -182,18 +196,19 @@ const variantContainer: Record<Resolved, ViewStyle> = {
   destructive: { backgroundColor: colors.error },
   success: { backgroundColor: colors.success },
   link: {},
-};
+});
 
-const variantPressed: Record<Resolved, ViewStyle> = {
+const getVariantPressed = (colors: ThemeColors): Record<Resolved, ViewStyle> => ({
   primary: { backgroundColor: colors.primaryPressed },
   secondary: { backgroundColor: colors.primaryBackground, borderColor: colors.primary },
   tertiary: { backgroundColor: colors.border },
   destructive: { backgroundColor: colors.errorStrong },
   success: { backgroundColor: colors.successStrong },
   link: {},
-};
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',

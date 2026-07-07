@@ -5,7 +5,8 @@ import AmountDisplayInput from '../finance/AmountDisplayInput';
 import AppButton from '../ui/AppButton';
 import GhsText from '../ui/GhsText';
 import EnvelopeSheetContainer from './EnvelopeSheetContainer';
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { EditEnvelopePayload, Envelope, EnvelopeFormErrors } from '../../types';
 
 /**
@@ -26,6 +27,7 @@ export default function EditEnvelopeSheet({
   onClose,
   onSave,
 }: EditEnvelopeSheetProps) {
+  const styles = useThemedStyles(createStyles);
   const [monthlyLimit, setMonthlyLimit] = useState('');
   const [errors, setErrors] = useState<EnvelopeFormErrors>({});
 
@@ -121,7 +123,8 @@ export default function EditEnvelopeSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   title: {
     color: colors.textDark,
     fontSize: fontSize.xl,

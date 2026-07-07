@@ -8,12 +8,14 @@ import ProviderCardRow from '../../components/calculator/ProviderCardRow';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useMoMoCalculator } from '../../hooks/useMoMoCalculator';
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Tab utility screen for instant MoMo fee calculation.
  */
 export default function MoMoCalculatorScreen() {
+  const styles = useThemedStyles(createStyles);
   const {
     selectedProvider,
     setProvider,
@@ -69,7 +71,8 @@ export default function MoMoCalculatorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   sectionLabel: {
     color: colors.textMuted,
     fontSize: fontSize.xs,

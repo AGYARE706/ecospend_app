@@ -5,7 +5,16 @@ import AppButton from '../ui/AppButton';
 import AppInput from '../ui/AppInput';
 import { Icon } from '../ui/icons';
 import GoalSheetContainer from './GoalSheetContainer';
-import { colors, fontSize, fontWeight, radius, spacing, typography } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { getProjectedWeekly } from '../../utils/goals';
 import type { AddGoalFormErrors, AddGoalPayload } from '../../types';
 
@@ -25,6 +34,8 @@ export default function AddGoalSheet({
   onClose,
   onSave,
 }: AddGoalSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [selectedDeadline, setSelectedDeadline] = useState<string | null>(null);
@@ -151,7 +162,8 @@ export default function AddGoalSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   title: {
     ...typography.h3,
     color: colors.textDark,
@@ -172,7 +184,7 @@ const styles = StyleSheet.create({
   },
   dateRow: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.border,
     borderRadius: radius.md,
     borderWidth: 1,

@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, shadowSm, spacing, typography } from '../../theme';
+import { radius, shadowSm, spacing, typography, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Rounded section card wrapper for grouped flat transaction rows.
@@ -15,6 +16,7 @@ export default function TransactionSectionCard({
   title,
   children,
 }: TransactionSectionCardProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -23,7 +25,8 @@ export default function TransactionSectionCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   section: {
     marginBottom: spacing.lg,
   },
@@ -34,7 +37,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,

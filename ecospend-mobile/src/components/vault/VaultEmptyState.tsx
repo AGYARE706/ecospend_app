@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '../ui/icons';
 import AppButton from '../ui/AppButton';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useTheme } from '../../theme';
 import type { VaultThemeColors } from './vaultTheme';
 
 export interface VaultEmptyStateProps {
@@ -14,6 +14,7 @@ export default function VaultEmptyState({
   theme,
   onCreateVault,
 }: VaultEmptyStateProps) {
+  const { colors } = useTheme();
   return (
     <View style={styles.container}>
       <View style={[styles.illustration, { backgroundColor: theme.chipBg }]}>

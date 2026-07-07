@@ -1,6 +1,7 @@
 import { ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { EnvelopeFilter } from '../../types';
 
 /**
@@ -33,6 +34,7 @@ export default function EnvelopeFilterRow({
   statusCounts,
   onFilterChange,
 }: EnvelopeFilterRowProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView
       horizontal
@@ -73,7 +75,8 @@ export default function EnvelopeFilterRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   scrollContent: {
     gap: spacing.sm,
     paddingBottom: spacing.md,
@@ -109,7 +112,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeDefault: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
   },
   badgeActive: {
     backgroundColor: colors.primaryDark,

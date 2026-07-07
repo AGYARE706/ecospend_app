@@ -15,14 +15,16 @@ import {
 } from '../../hooks/useGroupVaultDetails';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { GroupVaultMember, WithdrawalRequest } from '../../types/groupVault';
 
 type GroupVaultDetailsRouteProp = RouteProp<
@@ -42,6 +44,8 @@ function ghs(amount: number): string {
 }
 
 export default function GroupVaultDetailsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { params } = useRoute<GroupVaultDetailsRouteProp>();
   const navigation = useNavigation<GroupVaultDetailsNavProp>();
   const {
@@ -83,7 +87,7 @@ export default function GroupVaultDetailsScreen() {
         >
           {/* 1. Group Summary Card */}
           <LinearGradient
-            colors={['#1B5E20', '#2E7D32', '#0D9488']}
+            colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.summaryCard}
@@ -236,6 +240,8 @@ function SectionHeader({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const sectionStyles = useThemedStyles(createSectionStyles);
+  const { colors } = useTheme();
   return (
     <View style={sectionStyles.row}>
       <Ionicons name={icon} size={15} color={colors.primary} />
@@ -253,6 +259,7 @@ function MemberRow({
   contribution: number;
   isLast: boolean;
 }) {
+  const memberStyles = useThemedStyles(createMemberStyles);
   const isAdmin = member.role === 'admin';
   return (
     <View style={[memberStyles.row, isLast && memberStyles.rowLast]}>
@@ -286,6 +293,8 @@ function StatPill({
   label: string;
   value: string;
 }) {
+  const statStyles = useThemedStyles(createStatStyles);
+  const { colors } = useTheme();
   return (
     <View style={statStyles.pill}>
       <Ionicons name={icon} size={13} color={colors.textMuted} />
@@ -304,6 +313,7 @@ function ApprovalRequestRow({
   isLast: boolean;
   onOpen: () => void;
 }) {
+  const approvalStyles = useThemedStyles(createApprovalStyles);
   const pct = Math.min(100, Math.round((request.votesFor / request.requiredVotes) * 100));
   return (
     <Pressable
@@ -339,6 +349,8 @@ function TimelineItem({
   item: GroupContributionTimelineItem;
   isLast: boolean;
 }) {
+  const timelineStyles = useThemedStyles(createTimelineStyles);
+  const { colors } = useTheme();
   const icon =
     item.kind === 'created'
       ? 'flag-outline'
@@ -374,7 +386,8 @@ function TimelineItem({
   );
 }
 
-const sectionStyles = StyleSheet.create({
+const createSectionStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -391,7 +404,8 @@ const sectionStyles = StyleSheet.create({
   },
 });
 
-const memberStyles = StyleSheet.create({
+const createMemberStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     borderBottomColor: colors.divider,
@@ -461,7 +475,8 @@ const memberStyles = StyleSheet.create({
   },
 });
 
-const statStyles = StyleSheet.create({
+const createStatStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   pill: {
     alignItems: 'center',
     backgroundColor: colors.chipBg,
@@ -484,7 +499,8 @@ const statStyles = StyleSheet.create({
   },
 });
 
-const approvalStyles = StyleSheet.create({
+const createApprovalStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     backgroundColor: colors.warningLight,
     borderColor: `${colors.warning}33`,
@@ -548,7 +564,8 @@ const approvalStyles = StyleSheet.create({
   },
 });
 
-const timelineStyles = StyleSheet.create({
+const createTimelineStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     minHeight: 52,
@@ -605,13 +622,14 @@ const timelineStyles = StyleSheet.create({
   },
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -743,7 +761,7 @@ const styles = StyleSheet.create({
     height: 8,
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -825,7 +843,7 @@ const styles = StyleSheet.create({
     width: 8,
   },
   chartDot: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.primary,
     borderRadius: radius.full,
     borderWidth: 2,

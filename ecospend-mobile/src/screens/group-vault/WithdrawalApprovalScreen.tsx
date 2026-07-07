@@ -15,14 +15,16 @@ import {
 } from '../../data/mock/groupVaults';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type {
   GroupVaultMember,
   WithdrawalRequest,
@@ -90,6 +92,8 @@ function buildMemberVotes(
 }
 
 export default function WithdrawalApprovalScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { params } = useRoute<WithdrawalApprovalRouteProp>();
   const navigation = useNavigation<WithdrawalApprovalNavProp>();
 
@@ -154,7 +158,7 @@ export default function WithdrawalApprovalScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Request Summary Card */}
           <LinearGradient
-            colors={['#1B5E20', '#2E7D32', '#0D9488']}
+            colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.requestCard}
@@ -282,6 +286,8 @@ function SectionHeader({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const sectionStyles = useThemedStyles(createSectionStyles);
+  const { colors } = useTheme();
   return (
     <View style={sectionStyles.row}>
       <Ionicons name={icon} size={15} color={colors.primary} />
@@ -299,6 +305,7 @@ function MetaItem({
   label: string;
   value: string;
 }) {
+  const metaStyles = useThemedStyles(createMetaStyles);
   return (
     <View style={metaStyles.item}>
       <Ionicons name={icon} size={13} color="rgba(255,255,255,0.7)" />
@@ -323,6 +330,8 @@ function StatusMetric({
   value: string;
   tone: 'success' | 'error' | 'warning';
 }) {
+  const metricStyles = useThemedStyles(createMetricStyles);
+  const { colors } = useTheme();
   const bg =
     tone === 'success'
       ? colors.successLight
@@ -347,6 +356,8 @@ function MemberVoteRow({
   vote: MemberVoteStatus;
   isLast: boolean;
 }) {
+  const memberStyles = useThemedStyles(createMemberStyles);
+  const { colors } = useTheme();
   const cfg =
     vote === 'approved'
       ? { text: 'Approved', color: colors.success, bg: colors.successLight, icon: 'checkmark-circle' as const }
@@ -373,7 +384,8 @@ function MemberVoteRow({
   );
 }
 
-const sectionStyles = StyleSheet.create({
+const createSectionStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -390,7 +402,8 @@ const sectionStyles = StyleSheet.create({
   },
 });
 
-const metaStyles = StyleSheet.create({
+const createMetaStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   item: {
     flex: 1,
   },
@@ -407,7 +420,8 @@ const metaStyles = StyleSheet.create({
   },
 });
 
-const metricStyles = StyleSheet.create({
+const createMetricStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   metric: {
     alignItems: 'center',
     borderRadius: radius.md,
@@ -429,7 +443,8 @@ const metricStyles = StyleSheet.create({
   },
 });
 
-const memberStyles = StyleSheet.create({
+const createMemberStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     borderBottomColor: colors.divider,
@@ -482,13 +497,14 @@ const memberStyles = StyleSheet.create({
   },
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -581,7 +597,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,

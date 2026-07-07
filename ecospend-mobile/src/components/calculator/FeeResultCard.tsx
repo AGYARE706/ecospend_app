@@ -2,7 +2,15 @@ import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import GhsText from '../ui/GhsText';
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  cardShadow,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Fee breakdown card with placeholder state or animated result rows.
@@ -20,6 +28,7 @@ export default function FeeResultCard({
   fee,
   totalCost,
 }: FeeResultCardProps) {
+  const styles = useThemedStyles(createStyles);
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -67,9 +76,10 @@ export default function FeeResultCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.lg,
     marginBottom: spacing.md,
     minHeight: 180,

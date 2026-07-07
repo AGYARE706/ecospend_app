@@ -7,7 +7,16 @@ import Svg, { Circle } from 'react-native-svg';
 import type { GoalsStackParamList } from '../../navigation/types';
 import Card from '../../components/ui/Card';
 import AppButton from '../../components/ui/AppButton';
-import { colors, spacing, fontSize, fontWeight, radius, typography } from '../../theme';
+import {
+  spacing,
+  fontSize,
+  fontWeight,
+  radius,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type GoalDetailsRouteProp = RouteProp<GoalsStackParamList, 'GoalDetails'>;
 
@@ -21,6 +30,8 @@ interface Milestone {
 }
 
 export default function GoalDetailsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { params } = useRoute<GoalDetailsRouteProp>();
   const navigation = useNavigation<any>();
 
@@ -289,7 +300,8 @@ export default function GoalDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.pageBackground,

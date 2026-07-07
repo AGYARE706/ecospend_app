@@ -7,7 +7,8 @@ import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useLogin } from '../../hooks/useLogin';
 import type { AuthStackParamList } from '../../navigation/types';
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type LoginScreenNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -19,6 +20,7 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
+  const styles = useThemedStyles(createStyles);
   const {
     phone,
     setPhone,
@@ -82,7 +84,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   heading: {
     color: colors.textDark,
     fontSize: fontSize.xxl,

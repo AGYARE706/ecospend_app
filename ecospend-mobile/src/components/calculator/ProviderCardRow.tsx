@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '../../theme';
+import { spacing, useTheme } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { ProviderType } from '../../types';
 import ProviderCard from './ProviderCard';
 
@@ -12,11 +13,13 @@ export interface ProviderCardRowProps {
   onSelect: (provider: ProviderType) => void;
 }
 
-const PROVIDERS: Array<{
+const getProviders = (
+  colors: ThemeColors,
+): Array<{
   provider: ProviderType;
   initials: string;
   circleColor: string;
-}> = [
+}> => [
   { provider: 'MTN MoMo', initials: 'MTN', circleColor: colors.providerMtn },
   { provider: 'Telecel Cash', initials: 'TC', circleColor: colors.providerTelecel },
   { provider: 'AT Money', initials: 'AT', circleColor: colors.providerAt },
@@ -26,9 +29,10 @@ export default function ProviderCardRow({
   selectedProvider,
   onSelect,
 }: ProviderCardRowProps) {
+  const { colors } = useTheme();
   return (
     <View style={styles.row}>
-      {PROVIDERS.map((item) => (
+      {getProviders(colors).map((item) => (
         <ProviderCard
           key={item.provider}
           provider={item.provider}

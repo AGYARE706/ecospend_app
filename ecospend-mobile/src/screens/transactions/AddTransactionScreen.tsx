@@ -16,7 +16,8 @@ import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { Icon } from '../../components/ui/icons';
 import { useAddTransaction } from '../../hooks/useAddTransaction';
 import type { AppStackParamList } from '../../navigation/types';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { formatHeaderDate } from '../../utils/formatDate';
 import type { Provider, TransactionCategory } from '../../types';
 
@@ -32,6 +33,8 @@ interface AddTransactionScreenProps {
 export default function AddTransactionScreen({
   navigation,
 }: AddTransactionScreenProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     formState,
     setField,
@@ -139,7 +142,8 @@ export default function AddTransactionScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   handleBar: {
     alignSelf: 'center',
     backgroundColor: colors.border,

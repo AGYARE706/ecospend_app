@@ -26,7 +26,16 @@ import type {
   DashboardStackParamList,
   TabParamList,
 } from '../../navigation/types';
-import { cardShadow, colors, radius, shadowMd, spacing, typography } from '../../theme';
+import {
+  cardShadow,
+  radius,
+  shadowMd,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type DashboardNavigationProp = CompositeNavigationProp<
   StackNavigationProp<DashboardStackParamList, 'Dashboard'>,
@@ -48,6 +57,8 @@ function getGreeting(date = new Date()): string {
 }
 
 export default function DashboardScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<DashboardNavigationProp>();
   const { user } = useAuth();
   const {
@@ -199,7 +210,8 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   loadingContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
@@ -246,7 +258,7 @@ const styles = StyleSheet.create({
     paddingRight: spacing.lg,
   },
   transactionsCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -276,7 +288,7 @@ const styles = StyleSheet.create({
   },
   insightIconCircle: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.full,
     height: 48,
     justifyContent: 'center',

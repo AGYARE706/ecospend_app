@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
-import { colors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import type { ThemeColors } from '../theme';
 
 export type NotificationPreferenceKey =
   | 'weeklyInsights'
@@ -32,7 +33,9 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
   marketingUpdates: false,
 };
 
-export const NOTIFICATION_PREFERENCE_ITEMS: NotificationPreference[] = [
+export const getNotificationPreferenceItems = (
+  colors: ThemeColors,
+): NotificationPreference[] => [
   {
     key: 'weeklyInsights',
     title: 'Weekly Insights',
@@ -74,8 +77,8 @@ export const NOTIFICATION_PREFERENCE_ITEMS: NotificationPreference[] = [
     title: 'Group Vault Updates',
     description: 'Votes, contributions, and activity from shared vaults.',
     icon: 'people-outline',
-    iconColor: '#6A1B9A',
-    iconBackground: '#F3E5F5',
+    iconColor: colors.purple,
+    iconBackground: colors.purpleLight,
     section: 'vaults',
   },
   {
@@ -97,15 +100,21 @@ export interface NotificationSettingsSection {
 }
 
 export function useNotificationSettings() {
+  const { colors } = useTheme();
   const [preferences, setPreferences] =
     useState<NotificationPreferences>(DEFAULT_PREFERENCES);
+
+  const preferenceItems = useMemo(
+    () => getNotificationPreferenceItems(colors),
+    [colors],
+  );
 
   const enabledCount = useMemo(
     () => Object.values(preferences).filter(Boolean).length,
     [preferences],
   );
 
-  const totalCount = NOTIFICATION_PREFERENCE_ITEMS.length;
+  const totalCount = preferenceItems.length;
 
   const sections = useMemo<NotificationSettingsSection[]>(
     () => [
@@ -113,28 +122,22 @@ export function useNotificationSettings() {
         id: 'insights',
         title: 'Savings & Budget',
         icon: 'analytics-outline',
-        items: NOTIFICATION_PREFERENCE_ITEMS.filter(
-          (item) => item.section === 'insights',
-        ),
+        items: preferenceItems.filter((item) => item.section === 'insights'),
       },
       {
         id: 'vaults',
         title: 'Vaults',
         icon: 'shield-outline',
-        items: NOTIFICATION_PREFERENCE_ITEMS.filter(
-          (item) => item.section === 'vaults',
-        ),
+        items: preferenceItems.filter((item) => item.section === 'vaults'),
       },
       {
         id: 'general',
         title: 'General',
         icon: 'mail-outline',
-        items: NOTIFICATION_PREFERENCE_ITEMS.filter(
-          (item) => item.section === 'general',
-        ),
+        items: preferenceItems.filter((item) => item.section === 'general'),
       },
     ],
-    [],
+    [preferenceItems],
   );
 
   const togglePreference = useCallback((key: NotificationPreferenceKey) => {

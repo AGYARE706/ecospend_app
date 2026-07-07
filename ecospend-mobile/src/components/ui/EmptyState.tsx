@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import AppButton from './AppButton';
 import { Icon } from './icons';
 import type { IconName } from './icons';
@@ -29,6 +30,8 @@ export default function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.medallion}>
@@ -54,7 +57,8 @@ export default function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',

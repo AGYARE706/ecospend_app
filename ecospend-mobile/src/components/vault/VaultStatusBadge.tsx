@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useTheme } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { VaultStatus } from '../../types/vault';
 import type { VaultThemeColors } from './vaultTheme';
 
@@ -9,52 +10,49 @@ export interface VaultStatusBadgeProps {
   theme: VaultThemeColors;
 }
 
-const statusConfig: Record<
-  VaultStatus,
-  { label: string; background: string; text: string }
-> = {
+const getStatusConfig = (
+  colors: ThemeColors,
+): Record<VaultStatus, { label: string; background: string; text: string }> => ({
   active: {
     label: 'Active',
     background: 'rgba(46, 125, 50, 0.14)',
-    text: '#2E7D32',
+    text: colors.healthy,
   },
   locked: {
     label: 'Locked',
     background: 'rgba(230, 81, 0, 0.14)',
-    text: '#E65100',
+    text: colors.warning,
   },
   matured: {
     label: 'Matured',
     background: 'rgba(106, 27, 154, 0.14)',
-    text: '#6A1B9A',
+    text: colors.purple,
   },
   pending: {
     label: 'Pending',
     background: 'rgba(21, 101, 192, 0.14)',
-    text: '#1565C0',
+    text: colors.blue,
   },
   withdrawn: {
     label: 'Withdrawn',
     background: colors.chipBg,
     text: colors.textGrey,
   },
-};
+});
 
 export default function VaultStatusBadge({
   status,
   theme,
 }: VaultStatusBadgeProps) {
-  const config = statusConfig[status];
+  const { colors, isDark } = useTheme();
+  const config = getStatusConfig(colors)[status];
 
   return (
     <View
       style={[
         styles.badge,
         {
-          backgroundColor:
-            theme.background === '#0B1220'
-              ? `${config.text}22`
-              : config.background,
+          backgroundColor: isDark ? `${config.text}22` : config.background,
         },
       ]}
     >

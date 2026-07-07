@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, LayoutChangeEvent, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { EnvelopeStatus } from '../../types';
 import { getStatusColor } from '../../utils/envelopes';
 
@@ -17,11 +18,13 @@ export default function EnvelopeProgressBar({
   percent,
   status,
 }: EnvelopeProgressBarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const fillAnim = useRef(new Animated.Value(0)).current;
   const glowOpacity = useRef(new Animated.Value(1)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
-  const fillColor = getStatusColor(status);
+  const fillColor = getStatusColor(status, colors);
   const isExhausted = status === 'exhausted';
 
   useEffect(() => {
@@ -86,7 +89,8 @@ export default function EnvelopeProgressBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     width: '100%',
   },

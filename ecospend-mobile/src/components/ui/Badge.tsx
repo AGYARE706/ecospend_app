@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useTheme } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { Icon } from './icons';
 import type { IconName } from './icons';
 
@@ -19,7 +20,9 @@ export interface BadgeProps {
   style?: ViewStyle;
 }
 
-const TONES: Record<BadgeTone, { fg: string; bg: string; solidBg: string }> = {
+const getTones = (
+  colors: ThemeColors,
+): Record<BadgeTone, { fg: string; bg: string; solidBg: string }> => ({
   neutral: { fg: colors.textSecondary, bg: colors.chipBg, solidBg: colors.textSecondary },
   primary: { fg: colors.primary, bg: colors.primaryBackground, solidBg: colors.primary },
   success: { fg: colors.successStrong, bg: colors.successLight, solidBg: colors.success },
@@ -27,7 +30,7 @@ const TONES: Record<BadgeTone, { fg: string; bg: string; solidBg: string }> = {
   error: { fg: colors.errorStrong, bg: colors.errorLight, solidBg: colors.error },
   info: { fg: colors.blue, bg: colors.blueLight, solidBg: colors.blue },
   gold: { fg: colors.gold, bg: colors.goldLight, solidBg: colors.gold },
-};
+});
 
 export default function Badge({
   label,
@@ -37,7 +40,8 @@ export default function Badge({
   size = 'md',
   style,
 }: BadgeProps) {
-  const t = TONES[tone];
+  const { colors } = useTheme();
+  const t = getTones(colors)[tone];
   const fg = solid ? colors.onPrimary : t.fg;
   const isSm = size === 'sm';
 

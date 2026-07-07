@@ -29,13 +29,15 @@ import {
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   cardShadow,
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 if (
   Platform.OS === 'android' &&
@@ -50,6 +52,8 @@ type HelpSupportNavProp = StackNavigationProp<
 >;
 
 export default function HelpSupportScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<HelpSupportNavProp>();
   const {
     faqItems,
@@ -178,6 +182,8 @@ export default function HelpSupportScreen() {
 }
 
 function HeroCard({ supportEmail }: { supportEmail: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <LinearGradient
       colors={[colors.primary, colors.primaryDark]}
@@ -211,6 +217,8 @@ function FaqAccordionItem({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const rotation = useRef(new Animated.Value(expanded ? 1 : 0)).current;
 
   useEffect(() => {
@@ -263,6 +271,8 @@ function SupportLinkRow({
   link: SupportLinkItem;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -301,6 +311,7 @@ function ReportIssueSheet({
   onClose: () => void;
   onSubmit: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -353,6 +364,7 @@ function LegalDocumentSheet({
   content: string;
   onClose: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -379,6 +391,8 @@ function SectionLabel({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionLabel}>
       <View style={styles.sectionIconBadge}>
@@ -389,7 +403,8 @@ function SectionLabel({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -521,7 +536,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   faqCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -565,7 +580,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   linksCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -628,7 +643,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   sheet: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     paddingBottom: spacing.xl,
@@ -637,7 +652,7 @@ const styles = StyleSheet.create({
     ...shadowMd,
   },
   sheetLarge: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     maxHeight: '82%',

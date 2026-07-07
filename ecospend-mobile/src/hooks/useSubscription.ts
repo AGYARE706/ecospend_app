@@ -2,8 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
-import { colors } from '../theme';
 
 export const PLUS_ANNUAL_PRICE = 36;
 
@@ -26,6 +26,7 @@ export interface PlanComparisonRow {
 
 export function useSubscription() {
   const { tier, upgradeToPlus } = useAuth();
+  const { colors } = useTheme();
   const [isUpgrading, setIsUpgrading] = useState(false);
 
   const isPlus = tier === 'PLUS';
@@ -45,8 +46,8 @@ export function useSubscription() {
         title: 'Group Vaults',
         description: 'Save together with friends, family, or your chama.',
         icon: 'people-outline',
-        iconColor: '#6A1B9A',
-        iconBackground: '#F3E5F5',
+        iconColor: colors.purple,
+        iconBackground: colors.purpleLight,
       },
       {
         id: 'priority-notifications',
@@ -65,7 +66,7 @@ export function useSubscription() {
         iconBackground: colors.warningLight,
       },
     ],
-    [],
+    [colors],
   );
 
   const comparisonRows = useMemo<PlanComparisonRow[]>(

@@ -3,7 +3,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
-import { colors, palette, radius, shadowBrand, spacing, typography } from '../../theme';
+import {
+  palette,
+  radius,
+  shadowBrand,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Hero balance card — the focal point of the dashboard. A deep emerald
@@ -16,6 +25,8 @@ export interface BalanceCardProps {
 }
 
 export default function BalanceCard({ balance, income, expense }: BalanceCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.shadowWrap}>
       <LinearGradient
@@ -71,7 +82,8 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   shadowWrap: {
     borderRadius: radius.heroCard,
     marginBottom: spacing.lg,

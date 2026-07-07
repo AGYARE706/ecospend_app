@@ -2,7 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * providerFee — calculated provider fee amount
@@ -17,6 +18,8 @@ export default function MoMoFeePreview({
   providerFee,
   totalCost,
 }: MoMoFeePreviewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.icon}>
@@ -36,7 +39,8 @@ export default function MoMoFeePreview({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'flex-start',
     backgroundColor: colors.warningLight,

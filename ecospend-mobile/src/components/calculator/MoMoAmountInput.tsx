@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Calculator-style amount input with large display typography and green underline.
@@ -12,6 +13,8 @@ export interface MoMoAmountInputProps {
 }
 
 export default function MoMoAmountInput({ value, onChangeText }: MoMoAmountInputProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -39,7 +42,8 @@ export default function MoMoAmountInput({ value, onChangeText }: MoMoAmountInput
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     marginBottom: spacing.md,

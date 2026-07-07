@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 
-import { colors, radius, shadowXs, spacing } from '../../theme';
+import { radius, shadowXs, spacing, useTheme } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { Icon } from './icons';
 import type { IconName } from './icons';
 
@@ -38,6 +39,7 @@ export default function IconButton({
   disabled = false,
   style,
 }: IconButtonProps) {
+  const { colors } = useTheme();
   const dims = DIMS[size];
   const iconColor = color ?? (variant === 'solid' ? colors.onPrimary : colors.textDark);
 
@@ -52,7 +54,7 @@ export default function IconButton({
       style={({ pressed }) => [
         styles.base,
         { width: dims.box, height: dims.box, borderRadius: dims.box / 2.6 },
-        variantStyle[variant],
+        getVariantStyle(colors)[variant],
         variant === 'soft' && shadowXs,
         pressed && styles.pressed,
         disabled && styles.disabled,
@@ -64,12 +66,18 @@ export default function IconButton({
   );
 }
 
-const variantStyle: Record<NonNullable<IconButtonProps['variant']>, ViewStyle> = {
-  soft: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.borderSubtle },
+const getVariantStyle = (
+  colors: ThemeColors,
+): Record<NonNullable<IconButtonProps['variant']>, ViewStyle> => ({
+  soft: {
+    backgroundColor: colors.cardBackground,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+  },
   ghost: { backgroundColor: 'transparent' },
   solid: { backgroundColor: colors.primary },
   outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border },
-};
+});
 
 const styles = StyleSheet.create({
   base: {

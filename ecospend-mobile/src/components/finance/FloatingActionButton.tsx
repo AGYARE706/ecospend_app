@@ -2,7 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Icon } from '../ui/icons';
-import { palette, radius, shadowBrand, spacing } from '../../theme';
+import { palette, radius, shadowBrand, spacing, useTheme } from '../../theme';
 
 /**
  * Floating action button for primary add actions — a gradient pill with a
@@ -13,6 +13,7 @@ export interface FloatingActionButtonProps {
 }
 
 export default function FloatingActionButton({ onPress }: FloatingActionButtonProps) {
+  const { colors } = useTheme();
   return (
     <Pressable
       style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}
@@ -26,7 +27,7 @@ export default function FloatingActionButton({ onPress }: FloatingActionButtonPr
         end={{ x: 1, y: 1 }}
         style={styles.button}
       >
-        <Icon name="plus" size={28} color="#FFFFFF" strokeWidth={2.4} />
+        <Icon name="plus" size={28} color={colors.onPrimary} strokeWidth={2.4} />
       </LinearGradient>
     </Pressable>
   );

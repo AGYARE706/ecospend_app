@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Fixed top toast for budget envelope success messages.
@@ -10,6 +11,7 @@ export interface EnvelopeToastProps {
 }
 
 export default function EnvelopeToast({ message }: EnvelopeToastProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.message}>{message}</Text>
@@ -17,7 +19,8 @@ export default function EnvelopeToast({ message }: EnvelopeToastProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     backgroundColor: colors.successLight,
     borderRadius: radius.md,

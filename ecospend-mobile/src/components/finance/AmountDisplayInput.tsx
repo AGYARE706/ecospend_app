@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * value — raw amount string entered by the user
@@ -19,6 +20,8 @@ export default function AmountDisplayInput({
   onChangeText,
   error,
 }: AmountDisplayInputProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -47,7 +50,8 @@ export default function AmountDisplayInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     marginBottom: spacing.lg,

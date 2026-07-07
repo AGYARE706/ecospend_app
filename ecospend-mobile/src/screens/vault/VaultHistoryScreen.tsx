@@ -20,14 +20,16 @@ import {
 import { navigateApp } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { Vault, VaultStatus } from '../../types/vault';
 import { formatVaultDate, getVaultProgress } from '../../utils/vault';
 
@@ -62,7 +64,7 @@ type StatusConfig = {
   icon: keyof typeof Ionicons.glyphMap;
 };
 
-function statusConfig(status: VaultStatus): StatusConfig {
+function statusConfig(status: VaultStatus, colors: ThemeColors): StatusConfig {
   switch (status) {
     case 'active':
       return { label: 'Active', color: colors.success, bg: colors.successLight, icon: 'trending-up' };
@@ -81,6 +83,8 @@ function statusConfig(status: VaultStatus): StatusConfig {
 export default function VaultHistoryScreen({
   navigation,
 }: VaultHistoryScreenProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     filteredVaults,
     summary,
@@ -233,6 +237,8 @@ function SummaryBar({
   totalSaved: number;
   totalFeesPaid: number;
 }) {
+  const summaryStyles = useThemedStyles(createSummaryStyles);
+  const { colors } = useTheme();
   return (
     <LinearGradient
       colors={[colors.primaryDark, colors.primary]}
@@ -276,6 +282,7 @@ function SummaryMetric({
   label: string;
   value: string;
 }) {
+  const summaryStyles = useThemedStyles(createSummaryStyles);
   return (
     <View style={summaryStyles.metric}>
       <Ionicons name={icon} size={14} color="rgba(255,255,255,0.7)" />
@@ -285,7 +292,8 @@ function SummaryMetric({
   );
 }
 
-const summaryStyles = StyleSheet.create({
+const createSummaryStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.heroCard,
     marginBottom: spacing.md,
@@ -349,6 +357,7 @@ function FilterChip({
   selected: boolean;
   onPress: () => void;
 }) {
+  const chipStyles = useThemedStyles(createChipStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -376,10 +385,11 @@ function FilterChip({
   );
 }
 
-const chipStyles = StyleSheet.create({
+const createChipStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   chip: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.full,
     borderWidth: 1.5,
@@ -440,7 +450,9 @@ function VaultHistoryCard({
   onPress: () => void;
   onWithdraw?: () => void;
 }) {
-  const cfg = statusConfig(vault.status);
+  const cardStyles = useThemedStyles(createCardStyles);
+  const { colors } = useTheme();
+  const cfg = statusConfig(vault.status, colors);
   const progress = getVaultProgress(vault);
   const totalContributed = vault.contributions.reduce(
     (sum, c) => sum + c.amount,
@@ -602,6 +614,8 @@ function DetailCell({
   value: string;
   valueColor?: string;
 }) {
+  const detailStyles = useThemedStyles(createDetailStyles);
+  const { colors } = useTheme();
   return (
     <View style={detailStyles.cell}>
       <View style={detailStyles.iconRow}>
@@ -618,7 +632,8 @@ function DetailCell({
   );
 }
 
-const detailStyles = StyleSheet.create({
+const createDetailStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   cell: {
     flex: 1,
   },
@@ -641,9 +656,10 @@ const detailStyles = StyleSheet.create({
   },
 });
 
-const cardStyles = StyleSheet.create({
+const createCardStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -803,6 +819,8 @@ function EmptyState({
   isFiltered: boolean;
   onReset: () => void;
 }) {
+  const emptyStyles = useThemedStyles(createEmptyStyles);
+  const { colors } = useTheme();
   return (
     <View style={emptyStyles.container}>
       <View style={emptyStyles.iconRing}>
@@ -831,7 +849,8 @@ function EmptyState({
   );
 }
 
-const emptyStyles = StyleSheet.create({
+const createEmptyStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingVertical: spacing.xxl,
@@ -876,13 +895,14 @@ const emptyStyles = StyleSheet.create({
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -926,7 +946,7 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.full,
     borderWidth: 1.5,

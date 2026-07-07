@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 
-import { colors } from '../theme';
+import type { ThemeColors } from '../theme';
 import type {
   AppNotification,
   NotificationGroupKey,
@@ -83,7 +83,10 @@ export interface NotificationVisual {
   accentColor: string;
 }
 
-export function getNotificationVisual(type: NotificationType): NotificationVisual {
+export function getNotificationVisual(
+  type: NotificationType,
+  colors: ThemeColors,
+): NotificationVisual {
   switch (type) {
     case 'vault_matured':
       return {
@@ -116,9 +119,9 @@ export function getNotificationVisual(type: NotificationType): NotificationVisua
     case 'group_vault_vote':
       return {
         icon: 'people-outline',
-        iconColor: '#6A1B9A',
-        iconBackground: '#F3E5F5',
-        accentColor: '#6A1B9A',
+        iconColor: colors.purple,
+        iconBackground: colors.purpleLight,
+        accentColor: colors.purple,
       };
     default:
       return {

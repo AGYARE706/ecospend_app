@@ -1,7 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { PROVIDERS } from '../../constants/categories';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { Provider } from '../../types';
 
 /**
@@ -17,6 +18,7 @@ export default function ProviderChipRow({
   selectedProvider,
   onSelect,
 }: ProviderChipRowProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView
       horizontal
@@ -47,7 +49,8 @@ export default function ProviderChipRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     gap: spacing.sm,
     marginBottom: spacing.md,

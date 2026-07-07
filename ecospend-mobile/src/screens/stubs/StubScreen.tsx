@@ -1,13 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import { colors, fontSize, fontWeight } from '../../theme';
+import { fontSize, fontWeight, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 interface StubScreenProps {
   title: string;
 }
 
 export default function StubScreen({ title }: StubScreenProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <ScreenWrapper background="page">
       <View style={styles.container}>
@@ -17,7 +19,8 @@ export default function StubScreen({ title }: StubScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     flex: 1,

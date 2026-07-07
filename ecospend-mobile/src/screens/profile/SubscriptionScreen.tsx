@@ -15,14 +15,16 @@ import {
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   cardShadow,
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type SubscriptionNavProp = StackNavigationProp<
   ProfileStackParamList,
@@ -30,6 +32,8 @@ type SubscriptionNavProp = StackNavigationProp<
 >;
 
 export default function SubscriptionScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<SubscriptionNavProp>();
   const {
     isPlus,
@@ -150,10 +154,12 @@ function CurrentPlanCard({
   planTitle: string;
   planSubtitle: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (isPlus) {
     return (
       <LinearGradient
-        colors={['#1B5E20', '#2E7D32', '#0D9488']}
+        colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.planCardGradient}
@@ -193,6 +199,7 @@ function CurrentPlanCard({
 }
 
 function BenefitCard({ benefit }: { benefit: SubscriptionBenefit }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.benefitCard}>
       <View style={[styles.benefitIcon, { backgroundColor: benefit.iconBackground }]}>
@@ -213,6 +220,8 @@ function PricingCard({
   monthlyEquivalent: string;
   isPlus: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.pricingCard}>
       <LinearGradient
@@ -263,6 +272,8 @@ function PricingPerk({
   icon: keyof typeof Ionicons.glyphMap;
   text: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.pricingPerkRow}>
       <Ionicons name={icon} size={16} color={colors.primary} />
@@ -272,6 +283,8 @@ function PricingPerk({
 }
 
 function ComparisonTable({ rows }: { rows: PlanComparisonRow[] }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.comparisonCard}>
       <View style={styles.comparisonHeader}>
@@ -321,6 +334,8 @@ function ComparisonCell({
   highlight?: boolean;
   muted?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (label === 'Basic' || label === 'Full') {
     return (
       <View style={styles.comparisonCell}>
@@ -363,6 +378,8 @@ function SectionLabel({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionLabel}>
       <View style={styles.sectionIconBadge}>
@@ -373,7 +390,8 @@ function SectionLabel({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -461,7 +479,7 @@ const styles = StyleSheet.create({
     width: 120,
   },
   planCardFree: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.heroCard,
     borderWidth: 1,
@@ -562,7 +580,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   benefitCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -677,7 +695,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   comparisonCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -757,7 +775,7 @@ const styles = StyleSheet.create({
     height: 140,
   },
   footer: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
     paddingBottom: spacing.lg,

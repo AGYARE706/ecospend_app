@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '../../components/ui/icons';
 import type { IconName } from '../../components/ui/icons';
-import { colors, fontWeight, shadowSm } from '../../theme';
+import { fontWeight, shadowSm, useTheme } from '../../theme';
 import type { TabParamList } from '../types';
 import DashboardStack from './stacks/DashboardStack';
 import GoalsStack from './stacks/GoalsStack';
@@ -31,6 +31,7 @@ const tabLabels: Record<keyof TabParamList, string> = {
 };
 
 export default function TabNavigator() {
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   // Reserve room for the system gesture/nav bar so tab items never sit under it.
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 28 : 10);
@@ -42,7 +43,7 @@ export default function TabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textGrey,
         tabBarStyle: {
-          backgroundColor: colors.white,
+          backgroundColor: colors.cardBackground,
           borderTopColor: colors.borderSubtle,
           borderTopWidth: 1,
           height: 58 + bottomInset,

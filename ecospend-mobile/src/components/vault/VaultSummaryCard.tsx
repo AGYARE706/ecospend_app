@@ -5,7 +5,15 @@ import { Icon } from '../ui/icons';
 import GhsText from '../ui/GhsText';
 import type { VaultSummary } from '../../types/vault';
 import { formatVaultDate } from '../../utils/vault';
-import { colors, radius, shadowMd, spacing, typography } from '../../theme';
+import {
+  radius,
+  shadowMd,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { VaultThemeColors } from './vaultTheme';
 
 export interface VaultSummaryCardProps {
@@ -17,6 +25,8 @@ export default function VaultSummaryCard({
   summary,
   theme,
 }: VaultSummaryCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <LinearGradient
       colors={[...theme.heroGradient]}
@@ -65,7 +75,8 @@ export default function VaultSummaryCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.heroCard,
     marginBottom: spacing.lg,

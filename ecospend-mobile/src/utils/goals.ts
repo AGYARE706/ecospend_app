@@ -1,4 +1,4 @@
-import { colors } from '../theme';
+import type { ThemeColors } from '../theme';
 import type { GoalColorKey, SavingsGoal } from '../types';
 
 export type DeadlineBadgeType =
@@ -98,7 +98,7 @@ export function formatCompletedDate(isoDate: string): string {
   });
 }
 
-export function getGoalAccentColors(colorKey: GoalColorKey): {
+export function getGoalAccentColors(colorKey: GoalColorKey, colors: ThemeColors): {
   background: string;
   accent: string;
 } {

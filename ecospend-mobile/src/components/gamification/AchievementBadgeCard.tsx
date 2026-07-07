@@ -3,7 +3,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import type { AchievementProgress } from '../../types/achievement';
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  cardShadow,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 export interface AchievementBadgeCardProps {
   achievement: AchievementProgress;
@@ -14,6 +23,8 @@ export default function AchievementBadgeCard({
   achievement,
   locked = false,
 }: AchievementBadgeCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isLocked = locked || !achievement.unlocked;
   const progressLabel = isLocked
     ? `${achievement.current} / ${achievement.target}`
@@ -111,6 +122,8 @@ export function StreakHeroCard({
   consistencyLabel: string;
   nextMilestone: number;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const milestoneProgress = Math.min(
     Math.round((daysActive / nextMilestone) * 100),
     100,
@@ -118,7 +131,7 @@ export function StreakHeroCard({
 
   return (
     <LinearGradient
-      colors={['#FF6F00', '#F57F17', '#E65100']}
+      colors={[colors.streakGradientStart, colors.streakGradientMid, colors.streakGradientEnd]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.streakCard}
@@ -162,7 +175,8 @@ export function StreakHeroCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.card,
     borderWidth: 1,
@@ -172,10 +186,10 @@ const styles = StyleSheet.create({
     ...cardShadow,
   },
   cardUnlocked: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
   },
   cardLocked: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.surfaceSunken,
     borderColor: colors.borderSubtle,
   },
   shine: {
@@ -206,7 +220,7 @@ const styles = StyleSheet.create({
   lockBadge: {
     alignItems: 'center',
     backgroundColor: colors.textMuted,
-    borderColor: colors.white,
+    borderColor: colors.cardBackground,
     borderRadius: radius.full,
     borderWidth: 2,
     bottom: -2,
@@ -218,7 +232,7 @@ const styles = StyleSheet.create({
   },
   earnedBadge: {
     alignItems: 'center',
-    borderColor: colors.white,
+    borderColor: colors.cardBackground,
     borderRadius: radius.full,
     borderWidth: 2,
     bottom: -2,

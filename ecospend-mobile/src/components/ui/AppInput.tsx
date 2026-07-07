@@ -8,7 +8,15 @@ import {
   View,
 } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { Icon } from './icons';
 import type { IconName } from './icons';
 
@@ -58,6 +66,8 @@ export default function AppInput({
   multiline = false,
   numberOfLines = 1,
 }: AppInputProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -73,7 +83,7 @@ export default function AppInput({
   return (
     <View style={styles.container}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <View style={[styles.inputWrapper, wrapperState[state]]}>
+      <View style={[styles.inputWrapper, getWrapperState(colors)[state]]}>
         {leadingIcon ? (
           <Icon
             name={leadingIcon}
@@ -137,17 +147,19 @@ export default function AppInput({
   );
 }
 
-const wrapperState = {
-  default: { borderColor: colors.border },
-  focused: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySubtle,
-  },
-  error: { borderColor: colors.error, backgroundColor: colors.errorLight },
-  success: { borderColor: colors.success },
-} as const;
+const getWrapperState = (colors: ThemeColors) =>
+  ({
+    default: { borderColor: colors.border },
+    focused: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primarySubtle,
+    },
+    error: { borderColor: colors.error, backgroundColor: colors.errorLight },
+    success: { borderColor: colors.success },
+  }) as const;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     width: '100%',
   },
@@ -159,7 +171,7 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.input,
     borderWidth: 1.5,
     flexDirection: 'row',

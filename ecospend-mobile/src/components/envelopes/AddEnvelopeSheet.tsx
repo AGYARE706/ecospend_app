@@ -7,7 +7,8 @@ import AppButton from '../ui/AppButton';
 import EnvelopePreviewCard from './EnvelopePreviewCard';
 import EnvelopeSheetContainer from './EnvelopeSheetContainer';
 import { CATEGORY_CONFIG } from '../../constants/categories';
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type {
   AddEnvelopePayload,
   EnvelopeFormErrors,
@@ -32,6 +33,7 @@ export default function AddEnvelopeSheet({
   onClose,
   onSave,
 }: AddEnvelopeSheetProps) {
+  const styles = useThemedStyles(createStyles);
   const [selectedCategory, setSelectedCategory] = useState<TransactionCategory | null>(
     null,
   );
@@ -140,7 +142,8 @@ export default function AddEnvelopeSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   title: {
     color: colors.textDark,
     fontSize: fontSize.xl,

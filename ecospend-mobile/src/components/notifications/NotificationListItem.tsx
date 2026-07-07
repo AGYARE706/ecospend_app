@@ -8,7 +8,16 @@ import {
   getNotificationVisual,
 } from '../../utils/notifications';
 import type { AppNotification } from '../../types/notification';
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  cardShadow,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 export interface NotificationListItemProps {
   notification: AppNotification;
@@ -21,7 +30,9 @@ export default function NotificationListItem({
   onPress,
   onDismiss,
 }: NotificationListItemProps) {
-  const visual = getNotificationVisual(notification.type);
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const visual = getNotificationVisual(notification.type, colors);
   const typeLabel = getNotificationTypeLabel(notification.type);
   const timeLabel = formatNotificationTime(notification.createdAt);
 
@@ -74,6 +85,8 @@ export default function NotificationListItem({
 }
 
 function DismissAction({ onDismiss }: { onDismiss: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onDismiss}
@@ -85,9 +98,10 @@ function DismissAction({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -96,7 +110,7 @@ const styles = StyleSheet.create({
     ...cardShadow,
   },
   cardUnread: {
-    backgroundColor: '#FAFCFA',
+    backgroundColor: colors.primarySubtle,
     borderColor: `${colors.primary}22`,
   },
   cardPressed: {
