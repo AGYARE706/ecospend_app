@@ -22,14 +22,16 @@ import {
 } from '../../hooks/useCreateVault';
 import type { AppStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CreateVaultNavigationProp = StackNavigationProp<
@@ -45,6 +47,8 @@ interface CreateVaultScreenProps {
 export default function CreateVaultScreen({
   navigation,
 }: CreateVaultScreenProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     form,
     errors,
@@ -97,7 +101,7 @@ export default function CreateVaultScreen({
         >
           {/* ─── Educational Banner ────────────────────────────────── */}
           <LinearGradient
-            colors={[colors.primary, '#0D9488']}
+            colors={[colors.primary, colors.tealDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.banner}
@@ -272,6 +276,8 @@ function SectionLabel({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const labelStyles = useThemedStyles(createLabelStyles);
+  const { colors } = useTheme();
   return (
     <View style={labelStyles.row}>
       <Ionicons name={icon} size={15} color={colors.primary} />
@@ -280,7 +286,8 @@ function SectionLabel({
   );
 }
 
-const labelStyles = StyleSheet.create({
+const createLabelStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -308,6 +315,7 @@ function DatePresetChip({
   selected: boolean;
   onSelect: (key: DatePreset) => void;
 }) {
+  const chipStyles = useThemedStyles(createChipStyles);
   return (
     <Pressable
       onPress={() => onSelect(preset.key)}
@@ -329,7 +337,8 @@ function DatePresetChip({
   );
 }
 
-const chipStyles = StyleSheet.create({
+const createChipStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   chip: {
     backgroundColor: colors.chipBg,
     borderRadius: radius.full,
@@ -384,6 +393,8 @@ function FeeRow({
   locked: number;
   highlight: 'success' | 'warning';
 }) {
+  const feeRowStyles = useThemedStyles(createFeeRowStyles);
+  const { colors } = useTheme();
   const bgColor =
     highlight === 'success' ? colors.successLight : colors.warningLight;
   const textColor =
@@ -417,7 +428,8 @@ function FeeRow({
   );
 }
 
-const feeRowStyles = StyleSheet.create({
+const createFeeRowStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -485,6 +497,8 @@ function VaultSummaryPreview({
   daysRemaining: number;
   netWithdrawal: number;
 }) {
+  const summaryStyles = useThemedStyles(createSummaryStyles);
+  const { colors } = useTheme();
   const progress =
     targetAmount > 0
       ? Math.min(100, Math.round((lockedAmount / targetAmount) * 100))
@@ -560,6 +574,7 @@ function MetaItem({
   label: string;
   value: string;
 }) {
+  const metaItemStyles = useThemedStyles(createMetaItemStyles);
   return (
     <View style={metaItemStyles.container}>
       <Ionicons name={icon} size={13} color="rgba(255,255,255,0.7)" />
@@ -569,7 +584,8 @@ function MetaItem({
   );
 }
 
-const metaItemStyles = StyleSheet.create({
+const createMetaItemStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -589,7 +605,8 @@ const metaItemStyles = StyleSheet.create({
   },
 });
 
-const summaryStyles = StyleSheet.create({
+const createSummaryStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.heroCard,
     overflow: 'hidden',
@@ -682,13 +699,14 @@ const summaryStyles = StyleSheet.create({
 });
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -873,7 +891,7 @@ const styles = StyleSheet.create({
     height: spacing.xl,
   },
   stickyFooter: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
     paddingBottom: spacing.lg,

@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '../../theme';
+import { spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * background — screen background color variant ('white' or 'page')
@@ -32,6 +33,7 @@ export default function ScreenWrapper({
   padded = true,
   children,
 }: ScreenWrapperProps) {
+  const styles = useThemedStyles(createStyles);
   const scrollView = scrollable ? (
     <ScrollView
       contentContainerStyle={[
@@ -76,12 +78,13 @@ export default function ScreenWrapper({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
   },
   containerWhite: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
   },
   containerPage: {
     backgroundColor: colors.pageBackground,

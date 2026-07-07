@@ -1,6 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, shadowXs, spacing, typography } from '../../theme';
+import {
+  radius,
+  shadowXs,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { Icon } from '../ui/icons';
 import type { IconName } from '../ui/icons';
 
@@ -17,13 +25,15 @@ export interface QuickActionRowProps {
   onMorePress?: () => void;
 }
 
-const ACTIONS: {
+const getActions = (
+  colors: ThemeColors,
+): {
   key: QuickActionKey;
   label: string;
   icon: IconName;
   tint: string;
   bg: string;
-}[] = [
+}[] => [
   { key: 'add', label: 'Add', icon: 'plus', tint: colors.primary, bg: colors.primaryBackground },
   { key: 'transfer', label: 'Transfer', icon: 'transfer', tint: colors.accent, bg: colors.accentLight },
   { key: 'goals', label: 'Goals', icon: 'flag', tint: colors.gold, bg: colors.goldLight },
@@ -36,6 +46,8 @@ export default function QuickActionRow({
   onTransferPress,
   onMorePress,
 }: QuickActionRowProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const handlers: Record<QuickActionKey, () => void> = {
     add: onAddPress,
     transfer: onTransferPress ?? (() => undefined),
@@ -45,7 +57,7 @@ export default function QuickActionRow({
 
   return (
     <View style={styles.container}>
-      {ACTIONS.map((action) => (
+      {getActions(colors).map((action) => (
         <Pressable
           key={action.key}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
@@ -65,7 +77,8 @@ export default function QuickActionRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flexDirection: 'row',
     gap: spacing.smd,
@@ -73,7 +86,7 @@ const styles = StyleSheet.create({
   },
   action: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,

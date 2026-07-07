@@ -1,5 +1,11 @@
-export { colors, palette } from './colors';
-export type { ColorToken } from './colors';
+// NOTE: the legacy static `colors` export is intentionally NOT re-exported
+// here — components must use useTheme()/useThemedStyles() so they react to
+// the Light/Dark/System toggle.
+export { darkColors, lightColors, palette } from './colors';
+export type { ColorToken, ThemeColors } from './colors';
+export { useThemedStyles } from './useThemedStyles';
+export { useTheme, ThemeProvider } from '../context/ThemeContext';
+export type { ThemeMode, ResolvedScheme } from '../context/ThemeContext';
 export { spacing } from './spacing';
 export {
   fontSize,

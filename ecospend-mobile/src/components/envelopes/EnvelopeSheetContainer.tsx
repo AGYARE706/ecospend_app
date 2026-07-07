@@ -9,7 +9,8 @@ import {
   View,
 } from 'react-native';
 
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Shared modal shell for envelope bottom sheets with overlay and keyboard handling.
@@ -25,6 +26,7 @@ export default function EnvelopeSheetContainer({
   onClose,
   children,
 }: EnvelopeSheetContainerProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal
       visible={visible}
@@ -57,7 +59,8 @@ export default function EnvelopeSheetContainer({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -70,7 +73,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     maxHeight: '90%',

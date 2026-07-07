@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight } from '../../theme';
+import { fontSize, fontWeight, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * name — full name used to derive initials
@@ -18,6 +19,7 @@ function getInitials(name: string): string {
 }
 
 export default function AvatarInitials({ name }: AvatarInitialsProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.initials}>{getInitials(name)}</Text>
@@ -25,7 +27,8 @@ export default function AvatarInitials({ name }: AvatarInitialsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     backgroundColor: colors.primary,

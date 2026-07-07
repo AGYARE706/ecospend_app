@@ -7,7 +7,8 @@ import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useRegister } from '../../hooks/useRegister';
 import type { AuthStackParamList } from '../../navigation/types';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type RegisterScreenNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -19,6 +20,7 @@ interface RegisterScreenProps {
 }
 
 export default function RegisterScreen({ navigation }: RegisterScreenProps) {
+  const styles = useThemedStyles(createStyles);
   const {
     name,
     setName,
@@ -115,7 +117,8 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   heading: {
     color: colors.textDark,
     fontSize: fontSize.xxl,

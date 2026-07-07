@@ -17,7 +17,16 @@ import Card from '../../components/ui/Card';
 import { Icon } from '../../components/ui/icons';
 import { GOAL_CATEGORIES } from '../../constants/categories';
 import type { GoalsStackParamList } from '../../navigation/types';
-import { colors, fontSize, fontWeight, radius, spacing, typography } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 
@@ -32,6 +41,8 @@ interface EditGoalFormState {
 }
 
 export default function EditGoalScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
     const { params } = useRoute<EditGoalRouteProp>();
     const navigation = useNavigation();
 
@@ -288,7 +299,8 @@ export default function EditGoalScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: colors.pageBackground,
@@ -313,7 +325,7 @@ const styles = StyleSheet.create({
     },
     iconButton: {
         alignItems: 'center',
-        backgroundColor: colors.white,
+        backgroundColor: colors.cardBackground,
         borderColor: colors.border,
         borderRadius: radius.button,
         borderWidth: 1,
@@ -363,7 +375,7 @@ const styles = StyleSheet.create({
     },
     heroCenter: {
         alignItems: 'center',
-        backgroundColor: colors.white,
+        backgroundColor: colors.cardBackground,
         borderColor: colors.cardBorder,
         borderRadius: 999,
         borderWidth: 1,
@@ -400,7 +412,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.sm,
     },
     textField: {
-        backgroundColor: colors.white,
+        backgroundColor: colors.cardBackground,
         borderColor: colors.border,
         borderRadius: radius.input,
         borderWidth: 1.5,

@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
 import { getCategoryVisual } from '../../constants/categories';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { formatTime } from '../../utils/formatDate';
 import type { Transaction } from '../../types';
 
@@ -24,13 +25,15 @@ export default function TransactionListItem({
   onPress,
   showDivider = false,
 }: TransactionListItemProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const visual = getCategoryVisual(transaction.category);
   const isIncome = transaction.type === 'income';
 
   const content = (
     <View style={styles.row}>
-      <View style={[styles.iconCircle, { backgroundColor: visual.background }]}>
-        <Icon name={visual.icon} size={20} color={visual.tint} strokeWidth={1.9} />
+      <View style={[styles.iconCircle, { backgroundColor: colors[visual.background] }]}>
+        <Icon name={visual.icon} size={20} color={colors[visual.tint]} strokeWidth={1.9} />
         <View
           style={[
             styles.badge,
@@ -90,7 +93,8 @@ export default function TransactionListItem({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   flatRow: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.smd,
@@ -99,7 +103,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSunken,
   },
   cardWrapper: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -120,7 +124,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignItems: 'center',
-    borderColor: colors.white,
+    borderColor: colors.cardBackground,
     borderRadius: radius.full,
     borderWidth: 1.5,
     bottom: -2,

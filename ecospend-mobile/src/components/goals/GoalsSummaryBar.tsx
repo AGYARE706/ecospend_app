@@ -3,7 +3,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
-import { colors, radius, shadowMd, spacing, typography } from '../../theme';
+import {
+  radius,
+  shadowMd,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Summary stat card showing active goal count and total saved amount.
@@ -17,6 +25,8 @@ export default function GoalsSummaryBar({
   activeGoalCount,
   totalSaved,
 }: GoalsSummaryBarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <LinearGradient
       colors={[colors.primary, colors.primaryDark]}
@@ -56,7 +66,8 @@ export default function GoalsSummaryBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.heroCard,
     marginBottom: spacing.lg,

@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { getProgressFillColor } from '../../utils/goals';
 
 /**
@@ -20,6 +28,8 @@ export default function GoalProgressBar({
   forceHighColor = false,
   accentColor,
 }: GoalProgressBarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const fillAnim = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
@@ -69,7 +79,8 @@ export default function GoalProgressBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     width: '100%',
   },

@@ -18,11 +18,22 @@ import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
 import { Icon } from '../../components/ui/icons';
 import type { AppStackParamList } from '../../navigation/types';
-import { colors, fontSize, fontWeight, radius, spacing, typography } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type AddGoalContributionRouteProp = RouteProp<AppStackParamList, 'AddGoalContribution'>;
 
 export default function AddGoalContributionScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
     const { params } = useRoute<AddGoalContributionRouteProp>();
     const navigation = useNavigation();
     const [amount, setAmount] = useState('');
@@ -178,7 +189,8 @@ export default function AddGoalContributionScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: colors.pageBackground,
@@ -208,7 +220,7 @@ const styles = StyleSheet.create({
     },
     iconButton: {
         alignItems: 'center',
-        backgroundColor: colors.white,
+        backgroundColor: colors.cardBackground,
         borderColor: colors.border,
         borderRadius: radius.button,
         borderWidth: 1,
@@ -235,7 +247,7 @@ const styles = StyleSheet.create({
     },
     heroOrbInner: {
         alignItems: 'center',
-        backgroundColor: colors.white,
+        backgroundColor: colors.cardBackground,
         borderColor: colors.primaryBackground,
         borderRadius: 999,
         borderWidth: 1,
@@ -324,7 +336,7 @@ const styles = StyleSheet.create({
     },
     quickChip: {
         alignItems: 'center',
-        backgroundColor: colors.white,
+        backgroundColor: colors.cardBackground,
         borderColor: colors.border,
         borderRadius: radius.full,
         borderWidth: 1,

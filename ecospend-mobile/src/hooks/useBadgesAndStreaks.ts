@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 
-import { ACHIEVEMENT_DEFINITIONS, ACHIEVEMENT_ORDER } from '../constants/achievements';
+import { getAchievementDefinitions, ACHIEVEMENT_ORDER } from '../constants/achievements';
 import { useFinance } from '../context/FinanceContext';
+import { useTheme } from '../context/ThemeContext';
+import type { ThemeColors } from '../theme';
 import { mockGroupVaults } from '../data/mock/groupVaults';
 import { mockSavingsGoals } from '../data/mock/mockData';
 import { mockVaults } from '../data/mock/vaults';
@@ -60,9 +62,11 @@ function getMetricValue(
 
 function buildAchievementProgress(
   metrics: AchievementMetrics,
+  colors: ThemeColors,
 ): AchievementProgress[] {
+  const definitions = getAchievementDefinitions(colors);
   return ACHIEVEMENT_ORDER.map((id) => {
-    const definition = ACHIEVEMENT_DEFINITIONS.find((item) => item.id === id)!;
+    const definition = definitions.find((item) => item.id === id)!;
     const current = getMetricValue(id, metrics);
     const unlocked = current >= definition.target;
     const progressPercent = Math.min(
@@ -103,12 +107,13 @@ function buildStreakStats(metrics: AchievementMetrics): StreakStats {
 
 export function useBadgesAndStreaks(): BadgesAndStreaksData {
   const { transactions } = useFinance();
+  const { colors } = useTheme();
 
   return useMemo(() => {
     const metrics = getAchievementMetrics();
     metrics.transactionsLogged = transactions.length;
 
-    const achievements = buildAchievementProgress(metrics);
+    const achievements = buildAchievementProgress(metrics, colors);
     const unlockedAchievements = achievements.filter((item) => item.unlocked);
     const lockedAchievements = achievements.filter((item) => !item.unlocked);
 
@@ -119,5 +124,5 @@ export function useBadgesAndStreaks(): BadgesAndStreaksData {
       totalAchievements: achievements.length,
       unlockedCount: unlockedAchievements.length,
     };
-  }, [transactions.length]);
+  }, [colors, transactions.length]);
 }

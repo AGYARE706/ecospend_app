@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '../ui/icons';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import {
   getDaysRemaining,
   getDeadlineBadgeType,
@@ -16,6 +17,8 @@ export interface GoalDeadlineBadgeProps {
 }
 
 export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const badgeType = getDeadlineBadgeType(goal);
 
   if (badgeType === 'completed') {
@@ -55,7 +58,8 @@ export default function GoalDeadlineBadge({ goal }: GoalDeadlineBadgeProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   badge: {
     alignItems: 'center',
     borderRadius: radius.full,

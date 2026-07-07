@@ -17,14 +17,16 @@ import { MOCK_SAVE_DELAY_MS } from '../../data/mock/mockData';
 import { mockGroupVaults } from '../../data/mock/groupVaults';
 import type { AppStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { GroupVault } from '../../types/groupVault';
 import { formatVaultDate, getDaysRemaining } from '../../utils/vault';
 
@@ -70,6 +72,8 @@ function progress(vault: GroupVault): number {
 export default function JoinGroupVaultScreen({
   navigation,
 }: JoinGroupVaultScreenProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [rawCode, setRawCode] = useState('');
   const [lookupState, setLookupState] = useState<
     'idle' | 'loading' | 'found' | 'not_found'
@@ -280,6 +284,7 @@ export default function JoinGroupVaultScreen({
 
 // ─── GroupPreviewCard ─────────────────────────────────────────────────────────
 function GroupPreviewCard({ vault }: { vault: GroupVault }) {
+  const previewStyles = useThemedStyles(createPreviewStyles);
   const pct = progress(vault);
   const days = getDaysRemaining(vault.maturityDate);
   const totalContributed = vault.members.length; // used as member count
@@ -414,6 +419,8 @@ function PreviewStatCell({
   value: string;
   large?: boolean;
 }) {
+  const statCellStyles = useThemedStyles(createStatCellStyles);
+  const { colors } = useTheme();
   return (
     <View style={statCellStyles.cell}>
       <Ionicons name={icon} size={14} color={colors.textMuted} />
@@ -429,7 +436,8 @@ function PreviewStatCell({
   );
 }
 
-const statCellStyles = StyleSheet.create({
+const createStatCellStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   cell: {
     alignItems: 'flex-start',
     paddingVertical: spacing.sm,
@@ -452,9 +460,10 @@ const statCellStyles = StyleSheet.create({
   },
 });
 
-const previewStyles = StyleSheet.create({
+const createPreviewStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   wrapper: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -595,6 +604,8 @@ const previewStyles = StyleSheet.create({
 
 // ─── EmptyCodeIllustration ────────────────────────────────────────────────────
 function EmptyCodeIllustration() {
+  const emptyStyles = useThemedStyles(createEmptyStyles);
+  const { colors } = useTheme();
   return (
     <View style={emptyStyles.container}>
       <View style={emptyStyles.outerRing} />
@@ -611,7 +622,8 @@ function EmptyCodeIllustration() {
   );
 }
 
-const emptyStyles = StyleSheet.create({
+const createEmptyStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     flex: 1,
@@ -659,13 +671,14 @@ const emptyStyles = StyleSheet.create({
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -716,7 +729,7 @@ const styles = StyleSheet.create({
   },
   codeInputWrapper: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 2,
@@ -796,7 +809,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   footer: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
     paddingBottom: spacing.lg,

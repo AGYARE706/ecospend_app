@@ -9,14 +9,16 @@ import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useWithdrawVault } from '../../hooks/useWithdrawVault';
 import type { AppStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 type WithdrawRouteProp = RouteProp<AppStackParamList, 'WithdrawVault'>;
@@ -44,6 +46,8 @@ export default function WithdrawVaultScreen({
   route,
   navigation,
 }: WithdrawVaultScreenProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { vaultId } = route.params;
   const {
     vault,
@@ -309,6 +313,8 @@ export default function WithdrawVaultScreen({
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function MaturedBanner() {
+  const bannerStyles = useThemedStyles(createBannerStyles);
+  const { colors } = useTheme();
   return (
     <LinearGradient
       colors={[colors.primaryDark, colors.primary]}
@@ -332,6 +338,8 @@ function MaturedBanner() {
 }
 
 function EarlyWithdrawalBanner({ daysRemaining }: { daysRemaining: number }) {
+  const bannerStyles = useThemedStyles(createBannerStyles);
+  const { colors } = useTheme();
   return (
     <View style={bannerStyles.earlyBase}>
       <View style={bannerStyles.earlyAccent} />
@@ -351,7 +359,8 @@ function EarlyWithdrawalBanner({ daysRemaining }: { daysRemaining: number }) {
   );
 }
 
-const bannerStyles = StyleSheet.create({
+const createBannerStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   base: {
     alignItems: 'center',
     borderRadius: radius.card,
@@ -447,6 +456,8 @@ function SectionLabel({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const labelStyles = useThemedStyles(createLabelStyles);
+  const { colors } = useTheme();
   return (
     <View style={labelStyles.row}>
       <Ionicons name={icon} size={14} color={colors.primary} />
@@ -455,7 +466,8 @@ function SectionLabel({
   );
 }
 
-const labelStyles = StyleSheet.create({
+const createLabelStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -485,6 +497,7 @@ function SummaryItem({
   valueSize?: 'normal' | 'large';
   valueColor?: string;
 }) {
+  const summaryItemStyles = useThemedStyles(createSummaryItemStyles);
   return (
     <View style={summaryItemStyles.container}>
       <Text style={summaryItemStyles.label}>{label}</Text>
@@ -504,7 +517,8 @@ function SummaryItem({
   );
 }
 
-const summaryItemStyles = StyleSheet.create({
+const createSummaryItemStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -543,6 +557,7 @@ function FeeRow({
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
 }) {
+  const feeRowStyles = useThemedStyles(createFeeRowStyles);
   return (
     <View style={feeRowStyles.row}>
       <Text
@@ -576,7 +591,8 @@ function FeeRow({
   );
 }
 
-const feeRowStyles = StyleSheet.create({
+const createFeeRowStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -610,13 +626,14 @@ const feeRowStyles = StyleSheet.create({
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -661,7 +678,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   summaryCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -706,7 +723,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   feeCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -791,7 +808,7 @@ const styles = StyleSheet.create({
   },
   checkboxCard: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1.5,
@@ -856,7 +873,7 @@ const styles = StyleSheet.create({
     height: spacing.xl,
   },
   stickyFooter: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
     paddingBottom: spacing.lg,

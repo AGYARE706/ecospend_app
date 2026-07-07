@@ -9,14 +9,16 @@ import { useGroupVaultDashboard } from '../../hooks/useGroupVaultDashboard';
 import { navigateApp } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { GroupVault, GroupVaultStatus, WithdrawalRequest } from '../../types/groupVault';
 import { getDaysRemaining, formatVaultDate } from '../../utils/vault';
 
@@ -42,7 +44,7 @@ function ghsShort(amount: number): string {
 
 type StatusMeta = { label: string; color: string; bg: string };
 
-function statusMeta(status: GroupVaultStatus): StatusMeta {
+function statusMeta(status: GroupVaultStatus, colors: ThemeColors): StatusMeta {
   switch (status) {
     case 'active':
       return { label: 'Active', color: colors.success, bg: colors.successLight };
@@ -62,6 +64,8 @@ function progress(vault: GroupVault): number {
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function GroupVaultDashboardScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<GroupVaultDashNavProp>();
   const {
     groups,
@@ -217,6 +221,8 @@ function HeaderIconBtn({
   primary?: boolean;
   tooltip?: string;
 }) {
+  const headerBtnStyles = useThemedStyles(createHeaderBtnStyles);
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -240,7 +246,8 @@ function HeaderIconBtn({
   );
 }
 
-const headerBtnStyles = StyleSheet.create({
+const createHeaderBtnStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   btn: {
     alignItems: 'center',
     backgroundColor: colors.chipBg,
@@ -259,7 +266,7 @@ const headerBtnStyles = StyleSheet.create({
   badge: {
     alignItems: 'center',
     backgroundColor: colors.error,
-    borderColor: colors.white,
+    borderColor: colors.cardBackground,
     borderRadius: radius.full,
     borderWidth: 1.5,
     height: 18,
@@ -287,9 +294,11 @@ function GroupSummaryCard({
   activeGroups: number;
   pendingApprovals: number;
 }) {
+  const summaryStyles = useThemedStyles(createSummaryStyles);
+  const { colors } = useTheme();
   return (
     <LinearGradient
-      colors={['#1B5E20', '#2E7D32', '#0D9488']}
+      colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={summaryStyles.card}
@@ -345,12 +354,14 @@ function SummaryMetric({
   value: string;
   highlight?: boolean;
 }) {
+  const summaryStyles = useThemedStyles(createSummaryStyles);
+  const { colors } = useTheme();
   return (
     <View style={summaryStyles.metric}>
       <Ionicons
         name={icon}
         size={14}
-        color={highlight ? colors.warningLight : 'rgba(255,255,255,0.72)'}
+        color={highlight ? colors.progressMid : 'rgba(255,255,255,0.72)'}
       />
       <Text style={summaryStyles.metricLabel}>{label}</Text>
       <Text
@@ -365,7 +376,8 @@ function SummaryMetric({
   );
 }
 
-const summaryStyles = StyleSheet.create({
+const createSummaryStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.heroCard,
     marginBottom: spacing.lg,
@@ -440,7 +452,7 @@ const summaryStyles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   metricValueHighlight: {
-    color: colors.warningLight,
+    color: colors.progressMid,
   },
   metricDivider: {
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -453,20 +465,23 @@ function SectionHeader({
   title,
   icon,
   badge,
-  badgeColor = colors.primary,
+  badgeColor,
 }: {
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
   badge?: number;
   badgeColor?: string;
 }) {
+  const sectionStyles = useThemedStyles(createSectionStyles);
+  const { colors } = useTheme();
+  const resolvedBadgeColor = badgeColor ?? colors.primary;
   return (
     <View style={sectionStyles.row}>
       <Ionicons name={icon} size={16} color={colors.primary} />
       <Text style={sectionStyles.title}>{title}</Text>
       {badge != null ? (
-        <View style={[sectionStyles.badge, { backgroundColor: `${badgeColor}22` }]}>
-          <Text style={[sectionStyles.badgeText, { color: badgeColor }]}>
+        <View style={[sectionStyles.badge, { backgroundColor: `${resolvedBadgeColor}22` }]}>
+          <Text style={[sectionStyles.badgeText, { color: resolvedBadgeColor }]}>
             {badge}
           </Text>
         </View>
@@ -475,7 +490,8 @@ function SectionHeader({
   );
 }
 
-const sectionStyles = StyleSheet.create({
+const createSectionStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -511,8 +527,10 @@ function GroupVaultCard({
   vault: GroupVault;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const gvCardStyles = useThemedStyles(createGvCardStyles);
   const pct = progress(vault);
-  const meta = statusMeta(vault.status);
+  const meta = statusMeta(vault.status, colors);
   const days = getDaysRemaining(vault.maturityDate);
 
   return (
@@ -611,6 +629,7 @@ function MemberAvatarRow({
   members: GroupVault['members'];
   myContribution: number;
 }) {
+  const avatarStyles = useThemedStyles(createAvatarStyles);
   const visible = members.slice(0, 4);
   const overflow = members.length - visible.length;
 
@@ -639,7 +658,8 @@ function MemberAvatarRow({
   );
 }
 
-const avatarStyles = StyleSheet.create({
+const createAvatarStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -648,7 +668,7 @@ const avatarStyles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
     backgroundColor: colors.primary,
-    borderColor: colors.white,
+    borderColor: colors.cardBackground,
     borderRadius: radius.full,
     borderWidth: 2,
     height: 30,
@@ -686,6 +706,8 @@ function MetaChip({
   highlight?: boolean;
   iconColor?: string;
 }) {
+  const metaChipStyles = useThemedStyles(createMetaChipStyles);
+  const { colors } = useTheme();
   return (
     <View
       style={[
@@ -713,7 +735,8 @@ function MetaChip({
   );
 }
 
-const metaChipStyles = StyleSheet.create({
+const createMetaChipStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   chip: {
     alignItems: 'center',
     backgroundColor: colors.chipBg,
@@ -737,9 +760,10 @@ const metaChipStyles = StyleSheet.create({
   },
 });
 
-const gvCardStyles = StyleSheet.create({
+const createGvCardStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -849,6 +873,8 @@ function WithdrawalRequestCard({
   request: WithdrawalRequest;
   onPress: () => void;
 }) {
+  const reqStyles = useThemedStyles(createReqStyles);
+  const { colors } = useTheme();
   const voteProgress = Math.min(
     100,
     Math.round((request.votesFor / request.requiredVotes) * 100),
@@ -959,7 +985,8 @@ function WithdrawalRequestCard({
   );
 }
 
-const reqStyles = StyleSheet.create({
+const createReqStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     backgroundColor: colors.warningLight,
     borderColor: `${colors.warning}40`,
@@ -971,7 +998,7 @@ const reqStyles = StyleSheet.create({
     ...shadowSm,
   },
   cardVoted: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
   },
   cardPressed: {
@@ -1081,7 +1108,7 @@ const reqStyles = StyleSheet.create({
   },
   ctaBtn: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.button,
     flexDirection: 'row',
     flex: 1,
@@ -1126,6 +1153,8 @@ const reqStyles = StyleSheet.create({
 
 // ─── GroupVaultEmptyState ─────────────────────────────────────────────────────
 function GroupVaultEmptyState() {
+  const emptyStyles = useThemedStyles(createEmptyStyles);
+  const { colors } = useTheme();
   return (
     <View style={emptyStyles.container}>
       {/* Illustration */}
@@ -1188,7 +1217,8 @@ function GroupVaultEmptyState() {
   );
 }
 
-const emptyStyles = StyleSheet.create({
+const createEmptyStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     flex: 1,
@@ -1229,7 +1259,7 @@ const emptyStyles = StyleSheet.create({
   },
   chip: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.full,
     borderWidth: 1,
@@ -1296,13 +1326,14 @@ const emptyStyles = StyleSheet.create({
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -1340,7 +1371,7 @@ const styles = StyleSheet.create({
   },
   quickAction: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,

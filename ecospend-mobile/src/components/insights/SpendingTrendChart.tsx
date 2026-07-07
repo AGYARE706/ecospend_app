@@ -1,7 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { DailySpendingPoint } from '../../utils/weeklyInsights';
 
 export interface SpendingTrendChartProps {
@@ -11,8 +19,11 @@ export interface SpendingTrendChartProps {
 
 export default function SpendingTrendChart({
   data,
-  barColor = colors.primary,
+  barColor,
 }: SpendingTrendChartProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const resolvedBarColor = barColor ?? colors.primary;
   const maxAmount = Math.max(...data.map((point) => point.amount), 1);
   const animations = useRef(data.map(() => new Animated.Value(0))).current;
 
@@ -44,7 +55,7 @@ export default function SpendingTrendChart({
                 <Animated.View
                   style={[
                     styles.barFill,
-                    { height, backgroundColor: barColor },
+                    { height, backgroundColor: resolvedBarColor },
                   ]}
                 />
               </View>
@@ -57,7 +68,8 @@ export default function SpendingTrendChart({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     marginTop: spacing.sm,
   },

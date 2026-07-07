@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { Icon } from './icons';
 
 /**
@@ -19,6 +27,8 @@ export default function SearchInput({
   onChangeText,
   placeholder = 'Search transactions...',
 }: SearchInputProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -45,10 +55,11 @@ export default function SearchInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.border,
     borderRadius: radius.input,
     borderWidth: 1.5,

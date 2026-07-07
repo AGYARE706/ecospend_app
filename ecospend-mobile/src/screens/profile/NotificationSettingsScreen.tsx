@@ -12,13 +12,15 @@ import {
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   cardShadow,
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type NotificationSettingsNavProp = StackNavigationProp<
   ProfileStackParamList,
@@ -26,6 +28,8 @@ type NotificationSettingsNavProp = StackNavigationProp<
 >;
 
 export default function NotificationSettingsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<NotificationSettingsNavProp>();
   const {
     preferences,
@@ -149,6 +153,8 @@ function SummaryCard({
   totalCount: number;
   statusMessage: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <LinearGradient
       colors={[colors.primary, colors.primaryDark]}
@@ -182,6 +188,8 @@ function ToggleRow({
   enabled: boolean;
   onToggle: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.toggleRow}>
       <View style={[styles.rowIcon, { backgroundColor: item.iconBackground }]}>
@@ -208,6 +216,8 @@ function SectionLabel({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionLabel}>
       <View style={styles.sectionIconBadge}>
@@ -218,7 +228,8 @@ function SectionLabel({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -320,7 +331,7 @@ const styles = StyleSheet.create({
   },
   quickActionBtn: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.full,
     borderWidth: 1,
@@ -362,7 +373,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   settingsCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,

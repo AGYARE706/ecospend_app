@@ -8,14 +8,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import type { AppStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 type VaultSuccessRouteProp = RouteProp<AppStackParamList, 'VaultSuccess'>;
@@ -45,6 +47,8 @@ function mockRef(): string {
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function VaultSuccessScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { params } = useRoute<VaultSuccessRouteProp>();
   const navigation = useNavigation<VaultSuccessNavProp>();
 
@@ -249,6 +253,8 @@ export default function VaultSuccessScreen() {
 // ─── SuccessIllustration ──────────────────────────────────────────────────────
 // Premium geometric illustration built entirely from Views — no images needed
 function SuccessIllustration() {
+  const illustStyles = useThemedStyles(createIllustStyles);
+  const { colors } = useTheme();
   return (
     <View style={illustStyles.container}>
       {/* Outer glow rings */}
@@ -282,7 +288,8 @@ function SuccessIllustration() {
   );
 }
 
-const illustStyles = StyleSheet.create({
+const createIllustStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     height: 200,
@@ -323,7 +330,7 @@ const illustStyles = StyleSheet.create({
   },
   chip: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.full,
     borderWidth: 1,
@@ -350,6 +357,7 @@ const illustStyles = StyleSheet.create({
 // ─── ReceiptEdge ─────────────────────────────────────────────────────────────
 // Ticket / receipt torn edge using a row of circles
 function ReceiptEdge({ position }: { position: 'top' | 'bottom' }) {
+  const edgeStyles = useThemedStyles(createEdgeStyles);
   const dots = Array.from({ length: 14 });
   const isTop = position === 'top';
   return (
@@ -384,7 +392,8 @@ function ReceiptEdge({ position }: { position: 'top' | 'bottom' }) {
 }
 
 const NOTCH = 14;
-const edgeStyles = StyleSheet.create({
+const createEdgeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -445,6 +454,7 @@ function ReceiptRow({
   valueColor?: string;
   valueStyle?: 'normal' | 'hero' | 'muted' | 'mono';
 }) {
+  const rowStyles = useThemedStyles(createRowStyles);
   return (
     <View style={rowStyles.row}>
       <View style={rowStyles.labelBlock}>
@@ -470,7 +480,8 @@ function ReceiptRow({
   );
 }
 
-const rowStyles = StyleSheet.create({
+const createRowStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -525,6 +536,8 @@ function TrustBadge({
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
 }) {
+  const trustStyles = useThemedStyles(createTrustStyles);
+  const { colors } = useTheme();
   return (
     <View style={trustStyles.badge}>
       <Ionicons name={icon} size={14} color={colors.primary} />
@@ -533,7 +546,8 @@ function TrustBadge({
   );
 }
 
-const trustStyles = StyleSheet.create({
+const createTrustStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   badge: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -546,7 +560,8 @@ const trustStyles = StyleSheet.create({
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -577,7 +592,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   receiptCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.card,
     marginBottom: spacing.lg,
     ...shadowMd,
@@ -631,7 +646,7 @@ const styles = StyleSheet.create({
     width: 1,
   },
   footer: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
     paddingBottom: spacing.lg,

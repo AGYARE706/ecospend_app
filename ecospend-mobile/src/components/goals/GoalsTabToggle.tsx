@@ -1,7 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '../ui/icons';
-import { colors, radius, spacing, subtleShadow, typography } from '../../theme';
+import {
+  radius,
+  spacing,
+  subtleShadow,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { GoalsTabMode } from '../../types';
 
 /**
@@ -16,6 +24,8 @@ export default function GoalsTabToggle({
   activeTab,
   onTabChange,
 }: GoalsTabToggleProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Pressable
@@ -62,9 +72,10 @@ export default function GoalsTabToggle({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.full,
     borderWidth: 1,

@@ -1,7 +1,16 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  cardShadow,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Always-visible tip card with provider-specific fee-saving advice.
@@ -11,6 +20,8 @@ export interface FeeSavingTipCardProps {
 }
 
 export default function FeeSavingTipCard({ tip }: FeeSavingTipCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -22,7 +33,8 @@ export default function FeeSavingTipCard({ tip }: FeeSavingTipCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     backgroundColor: colors.primaryBackground,
     borderRadius: radius.lg,

@@ -2,7 +2,15 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
-import { colors, radius, shadowSm, spacing, typography } from '../../theme';
+import {
+  radius,
+  shadowSm,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { TransactionSummaryBar } from '../../types';
 
 /**
@@ -14,6 +22,8 @@ export interface SummaryChipRowProps {
 }
 
 export default function SummaryChipRow({ summary }: SummaryChipRowProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const netPositive = summary.net >= 0;
 
   return (
@@ -54,9 +64,10 @@ export default function SummaryChipRow({ summary }: SummaryChipRowProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,

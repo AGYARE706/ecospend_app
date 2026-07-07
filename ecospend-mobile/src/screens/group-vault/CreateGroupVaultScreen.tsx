@@ -23,14 +23,16 @@ import {
 } from '../../hooks/useCreateGroupVault';
 import type { AppStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 type CreateGroupVaultNavProp = StackNavigationProp<
@@ -54,6 +56,8 @@ function ghs(amount: number): string {
 export default function CreateGroupVaultScreen({
   navigation,
 }: CreateGroupVaultScreenProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     form,
     errors,
@@ -109,7 +113,7 @@ export default function CreateGroupVaultScreen({
         >
           {/* ─── Educational Banner ───────────────────────────── */}
           <LinearGradient
-            colors={['#1B5E20', '#2E7D32', '#0D9488']}
+            colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.banner}
@@ -412,6 +416,8 @@ function SectionLabel({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const labelStyles = useThemedStyles(createLabelStyles);
+  const { colors } = useTheme();
   return (
     <View style={labelStyles.row}>
       <Ionicons name={icon} size={14} color={colors.primary} />
@@ -420,7 +426,8 @@ function SectionLabel({
   );
 }
 
-const labelStyles = StyleSheet.create({
+const createLabelStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -447,6 +454,7 @@ function DateChip({
   selected: boolean;
   onSelect: (key: DatePreset) => void;
 }) {
+  const dateChipStyles = useThemedStyles(createDateChipStyles);
   return (
     <Pressable
       onPress={() => onSelect(preset.key)}
@@ -468,7 +476,8 @@ function DateChip({
   );
 }
 
-const dateChipStyles = StyleSheet.create({
+const createDateChipStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   chip: {
     alignItems: 'center',
     backgroundColor: colors.chipBg,
@@ -507,6 +516,8 @@ function MemberStepper({
   onDecrement: () => void;
   onIncrement: () => void;
 }) {
+  const stepperStyles = useThemedStyles(createStepperStyles);
+  const { colors } = useTheme();
   return (
     <View style={stepperStyles.row}>
       <Pressable
@@ -549,7 +560,8 @@ function MemberStepper({
   );
 }
 
-const stepperStyles = StyleSheet.create({
+const createStepperStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -601,6 +613,8 @@ function MemberRow({
   isCreator?: boolean;
   onRemove?: () => void;
 }) {
+  const memberRowStyles = useThemedStyles(createMemberRowStyles);
+  const { colors } = useTheme();
   return (
     <View style={memberRowStyles.row}>
       <View
@@ -637,7 +651,8 @@ function MemberRow({
   );
 }
 
-const memberRowStyles = StyleSheet.create({
+const createMemberRowStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -705,6 +720,7 @@ function RuleRow({
   title: string;
   body: string;
 }) {
+  const ruleStyles = useThemedStyles(createRuleStyles);
   return (
     <View style={ruleStyles.row}>
       <View
@@ -720,7 +736,8 @@ function RuleRow({
   );
 }
 
-const ruleStyles = StyleSheet.create({
+const createRuleStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -770,11 +787,13 @@ function GroupSummaryPreview({
   maturityDate: string;
   daysRemaining: number;
 }) {
+  const previewStyles = useThemedStyles(createPreviewStyles);
+  const { colors } = useTheme();
   const totalMembers = members.length + 1; // +1 creator
 
   return (
     <LinearGradient
-      colors={['#1B5E20', '#2E7D32', '#0D9488']}
+      colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={previewStyles.card}
@@ -856,6 +875,7 @@ function PreviewStat({
   label: string;
   value: string;
 }) {
+  const previewStatStyles = useThemedStyles(createPreviewStatStyles);
   return (
     <View style={previewStatStyles.cell}>
       <Ionicons name={icon} size={13} color="rgba(255,255,255,0.65)" />
@@ -867,7 +887,8 @@ function PreviewStat({
   );
 }
 
-const previewStatStyles = StyleSheet.create({
+const createPreviewStatStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   cell: {
     alignItems: 'center',
     paddingVertical: spacing.sm,
@@ -888,7 +909,8 @@ const previewStatStyles = StyleSheet.create({
   },
 });
 
-const previewStyles = StyleSheet.create({
+const createPreviewStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.heroCard,
     overflow: 'hidden',
@@ -961,13 +983,14 @@ const previewStyles = StyleSheet.create({
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -1058,7 +1081,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -1067,7 +1090,7 @@ const styles = StyleSheet.create({
     ...shadowSm,
   },
   rulesCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -1219,7 +1242,7 @@ const styles = StyleSheet.create({
   },
   phoneInputWrapper: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1.5,
@@ -1306,7 +1329,7 @@ const styles = StyleSheet.create({
     height: spacing.xl,
   },
   footer: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
     paddingBottom: spacing.lg,

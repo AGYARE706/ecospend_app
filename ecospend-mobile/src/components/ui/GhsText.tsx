@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextStyle } from 'react-native';
 
-import { colors, fontSize, fontWeight } from '../../theme';
+import { fontSize, fontWeight, useTheme } from '../../theme';
 
 /**
  * amount — numeric monetary value to format as Ghana Cedis
@@ -39,9 +39,17 @@ export default function GhsText({
   adjustsFontSizeToFit,
   minimumFontScale = 0.7,
 }: GhsTextProps) {
+  const { colors } = useTheme();
+  const variantColors: Record<NonNullable<GhsTextProps['variant']>, string> = {
+    default: colors.textDark,
+    white: colors.white,
+    income: colors.success,
+    expense: colors.error,
+  };
+
   return (
     <Text
-      style={[styles.base, sizeStyles[size], variantStyles[variant], style]}
+      style={[styles.base, sizeStyles[size], { color: variantColors[variant] }, style]}
       numberOfLines={numberOfLines}
       adjustsFontSizeToFit={adjustsFontSizeToFit}
       minimumFontScale={adjustsFontSizeToFit ? minimumFontScale : undefined}
@@ -73,17 +81,3 @@ const sizeStyles = StyleSheet.create({
   },
 });
 
-const variantStyles = StyleSheet.create({
-  default: {
-    color: colors.textDark,
-  },
-  white: {
-    color: colors.white,
-  },
-  income: {
-    color: colors.success,
-  },
-  expense: {
-    color: colors.error,
-  },
-});

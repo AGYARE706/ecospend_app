@@ -1,41 +1,46 @@
-import { colors } from '../theme';
+import type { ColorToken } from '../theme';
 import type { TransactionCategory } from '../types';
 
+/**
+ * Category colors are stored as semantic token names so they stay static and
+ * theme-agnostic — resolve them against the active theme at the call site,
+ * e.g. `colors[config.circleBackground]`.
+ */
 export interface CategoryConfig {
   emoji: string;
-  circleBackground: string;
+  circleBackground: ColorToken;
   label: string;
 }
 
 export const CATEGORY_CONFIG: Record<TransactionCategory, CategoryConfig> = {
   Food: {
     emoji: '🍔',
-    circleBackground: colors.warningLight,
+    circleBackground: 'warningLight',
     label: 'Food',
   },
   Transport: {
     emoji: '🚗',
-    circleBackground: colors.blueLight,
+    circleBackground: 'blueLight',
     label: 'Transport',
   },
   Utilities: {
     emoji: '💡',
-    circleBackground: colors.warningLight,
+    circleBackground: 'warningLight',
     label: 'Utilities',
   },
   Business: {
     emoji: '💼',
-    circleBackground: colors.blueLight,
+    circleBackground: 'blueLight',
     label: 'Business',
   },
   Savings: {
     emoji: '🏦',
-    circleBackground: colors.successLight,
+    circleBackground: 'successLight',
     label: 'Savings',
   },
   Other: {
     emoji: '📦',
-    circleBackground: colors.divider,
+    circleBackground: 'divider',
     label: 'Other',
   },
 };
@@ -43,20 +48,21 @@ export const CATEGORY_CONFIG: Record<TransactionCategory, CategoryConfig> = {
 /**
  * SVG visual identity per category — a consistent icon, foreground tint and
  * tinted medallion background. Prefer this over the legacy emoji config.
+ * Tints/backgrounds are token names; resolve via the active theme's colors.
  */
 export interface CategoryVisual {
   icon: string;
-  tint: string;
-  background: string;
+  tint: ColorToken;
+  background: ColorToken;
 }
 
 export const CATEGORY_VISUALS: Record<TransactionCategory, CategoryVisual> = {
-  Food: { icon: 'utensils', tint: colors.warning, background: colors.warningLight },
-  Transport: { icon: 'car', tint: colors.blue, background: colors.blueLight },
-  Utilities: { icon: 'bulb', tint: colors.gold, background: colors.goldLight },
-  Business: { icon: 'briefcase', tint: colors.accent, background: colors.accentLight },
-  Savings: { icon: 'bank', tint: colors.primary, background: colors.primaryBackground },
-  Other: { icon: 'box', tint: colors.textSecondary, background: colors.chipBg },
+  Food: { icon: 'utensils', tint: 'warning', background: 'warningLight' },
+  Transport: { icon: 'car', tint: 'blue', background: 'blueLight' },
+  Utilities: { icon: 'bulb', tint: 'gold', background: 'goldLight' },
+  Business: { icon: 'briefcase', tint: 'accent', background: 'accentLight' },
+  Savings: { icon: 'bank', tint: 'primary', background: 'primaryBackground' },
+  Other: { icon: 'box', tint: 'textSecondary', background: 'chipBg' },
 };
 
 /** Resolve a category visual from any string, falling back to "Other". */

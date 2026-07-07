@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CATEGORY_CONFIG, ALL_CATEGORIES } from '../../constants/categories';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { TransactionCategory } from '../../types';
 
 /**
@@ -17,6 +18,7 @@ export default function CategoryChipGrid({
   selectedCategory,
   onSelect,
 }: CategoryChipGridProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.grid}>
       {ALL_CATEGORIES.map((category) => {
@@ -45,7 +47,8 @@ export default function CategoryChipGrid({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

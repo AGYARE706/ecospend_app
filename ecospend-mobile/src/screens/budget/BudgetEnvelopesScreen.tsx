@@ -14,7 +14,8 @@ import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SkeletonBox from '../../components/ui/SkeletonBox';
 import { useBudgetEnvelopes } from '../../hooks/useBudgetEnvelopes';
-import { colors, fontSize, spacing, fontWeight } from '../../theme';
+import { fontSize, spacing, fontWeight, useTheme, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { getEmptyFilterMessage } from '../../utils/envelopes';
 import type { Envelope } from '../../types';
 
@@ -22,6 +23,8 @@ import type { Envelope } from '../../types';
  * Monthly budget dashboard with filterable envelope cards and add/edit sheets.
  */
 export default function BudgetEnvelopesScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     filteredEnvelopes,
     activeFilter,
@@ -158,7 +161,8 @@ export default function BudgetEnvelopesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   headerContainer: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,

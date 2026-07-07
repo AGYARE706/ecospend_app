@@ -5,7 +5,16 @@ import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
 import GoalDeadlineBadge from './GoalDeadlineBadge';
 import GoalProgressBar from './GoalProgressBar';
-import { cardShadow, colors, fontSize, radius, spacing, typography } from '../../theme';
+import {
+  cardShadow,
+  fontSize,
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import {
   formatMonthYear,
   getGoalAccentColors,
@@ -30,12 +39,14 @@ export default function GoalCard({
   onAddMoney,
   onDetails,
 }: GoalCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progress = getGoalProgress(goal);
   const weeklyTarget = getWeeklyTarget(goal);
   const isHighWeeklyTarget =
     weeklyTarget !== null && weeklyTarget > goal.targetAmount * 0.5;
-  const accent = getGoalAccentColors(goal.color);
+  const accent = getGoalAccentColors(goal.color, colors);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -109,9 +120,10 @@ export default function GoalCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.goalCard,
     borderWidth: 1,

@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
-import { colors, radius, shadowMd, shadowSm, shadowXs, spacing } from '../../theme';
+import { radius, shadowMd, shadowSm, shadowXs, spacing, useTheme } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type CardPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 type CardElevation = 'none' | 'xs' | 'sm' | 'md';
@@ -46,13 +47,14 @@ export default function Card({
   onPress,
   style,
 }: CardProps) {
+  const { colors } = useTheme();
   const defaultElevation: CardElevation =
     variant === 'outlined' ? 'none' : variant === 'primary' ? 'md' : 'sm';
   const shadow = elevationMap[elevation ?? defaultElevation];
 
   const composedStyle: ViewStyle[] = [
     styles.base,
-    variantStyles[variant],
+    getVariantStyles(colors)[variant],
     shadow,
     { padding: paddingMap[padding] },
     style as ViewStyle,
@@ -72,7 +74,9 @@ export default function Card({
   return <View style={composedStyle}>{children}</View>;
 }
 
-const variantStyles: Record<NonNullable<CardProps['variant']>, ViewStyle> = {
+const getVariantStyles = (
+  colors: ThemeColors,
+): Record<NonNullable<CardProps['variant']>, ViewStyle> => ({
   default: {
     backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
@@ -95,7 +99,7 @@ const variantStyles: Record<NonNullable<CardProps['variant']>, ViewStyle> = {
     borderWidth: 1,
     borderRadius: radius.card,
   },
-};
+});
 
 const styles = StyleSheet.create({
   base: {

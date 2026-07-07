@@ -3,7 +3,15 @@ import { Animated, LayoutChangeEvent, StyleSheet, Text, View } from 'react-nativ
 import { LinearGradient } from 'expo-linear-gradient';
 
 import GhsText from '../ui/GhsText';
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Green gradient hero card showing monthly budget totals and progress bar.
@@ -21,6 +29,8 @@ export default function BudgetHeroCard({
   totalRemaining,
   overallPercent,
 }: BudgetHeroCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const heroFillAnim = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
@@ -73,7 +83,8 @@ export default function BudgetHeroCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
     borderRadius: radius.heroCard,
     marginBottom: spacing.lg,

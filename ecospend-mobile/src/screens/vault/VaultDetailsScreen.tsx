@@ -13,7 +13,6 @@ import { useVaultDetails } from '../../hooks/useVaultDetails';
 import { navigateApp } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
@@ -21,7 +20,10 @@ import {
   shadowSm,
   spacing,
   typography,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { VaultContribution, VaultStatus } from '../../types/vault';
 import { formatVaultDate } from '../../utils/vault';
 
@@ -44,6 +46,7 @@ function ghs(amount: number, decimals = 2): string {
 
 function statusMeta(
   status: VaultStatus,
+  colors: ThemeColors,
 ): { label: string, color: string, bg: string } {
   switch (status) {
     case 'active':
@@ -64,6 +67,8 @@ export default function VaultDetailsScreen({
   route,
   navigation,
 }: VaultDetailsScreenProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { vaultId } = route.params;
   const {
     vault,
@@ -77,7 +82,7 @@ export default function VaultDetailsScreen({
     isOnTrack,
   } = useVaultDetails(vaultId);
 
-  const badge = statusMeta(vault.status);
+  const badge = statusMeta(vault.status, colors);
   const accentGradient: [string, string] = [
     `${vault.accentColor}DD`,
     vault.accentColor,
@@ -198,7 +203,7 @@ export default function VaultDetailsScreen({
             <LinearGradient
               colors={
                 isMatured
-                  ? ([colors.blue, '#1976D2'] as [string, string])
+                  ? ([colors.blue, colors.heroBlueMid] as [string, string])
                   : ([colors.primaryDark, colors.primary] as [string, string])
               }
               start={{ x: 0, y: 0 }}
@@ -495,6 +500,8 @@ function SectionHeader({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const secStyles = useThemedStyles(createSecStyles);
+  const { colors } = useTheme();
   return (
     <View style={secStyles.row}>
       <Ionicons name={icon} size={15} color={colors.primary} />
@@ -503,7 +510,8 @@ function SectionHeader({
   );
 }
 
-const secStyles = StyleSheet.create({
+const createSecStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -541,6 +549,8 @@ function FeeBox({
   bgColor: string;
   textColor: string;
 }) {
+  const feeBoxStyles = useThemedStyles(createFeeBoxStyles);
+  const { colors } = useTheme();
   return (
     <View style={[feeBoxStyles.box, { borderColor: bgColor }]}>
       <View style={feeBoxStyles.top}>
@@ -565,9 +575,10 @@ function FeeBox({
   );
 }
 
-const feeBoxStyles = StyleSheet.create({
+const createFeeBoxStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   box: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.card,
     borderWidth: 1.5,
     flex: 1,
@@ -646,6 +657,7 @@ function StatCard({
   accent: string;
   subLabel?: string;
 }) {
+  const statStyles = useThemedStyles(createStatStyles);
   return (
     <View style={statStyles.card}>
       <View style={[statStyles.iconRing, { backgroundColor: accent }]}>
@@ -662,9 +674,10 @@ function StatCard({
   );
 }
 
-const statStyles = StyleSheet.create({
+const createStatStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -719,6 +732,7 @@ function TimelineItem({
   isLast?: boolean;
   highlight?: boolean;
 }) {
+  const tlStyles = useThemedStyles(createTlStyles);
   return (
     <View style={tlStyles.row}>
       <View style={tlStyles.leftCol}>
@@ -754,7 +768,8 @@ function TimelineItem({
   );
 }
 
-const tlStyles = StyleSheet.create({
+const createTlStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     minHeight: 56,
@@ -833,13 +848,14 @@ const tlStyles = StyleSheet.create({
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
   topBar: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderBottomColor: colors.borderSubtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
@@ -1039,7 +1055,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,

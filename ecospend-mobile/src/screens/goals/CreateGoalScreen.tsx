@@ -14,7 +14,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/ui/Card';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
-import { colors, spacing, fontSize, fontWeight, radius, typography } from '../../theme';
+import {
+  spacing,
+  fontSize,
+  fontWeight,
+  radius,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { GOAL_CATEGORIES } from '../../constants/categories';
 
 interface GoalFormData {
@@ -25,6 +34,8 @@ interface GoalFormData {
 }
 
 export default function CreateGoalScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
   const [formData, setFormData] = useState<GoalFormData>({
     category: '',
@@ -227,7 +238,8 @@ export default function CreateGoalScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.pageBackground,

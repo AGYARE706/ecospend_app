@@ -13,13 +13,15 @@ import { useWeeklyInsights } from '../../hooks/useWeeklyInsights';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   cardShadow,
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 import { formatNotificationTime } from '../../utils/notifications';
 
 type WeeklyInsightsNavProp = StackNavigationProp<
@@ -28,6 +30,8 @@ type WeeklyInsightsNavProp = StackNavigationProp<
 >;
 
 export default function WeeklyInsightsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<WeeklyInsightsNavProp>();
   const { summary, topCategory, largestTransaction, spendingTrend, monthEndProjection } =
     useWeeklyInsights();
@@ -227,8 +231,8 @@ export default function WeeklyInsightsScreen() {
             <InsightCard style={styles.fullWidthCard}>
               <CardHeader
                 icon="calendar-outline"
-                iconColor="#6A1B9A"
-                iconBackground="#F3E5F5"
+                iconColor={colors.purple}
+                iconBackground={colors.purpleLight}
                 title="Month-End Projection"
               />
 
@@ -302,6 +306,8 @@ function SummaryStat({
   amount: number;
   highlight?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.summaryStat}>
       <View style={styles.summaryStatHeader}>
@@ -325,6 +331,8 @@ function SectionLabel({
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionLabel}>
       <View style={styles.sectionIconBadge}>
@@ -342,6 +350,7 @@ function InsightCard({
   children: ReactNode;
   style?: object;
 }) {
+  const styles = useThemedStyles(createStyles);
   return <View style={[styles.insightCard, style]}>{children}</View>;
 }
 
@@ -356,6 +365,7 @@ function CardHeader({
   iconBackground: string;
   title: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.cardHeader}>
       <View style={[styles.cardIcon, { backgroundColor: iconBackground }]}>
@@ -375,6 +385,7 @@ function TrendFooterItem({
   amount: number;
   muted?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.trendFooterItem}>
       <Text style={styles.trendFooterLabel}>{label}</Text>
@@ -396,6 +407,7 @@ function ProjectionStat({
   amount: number;
   positive?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.projectionStat}>
       <Text style={styles.projectionStatLabel}>{label}</Text>
@@ -409,7 +421,8 @@ function ProjectionStat({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -541,7 +554,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   insightCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -708,7 +721,7 @@ const styles = StyleSheet.create({
     width: 18,
   },
   ringProgress: {
-    backgroundColor: '#6A1B9A',
+    backgroundColor: colors.purple,
     borderRadius: radius.sm,
     width: '100%',
   },

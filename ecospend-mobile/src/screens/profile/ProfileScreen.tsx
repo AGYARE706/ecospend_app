@@ -10,14 +10,16 @@ import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../hooks/useProfile';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors, ThemeMode } from '../../theme';
 
 type ProfileNavigationProp = StackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -45,6 +47,16 @@ const menuItems: Array<{
   { label: 'About', route: 'About', icon: 'information-circle-outline' },
 ];
 
+const appearanceOptions: Array<{
+  value: ThemeMode;
+  label: string;
+  icon: IconName;
+}> = [
+  { value: 'light', label: 'Light', icon: 'sun' },
+  { value: 'dark', label: 'Dark', icon: 'moon' },
+  { value: 'system', label: 'System', icon: 'device' },
+];
+
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) {
@@ -54,6 +66,8 @@ function getInitials(name: string): string {
 }
 
 export default function ProfileScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<ProfileNavigationProp>();
   const { signOut } = useAuth();
   const { name, formattedPhone, isPlus, stats } = useProfile();
@@ -89,7 +103,7 @@ export default function ProfileScreen() {
           {/* Membership Card */}
           {isPlus ? (
             <LinearGradient
-              colors={['#1B5E20', '#2E7D32', '#0D9488']}
+              colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.membershipCard}
@@ -163,6 +177,10 @@ export default function ProfileScreen() {
             />
           </View>
 
+          {/* Appearance */}
+          <SectionLabel title="Appearance" icon="moon" />
+          <AppearanceSelector />
+
           {/* Menu Items */}
           <SectionLabel title="Account" icon="settings-outline" />
           <View style={styles.menuCard}>
@@ -201,6 +219,58 @@ export default function ProfileScreen() {
   );
 }
 
+function AppearanceSelector() {
+  const { colors, mode, setMode, resolvedScheme } = useTheme();
+  const appearanceStyles = useThemedStyles(createAppearanceStyles);
+
+  const hint =
+    mode === 'system'
+      ? `Follows your device setting — currently ${resolvedScheme}.`
+      : mode === 'dark'
+        ? 'Dark theme is always on.'
+        : 'Light theme is always on.';
+
+  return (
+    <View style={appearanceStyles.card}>
+      <View style={appearanceStyles.track}>
+        {appearanceOptions.map((option) => {
+          const selected = mode === option.value;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => setMode(option.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              accessibilityLabel={`${option.label} theme`}
+              style={({ pressed }) => [
+                appearanceStyles.segment,
+                selected && appearanceStyles.segmentSelected,
+                pressed && !selected && appearanceStyles.segmentPressed,
+              ]}
+            >
+              <Icon
+                name={option.icon}
+                size={16}
+                color={selected ? colors.primary : colors.textMuted}
+                strokeWidth={2}
+              />
+              <Text
+                style={[
+                  appearanceStyles.segmentLabel,
+                  selected && appearanceStyles.segmentLabelSelected,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={appearanceStyles.hint}>{hint}</Text>
+    </View>
+  );
+}
+
 function SectionLabel({
   title,
   icon,
@@ -208,6 +278,8 @@ function SectionLabel({
   title: string;
   icon: IconName | (string & {});
 }) {
+  const labelStyles = useThemedStyles(createLabelStyles);
+  const { colors } = useTheme();
   return (
     <View style={labelStyles.row}>
       <Icon name={icon} size={14} color={colors.primary} />
@@ -227,6 +299,7 @@ function StatItem({
   label: string;
   value: string;
 }) {
+  const statStyles = useThemedStyles(createStatStyles);
   return (
     <View style={statStyles.item}>
       <View style={[statStyles.iconRing, { backgroundColor: `${iconColor}18` }]}>
@@ -249,6 +322,8 @@ function MenuRow({
   isLast: boolean;
   onPress: () => void;
 }) {
+  const menuStyles = useThemedStyles(createMenuStyles);
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -267,7 +342,56 @@ function MenuRow({
   );
 }
 
-const labelStyles = StyleSheet.create({
+const createAppearanceStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.cardBackground,
+      borderColor: colors.cardBorder,
+      borderRadius: radius.card,
+      borderWidth: 1,
+      padding: spacing.md,
+      ...shadowSm,
+    },
+    track: {
+      backgroundColor: colors.chipBg,
+      borderRadius: radius.button,
+      flexDirection: 'row',
+      padding: spacing.xs,
+    },
+    segment: {
+      alignItems: 'center',
+      borderRadius: radius.button - spacing.xs,
+      flex: 1,
+      flexDirection: 'row',
+      gap: spacing.xs,
+      justifyContent: 'center',
+      paddingVertical: spacing.sm,
+    },
+    segmentSelected: {
+      backgroundColor: colors.cardBackground,
+      ...shadowSm,
+    },
+    segmentPressed: {
+      opacity: 0.7,
+    },
+    segmentLabel: {
+      color: colors.textMuted,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium,
+    },
+    segmentLabelSelected: {
+      color: colors.textDark,
+      fontWeight: fontWeight.semibold,
+    },
+    hint: {
+      color: colors.textMuted,
+      fontSize: fontSize.xs,
+      marginTop: spacing.sm,
+    },
+  });
+
+const createLabelStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -284,7 +408,8 @@ const labelStyles = StyleSheet.create({
   },
 });
 
-const statStyles = StyleSheet.create({
+const createStatStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   item: {
     alignItems: 'center',
     flex: 1,
@@ -310,7 +435,8 @@ const statStyles = StyleSheet.create({
   },
 });
 
-const menuStyles = StyleSheet.create({
+const createMenuStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   row: {
     alignItems: 'center',
     borderBottomColor: colors.divider,
@@ -342,7 +468,8 @@ const menuStyles = StyleSheet.create({
   },
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -353,7 +480,7 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.heroCard,
     borderWidth: 1,
@@ -383,7 +510,7 @@ const styles = StyleSheet.create({
   avatarBadge: {
     alignItems: 'center',
     backgroundColor: colors.success,
-    borderColor: colors.white,
+    borderColor: colors.cardBackground,
     borderRadius: radius.full,
     borderWidth: 2,
     bottom: 2,
@@ -470,7 +597,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   freeCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -520,7 +647,7 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -534,7 +661,7 @@ const styles = StyleSheet.create({
     width: 1,
   },
   menuCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.cardBorder,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -547,7 +674,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: `${colors.error}55`,
     borderRadius: radius.button,
     borderWidth: 1.5,

@@ -1,7 +1,15 @@
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing, subtleShadow } from '../../theme';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  subtleShadow,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { ProviderType } from '../../types';
 
 /**
@@ -22,6 +30,7 @@ export default function ProviderCard({
   selected,
   onSelect,
 }: ProviderCardProps) {
+  const styles = useThemedStyles(createStyles);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -66,7 +75,8 @@ export default function ProviderCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   pressable: {
     flex: 1,
   },
@@ -77,7 +87,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   cardDefault: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     ...subtleShadow,
   },
   cardSelected: {

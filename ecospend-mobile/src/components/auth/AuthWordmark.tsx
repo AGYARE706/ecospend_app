@@ -1,9 +1,11 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, spacing } from '../../theme';
+import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 export default function AuthWordmark() {
+  const styles = useThemedStyles(createStyles);
   return React.createElement(
     View,
     { style: styles.container },
@@ -12,7 +14,8 @@ export default function AuthWordmark() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     alignItems: 'center',
     flexDirection: 'row',

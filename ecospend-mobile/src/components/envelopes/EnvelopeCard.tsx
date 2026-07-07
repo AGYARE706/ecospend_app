@@ -4,7 +4,16 @@ import { Ionicons } from '@expo/vector-icons';
 
 import AppButton from '../ui/AppButton';
 import GhsText from '../ui/GhsText';
-import { cardShadow, colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import {
+  cardShadow,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import type { Envelope } from '../../types';
 import {
   getEnvelopePercent,
@@ -25,11 +34,13 @@ export interface EnvelopeCardProps {
 }
 
 export default function EnvelopeCard({ envelope, index, onEdit }: EnvelopeCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const percent = getEnvelopePercent(envelope);
   const status = getEnvelopeStatus(envelope);
   const remaining = getRemainingBudget(envelope);
-  const statusColor = getStatusColor(status);
+  const statusColor = getStatusColor(status, colors);
   const showEditButton = status === 'healthy' || status === 'atRisk';
   const showAlert = status === 'critical' || status === 'exhausted';
 
@@ -101,9 +112,10 @@ export default function EnvelopeCard({ envelope, index, onEdit }: EnvelopeCardPr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.lg,
     padding: spacing.lg,
     ...cardShadow,

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, ViewStyle } from 'react-native';
 
-import { colors, radius } from '../../theme';
+import { radius, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * width — skeleton width (number or percentage string)
@@ -22,6 +23,7 @@ export default function SkeletonBox({
   borderRadius = radius.md,
   style,
 }: SkeletonBoxProps) {
+  const styles = useThemedStyles(createStyles);
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -60,7 +62,8 @@ export default function SkeletonBox({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   box: {
     backgroundColor: colors.border,
   },

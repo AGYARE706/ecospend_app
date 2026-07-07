@@ -5,7 +5,15 @@ import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
 import GoalDeadlineBadge from './GoalDeadlineBadge';
 import GoalProgressBar from './GoalProgressBar';
-import { cardShadow, colors, radius, spacing, typography } from '../../theme';
+import {
+  cardShadow,
+  radius,
+  spacing,
+  typography,
+  useTheme,
+  useThemedStyles,
+} from '../../theme';
+import type { ThemeColors } from '../../theme';
 import {
   formatCompletedDate,
   getGoalAccentColors,
@@ -22,10 +30,12 @@ export interface CompletedGoalCardProps {
 }
 
 export default function CompletedGoalCard({ goal, index }: CompletedGoalCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progress = getGoalProgress(goal);
   const completedDate = goal.completedAt ?? goal.createdAt;
-  const accent = getGoalAccentColors(goal.color);
+  const accent = getGoalAccentColors(goal.color, colors);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -71,9 +81,10 @@ export default function CompletedGoalCard({ goal, index }: CompletedGoalCardProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.successLight,
     borderRadius: radius.goalCard,
     borderWidth: 1,

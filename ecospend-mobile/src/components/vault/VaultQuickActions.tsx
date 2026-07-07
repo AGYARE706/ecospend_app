@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '../ui/icons';
 import type { IconName } from '../ui/icons';
-import { radius, shadowSm, spacing, typography } from '../../theme';
+import { radius, shadowSm, spacing, typography, useTheme } from '../../theme';
 import type { VaultThemeColors } from './vaultTheme';
 
 export interface VaultQuickActionsProps {
@@ -18,26 +18,27 @@ export default function VaultQuickActions({
   onVaultHistory,
   onGroupVaults,
 }: VaultQuickActionsProps) {
+  const { colors } = useTheme();
   return (
     <View style={styles.container}>
       <View style={styles.row}>
         <QuickAction
           icon="add-circle-outline"
-          iconColor="#2E7D32"
+          iconColor={colors.healthy}
           label="Create Vault"
           theme={theme}
           onPress={onCreateVault}
         />
         <QuickAction
           icon="time-outline"
-          iconColor="#1565C0"
+          iconColor={colors.blue}
           label="Vault History"
           theme={theme}
           onPress={onVaultHistory}
         />
         <QuickAction
           icon="people-outline"
-          iconColor="#6A1B9A"
+          iconColor={colors.purple}
           label="Group Vaults"
           theme={theme}
           onPress={onGroupVaults}

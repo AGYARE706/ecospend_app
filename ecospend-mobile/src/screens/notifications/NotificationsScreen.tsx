@@ -9,12 +9,14 @@ import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useNotifications } from '../../hooks/useNotifications';
 import type { AppStackParamList } from '../../navigation/types';
 import {
-  colors,
   fontSize,
   fontWeight,
   radius,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type NotificationsNavProp = StackNavigationProp<
   AppStackParamList,
@@ -22,6 +24,8 @@ type NotificationsNavProp = StackNavigationProp<
 >;
 
 export default function NotificationsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<NotificationsNavProp>();
   const {
     sections,
@@ -115,6 +119,7 @@ export default function NotificationsScreen() {
 }
 
 function SectionHeader({ title }: { title: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -122,7 +127,8 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },

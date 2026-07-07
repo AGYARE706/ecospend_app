@@ -20,18 +20,22 @@ import { type ActiveSession, useSecurity } from '../../hooks/useSecurity';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   cardShadow,
-  colors,
   fontSize,
   fontWeight,
   radius,
   shadowMd,
   shadowSm,
   spacing,
+  useTheme,
+  useThemedStyles,
 } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 type SecurityNavProp = StackNavigationProp<ProfileStackParamList, 'Security'>;
 
 export default function SecurityScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<SecurityNavProp>();
   const {
     twoFactorEnabled,
@@ -138,8 +142,8 @@ export default function SecurityScreen() {
             <View style={styles.rowDivider} />
             <SettingsRow
               icon="laptop-outline"
-              iconColor="#6A1B9A"
-              iconBackground="#F3E5F5"
+              iconColor={colors.purple}
+              iconBackground={colors.purpleLight}
               title="Active Sessions"
               subtitle={`${activeSessionCount} device${activeSessionCount === 1 ? '' : 's'} signed in`}
               onPress={openSessionsSheet}
@@ -239,10 +243,12 @@ function SecurityStatusCard({
   tone: 'strong' | 'moderate';
   twoFactorEnabled: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const gradientColors =
     tone === 'strong'
-      ? (['#1B5E20', '#2E7D32', '#0D9488'] as const)
-      : (['#1565C0', '#1976D2', '#2E7D32'] as const);
+      ? ([colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd] as const)
+      : ([colors.heroBlueStart, colors.heroBlueMid, colors.heroGradientMid] as const);
 
   return (
     <LinearGradient
@@ -294,6 +300,8 @@ function SettingsRow({
   destructive?: boolean;
   isLast?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const content = (
     <>
       <View style={[styles.rowIcon, { backgroundColor: iconBackground }]}>
@@ -343,6 +351,8 @@ function SectionLabel({
   icon: keyof typeof Ionicons.glyphMap;
   danger?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionLabel}>
       <View
@@ -389,6 +399,7 @@ function PasswordSheet({
   onClose: () => void;
   onSave: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -452,6 +463,8 @@ function SessionsSheet({
   onClose: () => void;
   onRevoke: (sessionId: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -541,6 +554,8 @@ function ConfirmSheet({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isDanger = confirmVariant === 'danger';
 
   return (
@@ -584,7 +599,8 @@ function ConfirmSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
   },
@@ -733,7 +749,7 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   settingsCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderColor: colors.borderSubtle,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -809,7 +825,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   sheet: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     paddingBottom: spacing.xl,
@@ -818,7 +834,7 @@ const styles = StyleSheet.create({
     ...shadowMd,
   },
   sheetLarge: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     maxHeight: '78%',
@@ -923,7 +939,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   confirmCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
     borderRadius: radius.card,
     padding: spacing.lg,
     width: '100%',

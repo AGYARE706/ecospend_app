@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fontSize, fontWeight, radius, spacing } from '../../theme';
+import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * Warning banner shown when transfer amount exceeds GHS 10,000.
@@ -10,6 +11,7 @@ export interface LargeTransferWarningProps {
 }
 
 export default function LargeTransferWarning({ visible }: LargeTransferWarningProps) {
+  const styles = useThemedStyles(createStyles);
   if (!visible) {
     return null;
   }
@@ -25,7 +27,8 @@ export default function LargeTransferWarning({ visible }: LargeTransferWarningPr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     backgroundColor: colors.errorLight,
     borderRadius: radius.md,
