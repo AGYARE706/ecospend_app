@@ -179,3 +179,18 @@ export interface EnvelopeFormErrors {
   category?: string;
   monthlyLimit?: string;
 }
+
+export interface CategoryBreakdownPoint {
+  category: TransactionCategory;
+  amount: number;
+  percent: number;
+}
+
+export interface DashboardAnalytics {
+  savingsRate: number;
+  savingsAmount: number;
+  spendingTrend: import('../utils/weeklyInsights').SpendingTrendInsight;
+  topCategories: CategoryBreakdownPoint[];
+  monthLabel: string;
+  transactionCount: number;
+}

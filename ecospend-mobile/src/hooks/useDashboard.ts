@@ -8,7 +8,8 @@ import {
   mockMonthlySummary,
   mockUser,
 } from '../data/mock/mockData';
-import type { BudgetEnvelope, Transaction, WeeklyInsight } from '../types';
+import type { BudgetEnvelope, DashboardAnalytics, WeeklyInsight } from '../types';
+import { computeDashboardAnalytics } from '../utils/dashboardAnalytics';
 import { formatHeaderDate, getFirstName } from '../utils/formatDate';
 import {
   computeWeeklyInsight,
@@ -39,6 +40,10 @@ export function useDashboard() {
     (): BudgetEnvelope[] => mockBudgetEnvelopes,
     [],
   );
+  const analytics = useMemo(
+    (): DashboardAnalytics => computeDashboardAnalytics(transactions),
+    [transactions],
+  );
 
   return {
     userName: getFirstName(displayName),
@@ -49,6 +54,7 @@ export function useDashboard() {
     recentTransactions,
     budgetEnvelopes,
     weeklyInsight,
+    analytics,
     loading,
   };
 }

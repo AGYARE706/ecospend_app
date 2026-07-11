@@ -15,11 +15,13 @@ import type { DailySpendingPoint } from '../../utils/weeklyInsights';
 export interface SpendingTrendChartProps {
   data: DailySpendingPoint[];
   barColor?: string;
+  compact?: boolean;
 }
 
 export default function SpendingTrendChart({
   data,
   barColor,
+  compact = false,
 }: SpendingTrendChartProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -42,7 +44,7 @@ export default function SpendingTrendChart({
 
   return (
     <View style={styles.container}>
-      <View style={styles.chartArea}>
+      <View style={[styles.chartArea, compact && styles.chartAreaCompact]}>
         {data.map((point, index) => {
           const height = animations[index].interpolate({
             inputRange: [0, 1],
@@ -78,6 +80,9 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: 'row',
     gap: spacing.xs,
     height: 120,
+  },
+  chartAreaCompact: {
+    height: 80,
   },
   barColumn: {
     alignItems: 'center',

@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import GhsText from '../ui/GhsText';
 import { Icon } from '../ui/icons';
 import {
-  palette,
   radius,
   shadowBrand,
   spacing,
@@ -30,7 +29,7 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
   return (
     <View style={styles.shadowWrap}>
       <LinearGradient
-        colors={[palette.green[500], palette.green[700], palette.green[800]]}
+        colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
         style={styles.card}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
