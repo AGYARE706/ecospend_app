@@ -8,18 +8,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '../../theme';
+import { spacing, useThemedStyles } from '../../theme';
+import type { ThemeColors } from '../../theme';
 
 /**
  * background — screen background color variant ('white' or 'page')
  * scrollable — wraps children in a ScrollView when true
  * keyboardAvoiding — adds KeyboardAvoidingView for form screens
+ * padded — applies horizontal/vertical padding to scroll content when true
  * children — screen content to render inside the wrapper
  */
 export interface ScreenWrapperProps {
   background?: 'white' | 'page';
   scrollable?: boolean;
   keyboardAvoiding?: boolean;
+  padded?: boolean;
   children: ReactNode;
 }
 
@@ -27,24 +30,37 @@ export default function ScreenWrapper({
   background = 'page',
   scrollable = false,
   keyboardAvoiding = false,
+  padded = true,
   children,
 }: ScreenWrapperProps) {
-  const content = scrollable ? (
+  const styles = useThemedStyles(createStyles);
+  const scrollView = scrollable ? (
     <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={[
+        styles.scrollContent,
+        padded ? styles.paddedContent : styles.unpaddedContent,
+      ]}
+      keyboardShouldPersistTaps="always"
+      keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
     >
       {children}
     </ScrollView>
+  ) : null;
+
+  const content = scrollable ? (
+    scrollView
   ) : (
-    children
+    <View style={[styles.flex, padded ? styles.paddedContent : styles.unpaddedContent]}>
+      {children}
+    </View>
   );
 
   const wrappedContent = keyboardAvoiding ? (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      enabled={Platform.OS === 'ios'}
     >
       {content}
     </KeyboardAvoidingView>
@@ -62,12 +78,13 @@ export default function ScreenWrapper({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
   },
   containerWhite: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.cardBackground,
   },
   containerPage: {
     backgroundColor: colors.pageBackground,
@@ -77,7 +94,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  paddedContent: {
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+  },
+  unpaddedContent: {
     paddingVertical: spacing.lg,
   },
 });
