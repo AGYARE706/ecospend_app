@@ -89,6 +89,13 @@ export function getRecentTransactions(
     .slice(0, count);
 }
 
+export function getTransactionById(
+  transactions: Transaction[],
+  transactionId: string,
+): Transaction | undefined {
+  return transactions.find((item) => item.id === transactionId);
+}
+
 export function computeWeeklyInsight(transactions: Transaction[]): WeeklyInsight {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);

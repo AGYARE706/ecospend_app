@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { mockVaults } from '../data/mock/vaults';
+import { useVaults } from '../context/VaultContext';
 import type { Vault, VaultStatus } from '../types/vault';
 
-// ─── Filter types ─────────────────────────────────────────────────────────────
 export type HistoryFilter = 'all' | 'active' | 'matured' | 'withdrawn';
 
 export const HISTORY_FILTERS: { key: HistoryFilter; label: string }[] = [
@@ -13,22 +12,25 @@ export const HISTORY_FILTERS: { key: HistoryFilter; label: string }[] = [
   { key: 'withdrawn', label: 'Withdrawn' },
 ];
 
-// ─── Summary ──────────────────────────────────────────────────────────────────
 export interface VaultHistorySummary {
   totalVaults: number;
   totalSaved: number;
   totalFeesPaid: number;
 }
 
-// ─── Sort – newest created first ──────────────────────────────────────────────
 function sortByNewest(a: Vault, b: Vault): number {
   return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
 }
 
-// ─── Filter predicate ─────────────────────────────────────────────────────────
 function matchesFilter(vault: Vault, filter: HistoryFilter): boolean {
   if (filter === 'all') return true;
-  if (filter === 'active') return vault.status === 'active' || vault.status === 'locked' || vault.status === 'pending';
+  if (filter === 'active') {
+    return (
+      vault.status === 'active' ||
+      vault.status === 'locked' ||
+      vault.status === 'pending'
+    );
+  }
   return vault.status === (filter as VaultStatus);
 }
 
@@ -37,12 +39,12 @@ function matchesQuery(vault: Vault, query: string): boolean {
   return vault.name.toLowerCase().includes(query.toLowerCase().trim());
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useVaultHistory() {
+  const { vaults } = useVaults();
   const [activeFilter, setActiveFilter] = useState<HistoryFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const allVaults = useMemo(() => [...mockVaults].sort(sortByNewest), []);
+  const allVaults = useMemo(() => [...vaults].sort(sortByNewest), [vaults]);
 
   const filteredVaults = useMemo(
     () =>
@@ -72,7 +74,6 @@ export function useVaultHistory() {
     };
   }, [allVaults]);
 
-  // Count per filter tab for badges
   const filterCounts = useMemo<Record<HistoryFilter, number>>(
     () => ({
       all: allVaults.length,

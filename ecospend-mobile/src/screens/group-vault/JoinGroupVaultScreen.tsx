@@ -13,8 +13,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { useVaults } from '../../context/VaultContext';
 import { MOCK_SAVE_DELAY_MS } from '../../data/mock/mockData';
-import { mockGroupVaults } from '../../data/mock/groupVaults';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -40,17 +40,10 @@ interface JoinGroupVaultScreenProps {
   navigation: JoinGroupVaultNavProp;
 }
 
-// ─── Mock invite-code lookup ──────────────────────────────────────────────────
-// In production this would hit an API. Here we map short codes → group vaults.
-const INVITE_CODE_MAP: Record<string, GroupVault> = {
-  'TRIP-2026': mockGroupVaults[0]!,
-  'TECH-TEAM': mockGroupVaults[1]!,
-  'FAM-SAFE': mockGroupVaults[2]!,
-  'STRT-PAD': mockGroupVaults[3]!,
-};
-
+// ─── Invite code length ───────────────────────────────────────────────────────
 const CODE_LENGTH = 8; // matches "TRIP-2026" pattern
 const LOOKUP_DELAY = 900; // simulate network
+const DEMO_INVITE_CODES = ['TRIP-2026', 'TECH-TEAM', 'FAM-SAFE', 'STRT-PAD'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function ghs(amount: number): string {
@@ -74,6 +67,7 @@ export default function JoinGroupVaultScreen({
 }: JoinGroupVaultScreenProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { lookupInviteCode, joinGroupVault } = useVaults();
   const [rawCode, setRawCode] = useState('');
   const [lookupState, setLookupState] = useState<
     'idle' | 'loading' | 'found' | 'not_found'
@@ -86,23 +80,26 @@ export default function JoinGroupVaultScreen({
   const displayCode = rawCode.toUpperCase().replace(/[^A-Z0-9-]/g, '');
 
   // ─── Lookup on change ──────────────────────────────────────────────────
-  const handleCodeChange = useCallback((text: string) => {
-    const normalised = text.toUpperCase().replace(/[^A-Z0-9-]/g, '');
-    setRawCode(normalised);
-    setFoundVault(null);
-    setLookupState('idle');
+  const handleCodeChange = useCallback(
+    (text: string) => {
+      const normalised = text.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+      setRawCode(normalised);
+      setFoundVault(null);
+      setLookupState('idle');
 
-    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+      if (lookupTimer.current) clearTimeout(lookupTimer.current);
 
-    if (normalised.length < 6) return;
+      if (normalised.length < 6) return;
 
-    setLookupState('loading');
-    lookupTimer.current = setTimeout(() => {
-      const match = INVITE_CODE_MAP[normalised] ?? null;
-      setFoundVault(match);
-      setLookupState(match ? 'found' : 'not_found');
-    }, LOOKUP_DELAY);
-  }, []);
+      setLookupState('loading');
+      lookupTimer.current = setTimeout(() => {
+        const match = lookupInviteCode(normalised);
+        setFoundVault(match);
+        setLookupState(match ? 'found' : 'not_found');
+      }, LOOKUP_DELAY);
+    },
+    [lookupInviteCode],
+  );
 
   const clearCode = useCallback(() => {
     setRawCode('');
@@ -116,11 +113,12 @@ export default function JoinGroupVaultScreen({
     if (!foundVault) return;
     setIsJoining(true);
     await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
+    const joined = joinGroupVault(displayCode);
     setIsJoining(false);
     navigation.replace('VaultSuccess', {
-      message: `You've joined "${foundVault.name}"! Your contribution will help reach the shared goal.`,
+      message: `You've joined "${joined?.name ?? foundVault.name}"! Your contribution will help reach the shared goal.`,
     });
-  }, [foundVault, navigation]);
+  }, [displayCode, foundVault, joinGroupVault, navigation]);
 
   return (
     <ScreenWrapper background="page" padded={false}>
@@ -229,7 +227,7 @@ export default function JoinGroupVaultScreen({
             {lookupState === 'idle' && displayCode.length === 0 ? (
               <View style={styles.sampleCodes}>
                 <Text style={styles.sampleLabel}>Try a demo code:</Text>
-                {Object.keys(INVITE_CODE_MAP).map((code) => (
+                {DEMO_INVITE_CODES.map((code) => (
                   <Pressable
                     key={code}
                     onPress={() => handleCodeChange(code)}

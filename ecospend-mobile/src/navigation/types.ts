@@ -65,8 +65,6 @@ export type AppStackParamList = {
   AddGoalContribution: { goalId: string };
   // Budget (fullscreen modal — accessible from Dashboard + Goals)
   BudgetEnvelopes: undefined;
-  CreateBudgetEnvelope: undefined;
-  EditBudgetEnvelope: { envelopeId: string };
   // Calculator (fullscreen modal — accessible from Dashboard + Transactions)
   MoMoCalculator: undefined;
   // Vault

@@ -171,6 +171,7 @@ export default function DashboardScreen() {
                     tabNavigation?.navigate('TransactionsTab', {
                       screen: 'TransactionDetails',
                       params: { transactionId: transaction.id },
+                      initial: false,
                     })
                   }
                 />

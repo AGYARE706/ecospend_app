@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 
 import { useAuth } from '../context/AuthContext';
-import { mockGroupVaults } from '../data/mock/groupVaults';
-import { mockUser, mockSavingsGoals } from '../data/mock/mockData';
-import { mockVaults } from '../data/mock/vaults';
+import { useGoals } from '../context/GoalsContext';
+import { useVaults } from '../context/VaultContext';
+import { mockUser } from '../data/mock/mockData';
 import type { UserTier } from '../types';
 
 export interface ProfileStats {
@@ -39,14 +39,12 @@ function formatPhone(phone: string): string {
 
 export function useProfile(): ProfileData {
   const { user, tier } = useAuth();
+  const { completedGoals } = useGoals();
+  const { vaults, groupVaults } = useVaults();
 
   return useMemo(() => {
     const name = user?.name ?? mockUser.name;
     const phone = user?.phone ?? mockUser.phone;
-
-    const goalsCompleted = mockSavingsGoals.filter(
-      (goal) => goal.completedAt != null,
-    ).length;
 
     return {
       name,
@@ -55,10 +53,17 @@ export function useProfile(): ProfileData {
       tier,
       isPlus: tier === 'PLUS',
       stats: {
-        goalsCompleted,
-        vaultsCreated: mockVaults.length + mockGroupVaults.length,
+        goalsCompleted: completedGoals.length,
+        vaultsCreated: vaults.length + groupVaults.length,
         savingsStreak: 12,
       },
     };
-  }, [tier, user?.name, user?.phone]);
+  }, [
+    completedGoals.length,
+    groupVaults.length,
+    tier,
+    user?.name,
+    user?.phone,
+    vaults.length,
+  ]);
 }

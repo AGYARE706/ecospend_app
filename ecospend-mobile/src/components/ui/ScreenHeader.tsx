@@ -6,12 +6,14 @@ import type { ThemeColors } from '../../theme';
 import IconButton from './IconButton';
 
 /**
- * Consistent screen header with title, optional subtitle, and optional right slot.
+ * Consistent screen header with title, optional subtitle, back/close, and right slot.
  */
 export interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
   right?: ReactNode;
+  onBackPress?: () => void;
+  backVariant?: 'back' | 'close';
   onNotificationPress?: () => void;
   onCalculatorPress?: () => void;
   style?: ViewStyle;
@@ -21,6 +23,8 @@ export default function ScreenHeader({
   title,
   subtitle,
   right,
+  onBackPress,
+  backVariant = 'back',
   onNotificationPress,
   onCalculatorPress,
   style,
@@ -31,10 +35,21 @@ export default function ScreenHeader({
 
   return (
     <View style={[styles.container, style]}>
+      {onBackPress ? (
+        <IconButton
+          icon={backVariant === 'close' ? 'x' : 'chevron-left'}
+          variant="soft"
+          onPress={onBackPress}
+          accessibilityLabel={backVariant === 'close' ? 'Close' : 'Go back'}
+          style={styles.backButton}
+        />
+      ) : null}
+
       <View style={styles.textBlock}>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
+
       {showActions ? (
         <View style={styles.right}>
           {onCalculatorPress ? (
@@ -55,6 +70,8 @@ export default function ScreenHeader({
           ) : null}
           {right}
         </View>
+      ) : onBackPress ? (
+        <View style={styles.rightSpacer} />
       ) : null}
     </View>
   );
@@ -62,30 +79,37 @@ export default function ScreenHeader({
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  container: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  textBlock: {
-    flex: 1,
-    marginRight: spacing.md,
-    paddingTop: spacing.xs,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.textDark,
-    marginBottom: 2,
-  },
-  subtitle: {
-    ...typography.bodySm,
-    color: colors.textMuted,
-  },
-  right: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-});
+    container: {
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing.lg,
+    },
+    backButton: {
+      marginRight: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    textBlock: {
+      flex: 1,
+      marginRight: spacing.md,
+      paddingTop: spacing.xs,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.textDark,
+      marginBottom: 2,
+    },
+    subtitle: {
+      ...typography.bodySm,
+      color: colors.textMuted,
+    },
+    right: {
+      alignItems: 'center',
+      alignSelf: 'center',
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    rightSpacer: {
+      width: 40,
+    },
+  });

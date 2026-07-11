@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
+import { useVaults } from '../context/VaultContext';
 import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
 import type { AppStackParamList } from '../navigation/types';
 import {
@@ -66,6 +67,7 @@ function normalisePhone(raw: string): string | null {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useCreateGroupVault(navigation: CreateGroupVaultNavProp) {
+  const { createGroupVault } = useVaults();
   const [form, setForm] = useState<CreateGroupVaultFormState>({
     groupName: '',
     goalName: '',
@@ -210,12 +212,35 @@ export function useCreateGroupVault(navigation: CreateGroupVaultNavProp) {
 
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
+
+    createGroupVault({
+      name: form.groupName.trim(),
+      goalName: form.goalName.trim(),
+      targetAmount: parsedTarget,
+      maturityDate: formatIsoDate(form.maturityDate),
+      memberLimit: form.memberLimit,
+      members: form.members.map((member) => ({
+        phone: member.phone,
+        displayPhone: member.displayPhone,
+      })),
+    });
+
     setIsLoading(false);
 
     navigation.replace('VaultSuccess', {
       message: `"${form.groupName.trim()}" group vault created! Invites sent to ${form.members.length} member${form.members.length !== 1 ? 's' : ''}.`,
     });
-  }, [form.groupName, form.members.length, navigation, validate]);
+  }, [
+    createGroupVault,
+    form.goalName,
+    form.groupName,
+    form.maturityDate,
+    form.memberLimit,
+    form.members,
+    navigation,
+    parsedTarget,
+    validate,
+  ]);
 
   return {
     form,

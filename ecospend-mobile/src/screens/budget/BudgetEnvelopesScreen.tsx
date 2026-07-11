@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import AddEnvelopeSheet from '../../components/envelopes/AddEnvelopeSheet';
@@ -25,6 +26,7 @@ import type { Envelope } from '../../types';
 export default function BudgetEnvelopesScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const navigation = useNavigation();
   const {
     filteredEnvelopes,
     activeFilter,
@@ -57,6 +59,7 @@ export default function BudgetEnvelopesScreen() {
         <ScreenHeader
           title="Budget Envelopes"
           subtitle="Track monthly spending limits"
+          onBackPress={() => navigation.goBack()}
           right={
             <View style={styles.monthNav}>
               <Pressable style={styles.chevronButton}>
@@ -90,11 +93,18 @@ export default function BudgetEnvelopesScreen() {
     ),
     [
       activeFilter,
+      colors.textLight,
       currentMonthLabel,
       loading,
+      navigation,
       overallPercent,
       setFilter,
       statusCounts,
+      styles.chevronButton,
+      styles.headerContainer,
+      styles.monthLabel,
+      styles.monthNav,
+      styles.skeletonGap,
       totalLimit,
       totalRemaining,
       totalSpent,

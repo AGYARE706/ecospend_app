@@ -92,6 +92,18 @@ export default function VaultSuccessScreen() {
   return (
     <ScreenWrapper background="page" padded={false}>
       <View style={styles.screen}>
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={({ pressed }) => [
+              styles.closeBtn,
+              pressed && styles.closeBtnPressed,
+            ]}
+            hitSlop={spacing.sm}
+          >
+            <Ionicons name="close" size={24} color={colors.textDark} />
+          </Pressable>
+        </View>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
@@ -565,10 +577,26 @@ const createStyles = (colors: ThemeColors) =>
   screen: {
     flex: 1,
   },
+  topBar: {
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  closeBtn: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderRadius: radius.full,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  closeBtnPressed: {
+    opacity: 0.85,
+  },
   scrollContent: {
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.sm,
   },
   illustrationWrapper: {
     marginBottom: spacing.sm,

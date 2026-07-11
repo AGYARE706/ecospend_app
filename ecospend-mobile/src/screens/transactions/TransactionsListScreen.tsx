@@ -109,7 +109,7 @@ export default function TransactionsListScreen() {
                     variant="flat"
                     showDivider={index < section.data.length - 1}
                     onPress={() =>
-                      navigation.navigate('TransactionDetails', {
+                      navigation.push('TransactionDetails', {
                         transactionId: item.id,
                       })
                     }

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { mockGroupVaults, mockWithdrawalRequests } from '../data/mock/groupVaults';
+import { useVaults } from '../context/VaultContext';
 import type { GroupVault, WithdrawalRequest } from '../types/groupVault';
 import { formatVaultDate, getDaysRemaining } from '../utils/vault';
 
@@ -113,9 +113,10 @@ function buildTimeline(vault: GroupVault): GroupContributionTimelineItem[] {
 }
 
 export function useGroupVaultDetails(groupVaultId: string): GroupVaultDetailsData {
+  const { getGroupVaultById, groupVaults, withdrawalRequests } = useVaults();
   const vault =
-    mockGroupVaults.find((g) => g.id === groupVaultId) ??
-    mockGroupVaults[0]!;
+    getGroupVaultById(groupVaultId) ??
+    groupVaults[0]!;
 
   return useMemo(() => {
     const progressPct =
@@ -124,7 +125,7 @@ export function useGroupVaultDetails(groupVaultId: string): GroupVaultDetailsDat
         : 0;
     const daysRemaining = getDaysRemaining(vault.maturityDate);
     const remainingAmount = Math.max(0, vault.targetAmount - vault.amountSaved);
-    const pendingRequests = mockWithdrawalRequests.filter(
+    const pendingRequests = withdrawalRequests.filter(
       (r) => r.groupVaultId === vault.id && r.status === 'pending',
     );
     const memberContributionMap = buildMemberContributionMap(vault);
@@ -139,7 +140,7 @@ export function useGroupVaultDetails(groupVaultId: string): GroupVaultDetailsDat
       memberContributionMap,
       timeline,
     };
-  }, [vault]);
+  }, [vault, withdrawalRequests]);
 }
 
 export function formatGroupVaultDate(iso: string): string {

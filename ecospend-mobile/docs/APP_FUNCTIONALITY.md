@@ -58,15 +58,17 @@ Available before the user reaches the main app.
 - Enter **full name**, **phone**, **password**, and **confirm password**.
 - Tap **Create Account**; on success, see confirmation and return to Login.
 - Tap **Log in** if already registered.
-- Terms / Privacy links are shown (placeholder handlers in current build).
+- Terms / Privacy links open legal text sheets.
 
-### Forgot Password Screen *(placeholder)*
+### Forgot Password Screen
 
-- Displays a stub screen only; password reset flow is not yet implemented.
+- Enter Ghana phone number and request a verification code (mock SMS).
+- Continues to **Reset Password** with the phone param.
 
-### Reset Password Screen *(placeholder)*
+### Reset Password Screen
 
-- Displays a stub screen only; accepts a phone param but no form yet.
+- Enter 6-digit OTP, new password, and confirmation.
+- On success, returns to Login. Dev builds show the mock OTP hint.
 
 ---
 
@@ -429,9 +431,9 @@ These screens are reachable from multiple places (dashboard header, notification
 - Tap envelope → edit envelope sheet (update limit).
 - Month chevrons are display-only in current build.
 
-#### Create / Edit Budget Envelope screens *(placeholders)*
+#### Create / Edit Budget Envelope
 
-- Standalone routes exist as stubs; create/edit is handled via sheets on Budget Envelopes.
+- Create and edit are handled via sheets on Budget Envelopes (standalone stub routes removed).
 
 ### MoMo Calculator *(full-screen modal)*
 
@@ -439,11 +441,12 @@ These screens are reachable from multiple places (dashboard header, notification
 
 - Provider selection (MTN, Telecel, AT).
 - Fee result, large-transfer warning, saving tip, disclaimer.
+- Back button dismisses the calculator.
 
 **Do**
 
 - Enter amount for instant tier-based fee calculation.
-- No save or navigation — utility tool only.
+- Utility tool only (no save).
 
 ---
 
@@ -456,21 +459,19 @@ Quick index of every screen and primary user intent.
 | Splash | Wait for auto-redirect to login |
 | Login | Sign in, go to register or forgot password |
 | Register | Create account, return to login |
-| Forgot Password | *(stub)* |
-| Reset Password | *(stub)* |
+| Forgot Password | Request OTP via phone |
+| Reset Password | Verify OTP and set new password |
 | Dashboard | Overview, quick actions, open budgets/transactions/insights/notifications |
 | Transactions List | Search, filter, add transaction, open details |
 | Add Transaction | Record income/expense with MoMo fee preview |
-| Transaction Details | *(stub)* |
-| Edit Transaction | *(stub)* |
+| Transaction Details | View full transaction details, open edit |
+| Edit Transaction | Update or delete a transaction |
 | Savings Goals | Browse goals, switch active/completed, add money, open details |
-| Create Goal | *(stub)* |
-| Goal Details | *(stub)* |
-| Edit Goal | *(stub)* |
-| Add Goal Contribution | *(stub)* |
+| Create Goal | Create a savings goal |
+| Goal Details | View progress, milestones, contribute or edit |
+| Edit Goal | Update or delete a goal |
+| Add Goal Contribution | Contribute to a goal |
 | Budget Envelopes | View/filter envelopes, add/edit via sheets |
-| Create Budget Envelope | *(stub — use sheet)* |
-| Edit Budget Envelope | *(stub — use sheet)* |
 | Vault Dashboard | Manage personal vaults, open group vaults, create vault |
 | Vault Details | View vault, withdraw, add funds |
 | Vault History | Search/filter all vaults |
@@ -502,10 +503,8 @@ As of this documentation pass:
 
 | Status | Count | Notes |
 |--------|-------|-------|
-| **Fully interactive** | ~29 screens | Core flows for dashboard, transactions (add/list), vault, group vault, profile, notifications, insights, gamification, budget (via sheets) |
-| **Placeholder / stub** | ~11 screens | Forgot/reset password, transaction detail/edit, goal create/edit/details/contribution, standalone budget create/edit routes |
-
-Stub screens show a title only; related functionality may exist elsewhere (e.g. budget create/edit via sheets on Budget Envelopes).
+| **Fully interactive** | All registered screens | Mock-backed contexts for finance, goals, envelopes, and vaults; ready for API swap |
+| **Placeholder / stub** | 0 | Orphaned budget create/edit routes removed |
 
 ---
 
@@ -515,7 +514,7 @@ Stub screens show a title only; related functionality may exist elsewhere (e.g. 
 
 1. Splash → Register → Login  
 2. Dashboard → Add Transaction → view on Transactions tab  
-3. Goals → Create Goal *(when implemented)* or browse mock goals  
+3. Goals → Create Goal → contribute and track progress  
 4. Profile → complete Edit Profile, review Subscription  
 
 ### Saver
@@ -527,7 +526,7 @@ Stub screens show a title only; related functionality may exist elsewhere (e.g. 
 ### Group saver
 
 1. Vault → Group Vaults → Join or Create Group Vault  
-2. Group Vault Details → contribute *(when wired)*  
+2. Group Vault Details → review members and pending requests  
 3. Withdrawal Approval → vote on member withdrawal requests  
 
 ### Budget-conscious user

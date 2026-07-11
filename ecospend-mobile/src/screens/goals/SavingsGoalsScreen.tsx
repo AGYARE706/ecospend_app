@@ -1,11 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
-import AddGoalSheet from '../../components/goals/AddGoalSheet';
 import CompletedGoalCard from '../../components/goals/CompletedGoalCard';
-import ContributeSheet from '../../components/goals/ContributeSheet';
 import GoalCard from '../../components/goals/GoalCard';
 import GoalsSummaryBar from '../../components/goals/GoalsSummaryBar';
 import GoalsTabToggle from '../../components/goals/GoalsTabToggle';
@@ -27,7 +25,7 @@ type SavingsGoalsNavigationProp = StackNavigationProp<
 >;
 
 /**
- * Savings Goals tab with active/completed views, add/contribute sheets, and animated goal cards.
+ * Savings Goals tab with active/completed views and modal create/contribute flows.
  */
 export default function SavingsGoalsScreen() {
   const navigation = useNavigation<SavingsGoalsNavigationProp>();
@@ -37,17 +35,10 @@ export default function SavingsGoalsScreen() {
     loading,
     activeTab,
     setActiveTab,
-    addGoal,
-    contributeToGoal,
     toastMessage,
     totalSaved,
     activeGoalCount,
-    isSavingGoal,
-    isContributing,
   } = useSavingsGoals();
-
-  const [showAddSheet, setShowAddSheet] = useState(false);
-  const [contributeGoal, setContributeGoal] = useState<SavingsGoal | null>(null);
 
   const listData = activeTab === 'active' ? activeGoals : completedGoals;
 
@@ -154,21 +145,6 @@ export default function SavingsGoalsScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-      />
-
-      <AddGoalSheet
-        visible={showAddSheet}
-        loading={isSavingGoal}
-        onClose={() => setShowAddSheet(false)}
-        onSave={addGoal}
-      />
-
-      <ContributeSheet
-        visible={contributeGoal !== null}
-        goal={contributeGoal}
-        loading={isContributing}
-        onClose={() => setContributeGoal(null)}
-        onContribute={contributeToGoal}
       />
     </ScreenWrapper>
   );

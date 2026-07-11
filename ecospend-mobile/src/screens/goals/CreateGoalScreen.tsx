@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/ui/Card';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
+import { Icon } from '../../components/ui/icons';
+import { useGoals } from '../../context/GoalsContext';
 import {
   spacing,
   fontSize,
@@ -37,6 +39,7 @@ export default function CreateGoalScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation();
+  const { addGoal, isSavingGoal } = useGoals();
   const [formData, setFormData] = useState<GoalFormData>({
     category: '',
     title: '',
@@ -70,11 +73,29 @@ export default function CreateGoalScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCreateGoal = () => {
-    if (validateForm()) {
-      // TODO: Call the useSavingsGoals hook or API to create goal
-      navigation.goBack();
+  const handleCreateGoal = async () => {
+    if (!validateForm()) {
+      return;
     }
+
+    const targetAmount = parseFloat(formData.targetAmount);
+    let deadline: string | null = null;
+
+    if (formData.targetDate.includes('/')) {
+      const [month, day, year] = formData.targetDate.split('/');
+      if (month && day && year) {
+        deadline = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(formData.targetDate)) {
+      deadline = formData.targetDate;
+    }
+
+    await addGoal({
+      name: formData.title.trim(),
+      targetAmount,
+      deadline,
+    });
+    navigation.goBack();
   };
 
   return (
@@ -97,7 +118,7 @@ export default function CreateGoalScreen() {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>←</Text>
+          <Icon name="chevron-left" size={22} color={colors.textDark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Goal</Text>
         <View style={styles.headerSpacer} />
@@ -223,7 +244,10 @@ export default function CreateGoalScreen() {
       {/* Create Button */}
       <AppButton
         title="Create Goal"
-        onPress={handleCreateGoal}
+        onPress={() => {
+          void handleCreateGoal();
+        }}
+        loading={isSavingGoal}
         variant="primary"
         size="lg"
         fullWidth

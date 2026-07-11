@@ -1,10 +1,6 @@
 import { createStackNavigator } from '@react-navigation/stack';
 
-import {
-  BudgetEnvelopesScreen,
-  CreateBudgetEnvelopeScreen,
-  EditBudgetEnvelopeScreen,
-} from '../../screens/budget';
+import { BudgetEnvelopesScreen } from '../../screens/budget';
 import MoMoCalculatorScreen from '../../screens/calculator/MoMoCalculatorScreen';
 import CreateGroupVaultScreen from '../../screens/group-vault/CreateGroupVaultScreen';
 import JoinGroupVaultScreen from '../../screens/group-vault/JoinGroupVaultScreen';
@@ -43,14 +39,6 @@ export default function AppNavigator() {
         <Stack.Screen
           name="AddGoalContribution"
           component={AddGoalContributionScreen}
-        />
-        <Stack.Screen
-          name="CreateBudgetEnvelope"
-          component={CreateBudgetEnvelopeScreen}
-        />
-        <Stack.Screen
-          name="EditBudgetEnvelope"
-          component={EditBudgetEnvelopeScreen}
         />
         <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
         <Stack.Screen name="WithdrawVault" component={WithdrawVaultScreen} />

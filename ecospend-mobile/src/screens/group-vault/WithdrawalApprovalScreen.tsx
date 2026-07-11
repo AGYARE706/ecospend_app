@@ -9,10 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import {
-  mockGroupVaults,
-  mockWithdrawalRequests,
-} from '../../data/mock/groupVaults';
+import { useVaults } from '../../context/VaultContext';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -96,12 +93,20 @@ export default function WithdrawalApprovalScreen() {
   const styles = useThemedStyles(createStyles);
   const { params } = useRoute<WithdrawalApprovalRouteProp>();
   const navigation = useNavigation<WithdrawalApprovalNavProp>();
+  const {
+    getGroupVaultById,
+    getWithdrawalRequestById,
+    groupVaults,
+    withdrawalRequests,
+    voteWithdrawal,
+  } = useVaults();
 
-  const group = mockGroupVaults.find((g) => g.id === params.groupVaultId) ?? mockGroupVaults[0]!;
+  const group =
+    getGroupVaultById(params.groupVaultId) ?? groupVaults[0]!;
   const request =
-    mockWithdrawalRequests.find((r) => r.id === params.requestId && r.groupVaultId === params.groupVaultId) ??
-    mockWithdrawalRequests.find((r) => r.groupVaultId === group.id) ??
-    mockWithdrawalRequests[0]!;
+    getWithdrawalRequestById(params.requestId) ??
+    withdrawalRequests.find((r) => r.groupVaultId === group.id) ??
+    withdrawalRequests[0]!;
 
   const [votesFor, setVotesFor] = useState(request.votesFor);
   const [votesAgainst, setVotesAgainst] = useState(request.votesAgainst);
@@ -127,12 +132,14 @@ export default function WithdrawalApprovalScreen() {
     if (myVote !== null) return;
     setVotesFor((v) => v + 1);
     setMyVote('approve');
+    voteWithdrawal(request.id, true);
   };
 
   const onReject = () => {
     if (myVote !== null) return;
     setVotesAgainst((v) => v + 1);
     setMyVote('reject');
+    voteWithdrawal(request.id, false);
   };
 
   return (
