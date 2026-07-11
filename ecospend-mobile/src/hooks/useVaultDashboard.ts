@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
-import { mockVaults, buildVaultSummary } from '../data/mock/vaults';
+import { useVaults } from '../context/VaultContext';
+import { buildVaultSummary } from '../data/mock/vaults';
 import type { Vault, VaultSummary } from '../types/vault';
 
 interface UseVaultDashboardResult {
@@ -11,7 +12,7 @@ interface UseVaultDashboardResult {
 }
 
 export function useVaultDashboard(): UseVaultDashboardResult {
-  const vaults = mockVaults;
+  const { vaults } = useVaults();
 
   const activeVaults = useMemo(
     () => vaults.filter((vault) => vault.status === 'active'),

@@ -7,6 +7,10 @@ import Svg, { Circle } from 'react-native-svg';
 import type { GoalsStackParamList } from '../../navigation/types';
 import Card from '../../components/ui/Card';
 import AppButton from '../../components/ui/AppButton';
+import EmptyState from '../../components/ui/EmptyState';
+import { Icon } from '../../components/ui/icons';
+import { useGoals } from '../../context/GoalsContext';
+import { navigateApp } from '../../navigation/navigationRef';
 import {
   spacing,
   fontSize,
@@ -17,6 +21,12 @@ import {
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
+import {
+  formatMonthYear,
+  getDaysRemaining,
+  getGoalProgress,
+  getWeeklyTarget,
+} from '../../utils/goals';
 
 type GoalDetailsRouteProp = RouteProp<GoalsStackParamList, 'GoalDetails'>;
 
@@ -34,59 +44,78 @@ export default function GoalDetailsScreen() {
   const styles = useThemedStyles(createStyles);
   const { params } = useRoute<GoalDetailsRouteProp>();
   const navigation = useNavigation<any>();
+  const { getGoalById } = useGoals();
+  const savingsGoal = getGoalById(params.goalId);
 
-  // Mock data - replace with actual data from params/hook
+  if (!savingsGoal) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="chevron-left" size={22} color={colors.textDark} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Goal</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <EmptyState
+          icon="target"
+          title="Goal not found"
+          subtitle="This goal may have been deleted."
+          actionLabel="Go back"
+          onAction={() => navigation.goBack()}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  const daysRemaining = getDaysRemaining(savingsGoal.deadline);
+  const weeklyTarget = getWeeklyTarget(savingsGoal);
   const goal = {
-    id: params.goalId,
-    title: 'Emergency Fund',
-    description: 'Secure your financial foundation',
-    currentAmount: 3000,
-    targetAmount: 5000,
-    daysRemaining: 45,
-    avgContribution: 250,
-    weeklyProjection: 315,
-    projectedFinish: 'Nov 15, 2023',
+    id: savingsGoal.id,
+    title: savingsGoal.name,
+    description: savingsGoal.deadline
+      ? `Target by ${formatMonthYear(savingsGoal.deadline)}`
+      : 'No deadline set',
+    currentAmount: savingsGoal.currentAmount,
+    targetAmount: savingsGoal.targetAmount,
+    daysRemaining: daysRemaining ?? 0,
+    avgContribution: weeklyTarget ?? Math.round(savingsGoal.targetAmount / 12),
+    weeklyProjection: weeklyTarget ?? Math.round(savingsGoal.targetAmount / 12),
+    projectedFinish: savingsGoal.deadline
+      ? formatMonthYear(savingsGoal.deadline)
+      : 'No deadline',
   };
 
-  const progress = (goal.currentAmount / goal.targetAmount) * 100;
+  const progress = getGoalProgress(savingsGoal);
 
-  const milestones: Milestone[] = [
-    {
-      id: '100',
-      percentage: 100,
-      title: 'Complete',
-      amount: 5000,
-      icon: '🚩',
-      isCompleted: false,
-    },
-    {
-      id: '75',
-      percentage: 75,
-      title: 'Vault Secure',
-      amount: 3750,
-      icon: '🔒',
-      isCompleted: false,
-    },
-    {
-      id: '50',
-      percentage: 50,
-      title: 'Halfway There',
-      amount: 2500,
-      icon: '⏱️',
-      isCompleted: true,
-    },
-    {
-      id: '25',
-      percentage: 25,
-      title: 'First Steps',
-      amount: 1250,
-      icon: '✓',
-      isCompleted: true,
-    },
-  ];
+  const milestones: Milestone[] = [100, 75, 50, 25].map((percentage) => ({
+    id: String(percentage),
+    percentage,
+    title:
+      percentage === 100
+        ? 'Complete'
+        : percentage === 75
+          ? 'Almost there'
+          : percentage === 50
+            ? 'Halfway There'
+            : 'First Steps',
+    amount: Math.round((percentage / 100) * savingsGoal.targetAmount),
+    icon:
+      percentage === 100
+        ? '🚩'
+        : percentage === 75
+          ? '🔒'
+          : percentage === 50
+            ? '⏱️'
+            : '✓',
+    isCompleted: savingsGoal.currentAmount >= (percentage / 100) * savingsGoal.targetAmount,
+  }));
 
   const handleAddContribution = () => {
-    navigation.navigate('AddGoalContribution' as any, { goalId: params.goalId });
+    navigateApp('AddGoalContribution', { goalId: params.goalId });
   };
 
   return (
@@ -102,11 +131,14 @@ export default function GoalDetailsScreen() {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>←</Text>
+          <Icon name="chevron-left" size={22} color={colors.textDark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{goal.title}</Text>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Text style={styles.notificationIcon}>🔔</Text>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => navigation.navigate('EditGoal', { goalId: params.goalId })}
+        >
+          <Icon name="edit" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -341,6 +373,9 @@ const createStyles = (colors: ThemeColors) =>
     flex: 1,
     marginHorizontal: spacing.sm,
     textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 44,
   },
   notificationButton: {
     width: 44,

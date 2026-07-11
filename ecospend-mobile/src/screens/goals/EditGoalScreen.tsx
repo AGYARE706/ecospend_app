@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,8 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/icons';
 import { GOAL_CATEGORIES } from '../../constants/categories';
+import { useGoals } from '../../context/GoalsContext';
 import type { GoalsStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -45,14 +47,32 @@ export default function EditGoalScreen() {
   const styles = useThemedStyles(createStyles);
     const { params } = useRoute<EditGoalRouteProp>();
     const navigation = useNavigation();
+    const { getGoalById, updateGoal, deleteGoal, isSavingGoal } = useGoals();
+    const existing = getGoalById(params.goalId);
 
     const [form, setForm] = useState<EditGoalFormState>({
-        name: 'New Home Fund',
-        targetAmount: '150000',
-        currentSaved: '45000',
-        targetDeadline: '2026-12-31',
-        category: 'home',
+        name: '',
+        targetAmount: '',
+        currentSaved: '',
+        targetDeadline: '',
+        category: 'other',
     });
+    const [initialized, setInitialized] = useState(false);
+
+    useEffect(() => {
+      if (!existing || initialized) {
+        return;
+      }
+
+      setForm({
+        name: existing.name,
+        targetAmount: String(existing.targetAmount),
+        currentSaved: String(existing.currentAmount),
+        targetDeadline: existing.deadline ?? '',
+        category: 'other',
+      });
+      setInitialized(true);
+    }, [existing, initialized]);
 
     const [errors, setErrors] = useState<Partial<Record<keyof EditGoalFormState, string>>>({});
 
@@ -83,27 +103,52 @@ export default function EditGoalScreen() {
         if (!form.targetAmount || Number(form.targetAmount) <= 0) {
             nextErrors.targetAmount = 'Enter a valid target amount.';
         }
-        if (!form.currentSaved || Number(form.currentSaved) < 0) {
+        if (form.currentSaved === '' || Number(form.currentSaved) < 0) {
             nextErrors.currentSaved = 'Enter a valid saved amount.';
         }
-        if (!form.targetDeadline) nextErrors.targetDeadline = 'Choose a target deadline.';
         if (!form.category) nextErrors.category = 'Choose a category.';
 
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
     };
 
-    const handleSave = () => {
-        if (!validate()) {
+    const handleSave = async () => {
+        if (!validate() || !existing) {
             return;
         }
 
+        await updateGoal(existing.id, {
+          name: form.name.trim(),
+          targetAmount: Number(form.targetAmount),
+          currentAmount: Number(form.currentSaved),
+          deadline: form.targetDeadline.trim() || null,
+        });
+
         navigation.goBack();
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
+        if (!existing) {
+          return;
+        }
+
+        await deleteGoal(existing.id);
         navigation.goBack();
     };
+
+    if (!existing) {
+      return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <EmptyState
+            icon="target"
+            title="Goal not found"
+            subtitle="This goal may have been deleted."
+            actionLabel="Go back"
+            onAction={() => navigation.goBack()}
+          />
+        </SafeAreaView>
+      );
+    }
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -273,7 +318,10 @@ export default function EditGoalScreen() {
             <View style={styles.section}>
                 <AppButton
                     title="Save Changes"
-                    onPress={handleSave}
+                    onPress={() => {
+                      void handleSave();
+                    }}
+                    loading={isSavingGoal}
                     icon="save"
                     variant="primary"
                     size="lg"
@@ -283,7 +331,10 @@ export default function EditGoalScreen() {
 
                 <AppButton
                     title="Delete Goal"
-                    onPress={handleDelete}
+                    onPress={() => {
+                      void handleDelete();
+                    }}
+                    loading={isSavingGoal}
                     icon="trash"
                     variant="destructive"
                     size="lg"

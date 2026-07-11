@@ -14,8 +14,13 @@ export default function TransactionsStack() {
       <Stack.Screen
         name="TransactionDetails"
         component={TransactionDetailsScreen}
+        getId={({ params }) => params.transactionId}
       />
-      <Stack.Screen name="EditTransaction" component={EditTransactionScreen} />
+      <Stack.Screen
+        name="EditTransaction"
+        component={EditTransactionScreen}
+        getId={({ params }) => params.transactionId}
+      />
     </Stack.Navigator>
   );
 }

@@ -10,8 +10,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from './src/context/AuthContext';
+import { EnvelopesProvider } from './src/context/EnvelopesContext';
 import { FinanceProvider } from './src/context/FinanceContext';
+import { GoalsProvider } from './src/context/GoalsContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { VaultProvider } from './src/context/VaultContext';
 import { linking } from './src/navigation/linking';
 import { navigationRef } from './src/navigation/navigationRef';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -49,7 +52,13 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <FinanceProvider>
-              <ThemedApp />
+              <GoalsProvider>
+                <EnvelopesProvider>
+                  <VaultProvider>
+                    <ThemedApp />
+                  </VaultProvider>
+                </EnvelopesProvider>
+              </GoalsProvider>
             </FinanceProvider>
           </AuthProvider>
         </ThemeProvider>

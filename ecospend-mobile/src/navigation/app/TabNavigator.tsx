@@ -1,11 +1,10 @@
-import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '../../components/ui/icons';
 import type { IconName } from '../../components/ui/icons';
-import { fontWeight, shadowSm, useTheme } from '../../theme';
+import { useTheme } from '../../theme';
 import type { TabParamList } from '../types';
+import FloatingTabBar from './FloatingTabBar';
 import DashboardStack from './stacks/DashboardStack';
 import GoalsStack from './stacks/GoalsStack';
 import ProfileStack from './stacks/ProfileStack';
@@ -32,41 +31,30 @@ const tabLabels: Record<keyof TabParamList, string> = {
 
 export default function TabNavigator() {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  // Reserve room for the system gesture/nav bar so tab items never sit under it.
-  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 28 : 10);
 
   return (
     <Tab.Navigator
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={({ route }) => ({
         headerShown: false,
+        // Reset nested stacks when leaving a tab so deep screens don't linger.
+        popToTopOnBlur: true,
+        sceneContainerStyle: { backgroundColor: colors.pageBackground },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textGrey,
         tabBarStyle: {
-          backgroundColor: colors.cardBackground,
-          borderTopColor: colors.borderSubtle,
-          borderTopWidth: 1,
-          height: 58 + bottomInset,
-          paddingTop: 8,
-          paddingBottom: bottomInset,
-          ...shadowSm,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        tabBarItemStyle: {
-          paddingTop: 2,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: fontWeight.semibold,
-          letterSpacing: 0.1,
-          marginTop: 2,
-        },
-        tabBarIcon: ({ color, focused }) => (
+        tabBarIcon: ({ color, focused, size }) => (
           <Icon
             name={tabIcons[route.name]}
-            size={24}
+            size={size}
             color={color}
             filled={focused}
-            strokeWidth={focused ? 2 : 1.8}
+            strokeWidth={focused ? 2.2 : 1.7}
           />
         ),
         tabBarLabel: tabLabels[route.name],

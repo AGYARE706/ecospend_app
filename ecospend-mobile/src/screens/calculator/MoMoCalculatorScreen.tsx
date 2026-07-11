@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 import FeeResultCard from '../../components/calculator/FeeResultCard';
 import FeeSavingTipCard from '../../components/calculator/FeeSavingTipCard';
@@ -16,6 +17,7 @@ import type { ThemeColors } from '../../theme';
  */
 export default function MoMoCalculatorScreen() {
   const styles = useThemedStyles(createStyles);
+  const navigation = useNavigation();
   const {
     selectedProvider,
     setProvider,
@@ -37,6 +39,7 @@ export default function MoMoCalculatorScreen() {
         <ScreenHeader
           title="Fee Calculator"
           subtitle="See MoMo fees before you send"
+          onBackPress={() => navigation.goBack()}
         />
 
         <Text style={styles.sectionLabel}>Select provider</Text>

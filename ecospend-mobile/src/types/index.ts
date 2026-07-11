@@ -108,6 +108,13 @@ export interface AddGoalPayload {
   deadline: string | null;
 }
 
+export interface UpdateGoalPayload {
+  name?: string;
+  targetAmount?: number;
+  currentAmount?: number;
+  deadline?: string | null;
+}
+
 export interface AddGoalFormErrors {
   name?: string;
   targetAmount?: string;

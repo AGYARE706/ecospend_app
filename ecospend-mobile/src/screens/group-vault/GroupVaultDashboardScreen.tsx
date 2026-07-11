@@ -94,6 +94,16 @@ export default function GroupVaultDashboardScreen() {
       <View style={styles.screen}>
         {/* ─── 1. Header ──────────────────────────────────────── */}
         <View style={styles.header}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={({ pressed }) => [
+              styles.backBtn,
+              pressed && styles.backBtnPressed,
+            ]}
+            hitSlop={spacing.sm}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.textDark} />
+          </Pressable>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Group Vaults</Text>
             <Text style={styles.headerSub}>
@@ -1341,6 +1351,18 @@ const createStyles = (colors: ThemeColors) =>
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
+  },
+  backBtn: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderRadius: radius.full,
+    height: 40,
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    width: 40,
+  },
+  backBtnPressed: {
+    opacity: 0.85,
   },
   headerText: {
     flex: 1,

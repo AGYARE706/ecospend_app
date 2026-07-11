@@ -1,10 +1,7 @@
 import { useMemo } from 'react';
 
-import {
-  buildGroupVaultSummary,
-  mockGroupVaults,
-  mockWithdrawalRequests,
-} from '../data/mock/groupVaults';
+import { useVaults } from '../context/VaultContext';
+import { buildGroupVaultSummary } from '../data/mock/groupVaults';
 import type { GroupVault, WithdrawalRequest } from '../types/groupVault';
 
 export interface GroupVaultDashboardData {
@@ -21,27 +18,26 @@ export interface GroupVaultDashboardData {
 }
 
 export function useGroupVaultDashboard(): GroupVaultDashboardData {
-  const groups = mockGroupVaults;
-  const allRequests = mockWithdrawalRequests;
+  const { groupVaults, withdrawalRequests } = useVaults();
 
   return useMemo(() => {
-    const activeGroups = groups.filter(
+    const activeGroups = groupVaults.filter(
       (g) => g.status === 'active' || g.status === 'locked',
     );
 
-    const pendingRequests = allRequests.filter(
+    const pendingRequests = withdrawalRequests.filter(
       (r) => r.status === 'pending',
     );
 
-    const summary = buildGroupVaultSummary(groups, pendingRequests);
+    const summary = buildGroupVaultSummary(groupVaults, pendingRequests);
 
     return {
-      groups,
+      groups: groupVaults,
       activeGroups,
       pendingRequests,
       summary,
-      isEmpty: groups.length === 0,
+      isEmpty: groupVaults.length === 0,
       hasPendingRequests: pendingRequests.length > 0,
     };
-  }, [groups, allRequests]);
+  }, [groupVaults, withdrawalRequests]);
 }

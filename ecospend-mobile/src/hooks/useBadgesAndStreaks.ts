@@ -2,11 +2,10 @@ import { useMemo } from 'react';
 
 import { getAchievementDefinitions, ACHIEVEMENT_ORDER } from '../constants/achievements';
 import { useFinance } from '../context/FinanceContext';
+import { useGoals } from '../context/GoalsContext';
 import { useTheme } from '../context/ThemeContext';
+import { useVaults } from '../context/VaultContext';
 import type { ThemeColors } from '../theme';
-import { mockGroupVaults } from '../data/mock/groupVaults';
-import { mockSavingsGoals } from '../data/mock/mockData';
-import { mockVaults } from '../data/mock/vaults';
 import type {
   AchievementProgress,
   BadgesAndStreaksData,
@@ -19,25 +18,6 @@ interface AchievementMetrics {
   vaultsMatured: number;
   daysActive: number;
   transactionsLogged: number;
-}
-
-function getAchievementMetrics(): AchievementMetrics {
-  const goalsCompleted = mockSavingsGoals.filter(
-    (goal) => goal.completedAt != null,
-  ).length;
-
-  const vaultsCreated = mockVaults.length + mockGroupVaults.length;
-  const vaultsMatured = mockVaults.filter(
-    (vault) => vault.status === 'matured' || vault.status === 'withdrawn',
-  ).length;
-
-  return {
-    goalsCompleted,
-    vaultsCreated,
-    vaultsMatured,
-    daysActive: 12,
-    transactionsLogged: 0,
-  };
 }
 
 function getMetricValue(
@@ -107,11 +87,20 @@ function buildStreakStats(metrics: AchievementMetrics): StreakStats {
 
 export function useBadgesAndStreaks(): BadgesAndStreaksData {
   const { transactions } = useFinance();
+  const { completedGoals } = useGoals();
+  const { vaults, groupVaults } = useVaults();
   const { colors } = useTheme();
 
   return useMemo(() => {
-    const metrics = getAchievementMetrics();
-    metrics.transactionsLogged = transactions.length;
+    const metrics: AchievementMetrics = {
+      goalsCompleted: completedGoals.length,
+      vaultsCreated: vaults.length + groupVaults.length,
+      vaultsMatured: vaults.filter(
+        (vault) => vault.status === 'matured' || vault.status === 'withdrawn',
+      ).length,
+      daysActive: 12,
+      transactionsLogged: transactions.length,
+    };
 
     const achievements = buildAchievementProgress(metrics, colors);
     const unlockedAchievements = achievements.filter((item) => item.unlocked);
@@ -124,5 +113,11 @@ export function useBadgesAndStreaks(): BadgesAndStreaksData {
       totalAchievements: achievements.length,
       unlockedCount: unlockedAchievements.length,
     };
-  }, [colors, transactions.length]);
+  }, [
+    colors,
+    completedGoals.length,
+    groupVaults.length,
+    transactions.length,
+    vaults,
+  ]);
 }

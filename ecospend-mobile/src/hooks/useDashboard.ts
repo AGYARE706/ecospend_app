@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../context/AuthContext';
+import { useEnvelopes } from '../context/EnvelopesContext';
 import { useFinance } from '../context/FinanceContext';
-import {
-  MOCK_LOADING_DELAY_MS,
-  mockBudgetEnvelopes,
-  mockMonthlySummary,
-  mockUser,
-} from '../data/mock/mockData';
-import type { BudgetEnvelope, DashboardAnalytics, WeeklyInsight } from '../types';
+import { MOCK_LOADING_DELAY_MS, mockUser } from '../data/mock/mockData';
+import type { DashboardAnalytics, WeeklyInsight } from '../types';
 import { computeDashboardAnalytics } from '../utils/dashboardAnalytics';
 import { formatHeaderDate, getFirstName } from '../utils/formatDate';
 import {
@@ -19,6 +15,7 @@ import {
 export function useDashboard() {
   const { user } = useAuth();
   const { transactions, getMonthlySummary } = useFinance();
+  const { dashboardEnvelopes } = useEnvelopes();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,10 +33,6 @@ export function useDashboard() {
     (): WeeklyInsight => computeWeeklyInsight(transactions),
     [transactions],
   );
-  const budgetEnvelopes = useMemo(
-    (): BudgetEnvelope[] => mockBudgetEnvelopes,
-    [],
-  );
   const analytics = useMemo(
     (): DashboardAnalytics => computeDashboardAnalytics(transactions),
     [transactions],
@@ -48,11 +41,11 @@ export function useDashboard() {
   return {
     userName: getFirstName(displayName),
     todayLabel: formatHeaderDate(new Date()),
-    balance: mockMonthlySummary.netBalance,
+    balance: summary.netBalance,
     income: summary.totalIncome,
     expense: summary.totalExpense,
     recentTransactions,
-    budgetEnvelopes,
+    budgetEnvelopes: dashboardEnvelopes,
     weeklyInsight,
     analytics,
     loading,

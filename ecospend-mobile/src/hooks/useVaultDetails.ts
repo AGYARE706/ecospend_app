@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { mockVaults } from '../data/mock/vaults';
+import { useVaults } from '../context/VaultContext';
 import type { Vault } from '../types/vault';
 import {
   formatVaultDate,
@@ -8,11 +8,9 @@ import {
   getVaultProgress,
 } from '../utils/vault';
 
-// ─── Fee rates (matches CreateVault) ─────────────────────────────────────────
 const ON_TIME_RATE = 0.02;
 const EARLY_RATE = 0.05;
 
-// ─── Derived interfaces ───────────────────────────────────────────────────────
 export interface VaultFeeDetails {
   onTimeRate: number;
   earlyRate: number;
@@ -39,14 +37,53 @@ export interface VaultDetailsData {
   formattedCreated: string;
   isMatured: boolean;
   isOnTrack: boolean;
+  isFound: boolean;
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useVaultDetails(vaultId: string): VaultDetailsData {
-  const vault: Vault =
-    mockVaults.find((v) => v.id === vaultId) ?? mockVaults[0]!;
+  const { getVaultById, vaults } = useVaults();
+  const vault = getVaultById(vaultId) ?? vaults[0];
+  const isFound = Boolean(getVaultById(vaultId));
 
   return useMemo(() => {
+    if (!vault) {
+      return {
+        vault: {
+          id: vaultId,
+          name: 'Unknown Vault',
+          currentBalance: 0,
+          targetAmount: 0,
+          maturityDate: new Date().toISOString().slice(0, 10),
+          createdDate: new Date().toISOString().slice(0, 10),
+          estimatedWithdrawalFee: 0,
+          status: 'pending' as const,
+          accentColor: '#2E7D32',
+          contributions: [],
+        },
+        progress: 0,
+        daysRemaining: 0,
+        fees: {
+          onTimeRate: ON_TIME_RATE,
+          earlyRate: EARLY_RATE,
+          onTimeFeeGhs: 0,
+          earlyFeeGhs: 0,
+          onTimeNetGhs: 0,
+          earlyNetGhs: 0,
+        },
+        stats: {
+          amountSaved: 0,
+          remainingAmount: 0,
+          dailySavingsNeeded: 0,
+          progressPct: 0,
+        },
+        formattedMaturity: '',
+        formattedCreated: '',
+        isMatured: false,
+        isOnTrack: false,
+        isFound: false,
+      };
+    }
+
     const progress = getVaultProgress(vault);
     const daysRemaining = getDaysRemaining(vault.maturityDate);
     const remaining = Math.max(0, vault.targetAmount - vault.currentBalance);
@@ -59,7 +96,6 @@ export function useVaultDetails(vaultId: string): VaultDetailsData {
     const onTimeFeeGhs = vault.currentBalance * ON_TIME_RATE;
     const earlyFeeGhs = vault.currentBalance * EARLY_RATE;
 
-    // Simple "on track" heuristic: saved at least as much as time elapsed implies
     const totalDays =
       getDaysRemaining(vault.createdDate, new Date(vault.maturityDate)) || 1;
     const elapsedDays = totalDays - daysRemaining;
@@ -88,6 +124,7 @@ export function useVaultDetails(vaultId: string): VaultDetailsData {
       formattedCreated: formatVaultDate(vault.createdDate),
       isMatured: vault.status === 'matured',
       isOnTrack,
+      isFound,
     };
-  }, [vault]);
+  }, [isFound, vault, vaultId]);
 }

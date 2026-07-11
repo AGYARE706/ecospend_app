@@ -11,8 +11,16 @@ export default function GoalsStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="SavingsGoals" component={SavingsGoalsScreen} />
-      <Stack.Screen name="GoalDetails" component={GoalDetailsScreen} />
-      <Stack.Screen name="EditGoal" component={EditGoalScreen} />
+      <Stack.Screen
+        name="GoalDetails"
+        component={GoalDetailsScreen}
+        getId={({ params }) => params.goalId}
+      />
+      <Stack.Screen
+        name="EditGoal"
+        component={EditGoalScreen}
+        getId={({ params }) => params.goalId}
+      />
     </Stack.Navigator>
   );
 }

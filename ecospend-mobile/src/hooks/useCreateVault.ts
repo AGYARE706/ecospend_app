@@ -1,17 +1,16 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
+import { useVaults } from '../context/VaultContext';
 import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
 import type { AppStackParamList } from '../navigation/types';
 import { getDaysRemaining } from '../utils/vault';
 
 type CreateVaultNavProp = StackNavigationProp<AppStackParamList, 'CreateVault'>;
 
-// ─── Fee rates ────────────────────────────────────────────────────────────────
-export const ON_TIME_FEE_RATE = 0.02; // 2%
-export const EARLY_FEE_RATE = 0.05; // 5%
+export const ON_TIME_FEE_RATE = 0.02;
+export const EARLY_FEE_RATE = 0.05;
 
-// ─── Date preset helpers ──────────────────────────────────────────────────────
 export type DatePreset = '3m' | '6m' | '1y' | '2y';
 
 export const DATE_PRESETS: { key: DatePreset; label: string; months: number }[] = [
@@ -39,7 +38,6 @@ export function formatDisplayDate(date: Date): string {
   });
 }
 
-// ─── Form types ───────────────────────────────────────────────────────────────
 export interface CreateVaultFormState {
   vaultName: string;
   targetAmount: string;
@@ -64,8 +62,8 @@ export interface VaultFeePreview {
   earlyWithdrawal: number;
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useCreateVault(navigation: CreateVaultNavProp) {
+  const { createVault } = useVaults();
   const [form, setForm] = useState<CreateVaultFormState>({
     vaultName: '',
     targetAmount: '',
@@ -76,12 +74,10 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
   const [errors, setErrors] = useState<CreateVaultFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // ─── Parsed values ──────────────────────────────────────────────────────
   const parsedTarget = parseFloat(form.targetAmount.replace(/,/g, '')) || 0;
   const parsedDeposit = parseFloat(form.initialDeposit.replace(/,/g, '')) || 0;
   const lockedAmount = parsedDeposit > 0 ? parsedDeposit : parsedTarget;
 
-  // ─── Fee preview ────────────────────────────────────────────────────────
   const feePreview = useMemo<VaultFeePreview>(() => {
     const onTimeFee = lockedAmount * ON_TIME_FEE_RATE;
     const earlyFee = lockedAmount * EARLY_FEE_RATE;
@@ -96,13 +92,11 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
     };
   }, [lockedAmount]);
 
-  // ─── Live summary ───────────────────────────────────────────────────────
   const daysRemaining = useMemo(
     () => getDaysRemaining(formatIsoDate(form.maturityDate)),
     [form.maturityDate],
   );
 
-  // ─── Field setters ──────────────────────────────────────────────────────
   const setField = useCallback(
     <K extends keyof CreateVaultFormState>(
       field: K,
@@ -115,8 +109,7 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
   );
 
   const selectPreset = useCallback((preset: DatePreset) => {
-    const months =
-      DATE_PRESETS.find((p) => p.key === preset)?.months ?? 6;
+    const months = DATE_PRESETS.find((p) => p.key === preset)?.months ?? 6;
     setForm((prev) => ({
       ...prev,
       selectedPreset: preset,
@@ -124,7 +117,6 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
     }));
   }, []);
 
-  // ─── Validation ─────────────────────────────────────────────────────────
   const validate = useCallback((): CreateVaultFormErrors => {
     const next: CreateVaultFormErrors = {};
 
@@ -147,7 +139,6 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
     return next;
   }, [form.vaultName, parsedDeposit, parsedTarget]);
 
-  // ─── Submit ─────────────────────────────────────────────────────────────
   const handleCreate = useCallback(async () => {
     const nextErrors = validate();
     setErrors(nextErrors);
@@ -158,12 +149,28 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
 
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
+
+    createVault({
+      name: form.vaultName.trim(),
+      targetAmount: parsedTarget,
+      initialDeposit: parsedDeposit,
+      maturityDate: formatIsoDate(form.maturityDate),
+    });
+
     setIsLoading(false);
 
     navigation.replace('VaultSuccess', {
       message: `"${form.vaultName.trim()}" vault created successfully!`,
     });
-  }, [form.vaultName, navigation, validate]);
+  }, [
+    createVault,
+    form.maturityDate,
+    form.vaultName,
+    navigation,
+    parsedDeposit,
+    parsedTarget,
+    validate,
+  ]);
 
   return {
     form,

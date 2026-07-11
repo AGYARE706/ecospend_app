@@ -16,7 +16,9 @@ import type { RouteProp } from '@react-navigation/native';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/icons';
+import { useGoals } from '../../context/GoalsContext';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -28,6 +30,7 @@ import {
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
+import { formatMonthYear, getRemainingAmount } from '../../utils/goals';
 
 type AddGoalContributionRouteProp = RouteProp<AppStackParamList, 'AddGoalContribution'>;
 
@@ -36,26 +39,49 @@ export default function AddGoalContributionScreen() {
   const styles = useThemedStyles(createStyles);
     const { params } = useRoute<AddGoalContributionRouteProp>();
     const navigation = useNavigation();
+    const { getGoalById, contributeToGoal, isContributing } = useGoals();
     const [amount, setAmount] = useState('');
 
-    const baseAmount = 1250;
-    const targetAmount = 5000;
-    const goalTitle = 'New Motorcycle';
-    const targetDate = 'Dec 2024';
+    const goal = getGoalById(params.goalId);
 
     const quickAmounts = useMemo(() => [20, 50, 100], []);
 
+    if (!goal) {
+      return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <EmptyState
+            icon="target"
+            title="Goal not found"
+            subtitle="This goal may have been deleted."
+            actionLabel="Go back"
+            onAction={() => navigation.goBack()}
+          />
+        </SafeAreaView>
+      );
+    }
+
+    const baseAmount = goal.currentAmount;
+    const targetAmount = goal.targetAmount;
+    const goalTitle = goal.name;
+    const targetDate = goal.deadline ? formatMonthYear(goal.deadline) : 'No deadline';
+    const remaining = getRemainingAmount(goal);
+
     const addedAmount = Number(amount) || 0;
-    const newBalance = baseAmount + addedAmount;
+    const newBalance = Math.min(baseAmount + addedAmount, targetAmount);
     const currentProgress = (baseAmount / targetAmount) * 100;
     const addedProgress = Math.min((addedAmount / targetAmount) * 100, 100 - currentProgress);
     const previewPercentage = addedAmount > 0 ? `+${((addedAmount / targetAmount) * 100).toFixed(1)}%` : '+0%';
 
     const handleChipPress = (value: number) => {
-        setAmount((prev) => String((Number(prev) || 0) + value));
+        setAmount((prev) => String(Math.min((Number(prev) || 0) + value, remaining)));
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (addedAmount <= 0) {
+          return;
+        }
+
+        await contributeToGoal(goal.id, Math.min(addedAmount, remaining));
         navigation.goBack();
     };
 
@@ -174,7 +200,10 @@ export default function AddGoalContributionScreen() {
             <View style={styles.section}>
                 <AppButton
                     title="Save Contribution"
-                    onPress={handleSave}
+                    onPress={() => {
+                      void handleSave();
+                    }}
+                    loading={isContributing}
                     icon="arrow-right"
                     variant="primary"
                     size="lg"

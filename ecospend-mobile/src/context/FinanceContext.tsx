@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react';
 
-import { mockMonthlySummary, mockTransactions } from '../data/mock/mockData';
+import { mockTransactions } from '../data/mock/mockData';
 import type {
   AddTransactionPayload,
   MonthlySummary,
@@ -15,9 +15,18 @@ import type {
 } from '../types';
 import { computeSummary } from '../utils/transactions';
 
+export type UpdateTransactionPayload = Partial<
+  Omit<AddTransactionPayload, 'date'>
+> & {
+  date?: string;
+};
+
 interface FinanceContextValue {
   transactions: Transaction[];
   addTransaction: (payload: AddTransactionPayload) => void;
+  updateTransaction: (id: string, payload: UpdateTransactionPayload) => void;
+  deleteTransaction: (id: string) => void;
+  getTransactionById: (id: string) => Transaction | undefined;
   getMonthlySummary: () => MonthlySummary;
 }
 
@@ -44,6 +53,43 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setTransactions((current) => [newTransaction, ...current]);
   }, []);
 
+  const updateTransaction = useCallback(
+    (id: string, payload: UpdateTransactionPayload) => {
+      setTransactions((current) =>
+        current.map((item) => {
+          if (item.id !== id) {
+            return item;
+          }
+
+          const next: Transaction = {
+            ...item,
+            ...payload,
+            provider:
+              payload.type === 'income'
+                ? undefined
+                : (payload.provider ?? item.provider),
+          };
+
+          if (payload.type === 'income') {
+            next.provider = undefined;
+          }
+
+          return next;
+        }),
+      );
+    },
+    [],
+  );
+
+  const deleteTransaction = useCallback((id: string) => {
+    setTransactions((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const getTransactionById = useCallback(
+    (id: string) => transactions.find((item) => item.id === id),
+    [transactions],
+  );
+
   const getMonthlySummary = useCallback((): MonthlySummary => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -57,11 +103,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     });
 
     const summary = computeSummary(monthTransactions);
+    const allTime = computeSummary(transactions);
 
     return {
       totalIncome: summary.income,
       totalExpense: summary.expense,
-      netBalance: mockMonthlySummary.netBalance,
+      netBalance: allTime.net,
       transactionCount: monthTransactions.length,
     };
   }, [transactions]);
@@ -70,9 +117,19 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     () => ({
       transactions,
       addTransaction,
+      updateTransaction,
+      deleteTransaction,
+      getTransactionById,
       getMonthlySummary,
     }),
-    [addTransaction, getMonthlySummary, transactions],
+    [
+      addTransaction,
+      deleteTransaction,
+      getMonthlySummary,
+      getTransactionById,
+      transactions,
+      updateTransaction,
+    ],
   );
 
   return (
