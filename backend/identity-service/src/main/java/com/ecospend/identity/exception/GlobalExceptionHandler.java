@@ -49,6 +49,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of("USER_NOT_FOUND", ex.getMessage(), 404);
     }
 
+    @ExceptionHandler(InvalidOtpException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidOtp(InvalidOtpException ex) {
+        return ErrorResponse.of("INVALID_OTP", ex.getMessage(), 400);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {

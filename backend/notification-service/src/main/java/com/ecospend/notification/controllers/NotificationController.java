@@ -47,8 +47,10 @@ public class NotificationController {
 
     @DeleteMapping("/tokens/{expoPushToken}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void unregisterToken(@PathVariable String expoPushToken) {
-        notificationService.unregisterToken(expoPushToken);
+    public void unregisterToken(
+            @RequestHeader(value = USER_ID_HEADER, required = false) String userId,
+            @PathVariable String expoPushToken) {
+        notificationService.unregisterToken(requireUserId(userId), expoPushToken);
     }
 
     // --- Inbox ------------------------------------------------------------

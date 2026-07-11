@@ -1,5 +1,6 @@
 package com.ecospend.vault.services;
 
+import com.ecospend.vault.config.VaultTierPolicy;
 import com.ecospend.vault.dto.AmountRequest;
 import com.ecospend.vault.dto.CreateVaultRequest;
 import com.ecospend.vault.exceptions.VaultException;
@@ -23,9 +24,13 @@ public class VaultService {
 
     private final VaultRepository vaultRepository;
     private final VaultTransactionRepository transactionRepository;
+    private final VaultTierPolicy vaultTierPolicy;
 
     @Transactional
-    public Vault create(UUID userId, CreateVaultRequest request) {
+    public Vault create(UUID userId, String tier, CreateVaultRequest request) {
+        long count = vaultRepository.countByUserId(userId);
+        vaultTierPolicy.assertCanCreatePersonalVault(tier, count);
+
         Vault vault = new Vault();
         vault.setUserId(userId);
         vault.setName(request.name());
@@ -44,7 +49,7 @@ public class VaultService {
     }
 
     public List<VaultTransaction> findTransactions(UUID userId, UUID vaultId) {
-        findOne(userId, vaultId); // 404 if the vault isn't the caller's
+        findOne(userId, vaultId);
         return transactionRepository.findByVaultIdAndUserIdOrderByCreatedAtDesc(vaultId, userId);
     }
 
@@ -71,7 +76,6 @@ public class VaultService {
             throw VaultException.badRequest("Insufficient vault balance");
         }
 
-        // Platform sustainability fee on successful withdrawal
         BigDecimal fee = Fees.feeOn(request.amount(), Fees.WITHDRAWAL_FEE_RATE);
         BigDecimal payout = request.amount().subtract(fee);
 
@@ -82,10 +86,6 @@ public class VaultService {
         return vaultRepository.save(vault);
     }
 
-    /**
-     * Early break: withdraws the full balance before the unlock date,
-     * charging a penalty, and marks the vault BROKEN.
-     */
     @Transactional
     public Vault breakVault(UUID userId, UUID vaultId) {
         Vault vault = findOne(userId, vaultId);
@@ -126,7 +126,7 @@ public class VaultService {
 
     private void record(Vault vault, VaultTransaction.Type type, BigDecimal amount, String note) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            return; // fees on tiny amounts can round to 0.00; nothing to record
+            return;
         }
         VaultTransaction tx = new VaultTransaction();
         tx.setVaultId(vault.getId());

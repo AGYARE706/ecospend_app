@@ -10,6 +10,6 @@ public record LoginRequest(
         @NotBlank(message = "Phone number is required")
         String phoneNumber,
 
-        @NotBlank(message = "PIN is required")
-        String pin
+        @NotBlank(message = "Password is required")
+        String password
 ) {}

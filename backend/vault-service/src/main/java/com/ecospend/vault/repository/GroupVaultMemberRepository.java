@@ -13,4 +13,5 @@ public interface GroupVaultMemberRepository extends JpaRepository<GroupVaultMemb
     Optional<GroupVaultMember> findByGroupIdAndUserId(UUID groupId, UUID userId);
     long countByGroupId(UUID groupId);
     long countByGroupIdAndStatus(UUID groupId, GroupVaultMember.Status status);
+    long countByUserIdAndStatus(UUID userId, GroupVaultMember.Status status);
 }

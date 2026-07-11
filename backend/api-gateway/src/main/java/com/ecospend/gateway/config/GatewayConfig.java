@@ -1,10 +1,14 @@
 package com.ecospend.gateway.config;
 
 import com.ecospend.gateway.filter.AuthenticationFilter;
+import com.ecospend.gateway.routes.RoutePaths;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import reactor.core.publisher.Mono;
 
 @Configuration
 public class GatewayConfig {
@@ -19,30 +23,43 @@ public class GatewayConfig {
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
                 .route("identity-service", r -> r
-                        .path("/api/auth/**")
-
+                        .path(RoutePaths.AUTH)
                         .filters(f -> f.stripPrefix(1))
                         .uri("http://identity-service:8081"))
                 .route("identity-users", r -> r
-                        .path("/api/users/**")
+                        .path(RoutePaths.USERS)
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://identity-service:8081"))
                 .route("finance-service", r -> r
-                        .path("/api/finance/**")
+                        .path(RoutePaths.FINANCE)
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://expense-service:8082"))
                 .route("vault-service", r -> r
-                        .path("/api/vault/**")
+                        .path(RoutePaths.VAULT)
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://vault-service:8083"))
+                // Block public access to S2S send endpoint (must be before notifications catch-all)
+                .route("deny-notification-send", r -> r
+                        .path(RoutePaths.NOTIFICATIONS_SEND)
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            exchange.getResponse().getHeaders()
+                                    .setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"POST /api/notifications/send is service-to-service only\"}"
+                                    .getBytes();
+                            return exchange.getResponse().writeWith(
+                                    Mono.just(exchange.getResponse().bufferFactory().wrap(body)));
+                        }))
+                        .uri("http://notification-service:8084"))
                 .route("notification-service", r -> r
-                        .path("/api/notifications/**")
+                        .path(RoutePaths.NOTIFICATIONS)
+                        .and().not(p -> p.path(RoutePaths.NOTIFICATIONS_SEND))
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))

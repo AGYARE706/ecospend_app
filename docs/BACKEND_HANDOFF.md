@@ -1,8 +1,23 @@
 # EcoSpend Backend Handoff — Frontend API Contract
 
 **Audience:** Mobile (React Native / Expo) engineers wiring Axios, Zustand, and React Query to the backend.  
-**Baseline branch:** `develop` (backend) + frontend UI on `feature/auth-screens`, `feature/finance-screens`, `feature/vault-profile-screens`.  
-**Last updated:** 2026-07-04
+**Baseline branch:** `develop` / `feature/backend-integration-prep`.  
+**Last updated:** 2026-07-11
+
+> ### Integration prep (2026-07-11) — authoritative overlay
+>
+> Prefer **[API_CONTRACT_MOBILE.md](./API_CONTRACT_MOBILE.md)** for the current mobile-facing contract. Key changes on this branch:
+>
+> - Auth is **phone + password** (min 8), not PIN. Register/login return `{ accessToken, refreshToken, tier, user: { name, phone } }`.
+> - Profile: `GET/PUT /api/users/me`. Password reset: `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` (OTP logged in identity logs).
+> - Finance: transaction summary/GET/PUT/DELETE, envelope PUT (`monthlyLimit`), goal `POST .../contribute`.
+> - Vault tiers: **FREE** = up to **3 personal** vaults, **no group vaults**. **PLUS/PREMIUM** = unlimited personal, **max 10 group** memberships. Join groups via `POST /api/vault/groups/join` `{ inviteCode }` or preview `GET /api/vault/groups/by-code/{code}`.
+> - `POST /api/notifications/send` is **blocked at the gateway** (S2S only). Prefer `POST /api/notifications/tokens` for Expo tokens.
+> - `backend/user-service/` is **deprecated** — do not run.
+>
+> Older PIN / blanket Plus-only vault language below is superseded by this banner.
+
+**Previous last updated:** 2026-07-04
 
 > This document describes the backend **as the frontend must consume it**, including gaps where UI was built against mocks or assumptions that the backend does not yet satisfy.
 

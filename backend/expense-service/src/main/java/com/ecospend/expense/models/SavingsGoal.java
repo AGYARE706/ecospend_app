@@ -34,11 +34,17 @@ public class SavingsGoal {
     @Column(name = "deadline")
     private LocalDate deadline;
 
+    @Column(name = "completed_at")
+    private OffsetDateTime completedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = OffsetDateTime.now();
+        if (this.currentAmount == null) {
+            this.currentAmount = BigDecimal.ZERO;
+        }
     }
 }

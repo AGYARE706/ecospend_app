@@ -7,5 +7,6 @@ public record WithdrawalRequestView(
         long approvals,
         long rejections,
         long activeMembers,
-        long approvalsNeeded
+        long approvalsNeeded,
+        boolean hasVoted
 ) {}

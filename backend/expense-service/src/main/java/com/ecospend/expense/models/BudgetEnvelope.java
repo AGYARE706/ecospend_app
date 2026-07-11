@@ -1,5 +1,6 @@
 package com.ecospend.expense.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -23,11 +24,13 @@ public class BudgetEnvelope {
     @Column(nullable = false)
     private String category;
 
-    // Aligned to match 'monthly_limit' in the SQL file
+    // Aligned to match 'monthly_limit' in the SQL file; JSON uses mobile field name
+    @JsonProperty("monthlyLimit")
     @Column(name = "monthly_limit", nullable = false, precision = 15, scale = 2)
     private BigDecimal budgetLimit;
 
-    // Aligned to match 'current_spend' in the SQL file
+    // Aligned to match 'current_spend' in the SQL file; JSON uses mobile field name
+    @JsonProperty("currentSpend")
     @Column(name = "current_spend", nullable = false, precision = 15, scale = 2)
     private BigDecimal currentSpent = BigDecimal.ZERO;
 

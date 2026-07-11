@@ -17,7 +17,7 @@ public record RegisterRequest(
         @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
         String name,
 
-        @NotBlank(message = "PIN is required")
-        @Pattern(regexp = "^[0-9]{4,6}$", message = "PIN must be 4 to 6 digits")
-        String pin
+        @NotBlank(message = "Password is required")
+        @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
+        String password
 ) {}

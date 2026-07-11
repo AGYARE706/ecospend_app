@@ -61,7 +61,16 @@ public class NotificationService {
         deviceTokenRepository.save(token);
     }
 
-    /** Removes a device token, e.g. on logout. Silently ignores unknown tokens. */
+    /** Removes a device token owned by the caller. Silently ignores unknown/unowned tokens. */
+    @Transactional
+    public void unregisterToken(UUID userId, String expoPushToken) {
+        deviceTokenRepository.findByExpoPushToken(expoPushToken)
+                .filter(token -> token.getUserId().equals(userId))
+                .ifPresent(token -> deviceTokenRepository.delete(token));
+    }
+
+    /** Internal helper for Expo dead-token pruning (no ownership check). */
+    @Deprecated
     @Transactional
     public void unregisterToken(String expoPushToken) {
         deviceTokenRepository.deleteByExpoPushToken(expoPushToken);

@@ -36,6 +36,9 @@ public class GroupVault {
     @Column(name = "max_members", nullable = false)
     private int maxMembers = 8;
 
+    @Column(name = "invite_code", nullable = false, unique = true, length = 12)
+    private String inviteCode;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 10)
     private Status status = Status.ACTIVE;

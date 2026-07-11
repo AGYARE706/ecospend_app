@@ -30,11 +30,21 @@ public class Vault {
     @Column(name = "balance", nullable = false, precision = 15, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @JsonProperty("currentBalance")
+    public BigDecimal getCurrentBalance() {
+        return balance;
+    }
+
     @Column(name = "target_amount", precision = 15, scale = 2)
     private BigDecimal targetAmount;
 
     @Column(name = "locked_until", nullable = false)
     private LocalDate lockedUntil;
+
+    @JsonProperty("maturityDate")
+    public LocalDate getMaturityDate() {
+        return lockedUntil;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 10)
@@ -42,6 +52,11 @@ public class Vault {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    @JsonProperty("createdDate")
+    public String getCreatedDate() {
+        return createdAt != null ? createdAt.toLocalDate().toString() : null;
+    }
 
     @PrePersist
     protected void onCreate() {

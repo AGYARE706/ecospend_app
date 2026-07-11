@@ -26,7 +26,8 @@ import java.util.List;
  * downstream services don't need to decode JWTs themselves.
  *
  * Open endpoints (no token required):
- *   /api/auth/login, /api/auth/register, /api/auth/refresh
+ *   /api/auth/login, /api/auth/register, /api/auth/refresh,
+ *   /api/auth/forgot-password, /api/auth/reset-password, /api/auth/logout
  */
 @Component
 public class AuthenticationFilter extends
@@ -38,7 +39,10 @@ public class AuthenticationFilter extends
     private static final List<String> OPEN_PATHS = List.of(
             "/api/auth/login",
             "/api/auth/register",
-            "/api/auth/refresh"
+            "/api/auth/refresh",
+            "/api/auth/logout",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password"
     );
 
     public AuthenticationFilter() {
