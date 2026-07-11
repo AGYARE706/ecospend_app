@@ -197,6 +197,23 @@ export const mockTransactions: Transaction[] = [
   tx('tx-046', 'expense', 2000, 'Savings', '2026-04-05T10:00:00.000Z', 'MTN MoMo', 'Vault lock'),
   tx('tx-047', 'expense', 30, 'Transport', '2026-04-04T07:00:00.000Z', 'Telecel Cash'),
   tx('tx-048', 'expense', 5, 'Food', '2026-04-03T08:00:00.000Z', 'MTN MoMo', 'Bread'),
+  tx('tx-049', 'expense', 28, 'Food', '2026-07-10T08:15:00.000Z', 'MTN MoMo', 'Koko and bread'),
+  tx('tx-050', 'expense', 18, 'Transport', '2026-07-10T07:30:00.000Z', 'Telecel Cash', 'Trotro fare'),
+  tx('tx-051', 'expense', 95, 'Food', '2026-07-09T13:00:00.000Z', 'MTN MoMo', 'Lunch with team'),
+  tx('tx-052', 'expense', 220, 'Utilities', '2026-07-09T17:00:00.000Z', 'AT Money', 'ECG prepaid'),
+  tx('tx-053', 'income', 3500, 'Business', '2026-07-09T09:00:00.000Z', undefined, 'July salary'),
+  tx('tx-054', 'expense', 140, 'Transport', '2026-07-08T18:30:00.000Z', 'MTN MoMo', 'Bolt ride'),
+  tx('tx-055', 'expense', 75, 'Food', '2026-07-08T12:00:00.000Z', 'Telecel Cash'),
+  tx('tx-056', 'expense', 400, 'Savings', '2026-07-07T11:00:00.000Z', 'MTN MoMo', 'Vault top-up'),
+  tx('tx-057', 'expense', 310, 'Business', '2026-07-07T14:00:00.000Z', 'AT Money', 'Supplies'),
+  tx('tx-058', 'expense', 52, 'Food', '2026-07-06T19:00:00.000Z', 'MTN MoMo', 'Dinner'),
+  tx('tx-059', 'expense', 65, 'Transport', '2026-07-06T08:00:00.000Z', 'Telecel Cash'),
+  tx('tx-060', 'income', 1200, 'Business', '2026-07-05T15:00:00.000Z', undefined, 'Freelance gig'),
+  tx('tx-061', 'expense', 180, 'Food', '2026-07-04T13:30:00.000Z', 'MTN MoMo', 'Weekend lunch'),
+  tx('tx-062', 'expense', 90, 'Utilities', '2026-07-03T10:00:00.000Z', 'MTN MoMo', 'Data bundle'),
+  tx('tx-063', 'expense', 42, 'Transport', '2026-07-02T07:45:00.000Z', 'Telecel Cash'),
+  tx('tx-064', 'expense', 850, 'Utilities', '2026-07-01T16:00:00.000Z', 'AT Money', 'Rent share'),
+  tx('tx-065', 'expense', 38, 'Food', '2026-07-01T08:00:00.000Z', 'MTN MoMo', 'Breakfast'),
 ];
 
 function addMonths(date: Date, months: number): string {

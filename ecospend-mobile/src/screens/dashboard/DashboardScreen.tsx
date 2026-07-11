@@ -1,12 +1,13 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   CompositeNavigationProp,
   useNavigation,
 } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
 
+import DashboardAnalyticsCard from '../../components/dashboard/DashboardAnalyticsCard';
+import DashboardInsightTeaser from '../../components/dashboard/DashboardInsightTeaser';
 import { Icon } from '../../components/ui/icons';
 import IconButton from '../../components/ui/IconButton';
 import AvatarInitials from '../../components/finance/AvatarInitials';
@@ -29,10 +30,8 @@ import type {
 import {
   cardShadow,
   radius,
-  shadowMd,
   spacing,
   typography,
-  useTheme,
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
@@ -57,7 +56,6 @@ function getGreeting(date = new Date()): string {
 }
 
 export default function DashboardScreen() {
-  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<DashboardNavigationProp>();
   const { user } = useAuth();
@@ -70,6 +68,7 @@ export default function DashboardScreen() {
     recentTransactions,
     budgetEnvelopes,
     weeklyInsight,
+    analytics,
     loading,
   } = useDashboard();
 
@@ -85,6 +84,7 @@ export default function DashboardScreen() {
           <SkeletonBox height={16} width="50%" style={styles.skeletonGap} />
           <SkeletonBox height={180} style={styles.skeletonGap} />
           <SkeletonBox height={80} style={styles.skeletonGap} />
+          <SkeletonBox height={280} style={styles.skeletonGap} />
           <SkeletonBox height={120} style={styles.skeletonGap} />
         </View>
       ) : (
@@ -121,6 +121,8 @@ export default function DashboardScreen() {
             }
             onTransferPress={() => navigateApp('MoMoCalculator')}
           />
+
+          <DashboardAnalyticsCard analytics={analytics} />
 
           <SectionHeader
             title="Budget This Month"
@@ -176,34 +178,10 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          <Pressable
-            style={({ pressed }) => [styles.insightCard, pressed && styles.insightPressed]}
+          <DashboardInsightTeaser
+            insight={weeklyInsight}
             onPress={() => navigateApp('WeeklyInsights')}
-          >
-            <LinearGradient
-              colors={[colors.primaryBackground, colors.white]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.insightGradient}
-            >
-              <View style={styles.insightRow}>
-                <View style={styles.insightIconCircle}>
-                  <Icon name="bulb" size={22} color={colors.primary} />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightEyebrow}>Weekly insight</Text>
-                  <Text style={styles.insightHeading}>{weeklyInsight.heading}</Text>
-                  <Text style={styles.insightMessage} numberOfLines={2}>
-                    {weeklyInsight.message}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.insightFooter}>
-                <Text style={styles.insightLink}>View full report</Text>
-                <Icon name="arrow-right" size={16} color={colors.primary} strokeWidth={2.2} />
-              </View>
-            </LinearGradient>
-          </Pressable>
+          />
         </ScrollView>
       )}
     </ScreenWrapper>
@@ -265,63 +243,5 @@ const createStyles = (colors: ThemeColors) =>
     marginBottom: spacing.lg,
     overflow: 'hidden',
     ...cardShadow,
-  },
-  insightCard: {
-    borderRadius: radius.lg,
-    marginBottom: spacing.lg,
-    overflow: 'hidden',
-    ...shadowMd,
-  },
-  insightPressed: {
-    opacity: 0.95,
-    transform: [{ scale: 0.99 }],
-  },
-  insightGradient: {
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.lg,
-  },
-  insightRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.md,
-  },
-  insightIconCircle: {
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderRadius: radius.full,
-    height: 48,
-    justifyContent: 'center',
-    marginRight: spacing.md,
-    width: 48,
-    ...cardShadow,
-  },
-  insightContent: {
-    flex: 1,
-  },
-  insightEyebrow: {
-    ...typography.overline,
-    color: colors.primary,
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-  },
-  insightHeading: {
-    ...typography.subheading,
-    color: colors.textDark,
-    marginBottom: spacing.xs,
-  },
-  insightMessage: {
-    ...typography.bodySm,
-    color: colors.textMuted,
-  },
-  insightFooter: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    justifyContent: 'flex-end',
-  },
-  insightLink: {
-    ...typography.label,
-    color: colors.primary,
   },
 });

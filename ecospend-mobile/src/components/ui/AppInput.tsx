@@ -49,6 +49,7 @@ export interface AppInputProps {
   showToggle?: boolean;
   multiline?: boolean;
   numberOfLines?: number;
+  maxLength?: number;
 }
 
 export default function AppInput({
@@ -65,6 +66,7 @@ export default function AppInput({
   showToggle = false,
   multiline = false,
   numberOfLines = 1,
+  maxLength,
 }: AppInputProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -106,6 +108,7 @@ export default function AppInput({
           blurOnSubmit={!multiline}
           multiline={multiline}
           numberOfLines={numberOfLines}
+          maxLength={maxLength}
           textAlignVertical={multiline ? 'top' : 'center'}
         />
 
