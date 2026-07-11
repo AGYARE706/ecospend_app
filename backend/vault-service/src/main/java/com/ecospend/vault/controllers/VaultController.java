@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-// Gateway route: /api/vault/** -> stripPrefix(1) -> /vault/**
 @RequestMapping("/vault")
 @RequiredArgsConstructor
 public class VaultController {
@@ -25,8 +24,9 @@ public class VaultController {
     @PostMapping
     public ResponseEntity<Vault> create(
             @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "X-User-Tier", defaultValue = "FREE") String tier,
             @Valid @RequestBody CreateVaultRequest request) {
-        return new ResponseEntity<>(vaultService.create(userId, request), HttpStatus.CREATED);
+        return new ResponseEntity<>(vaultService.create(userId, tier, request), HttpStatus.CREATED);
     }
 
     @GetMapping

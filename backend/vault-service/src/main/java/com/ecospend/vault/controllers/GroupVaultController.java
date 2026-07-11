@@ -3,6 +3,7 @@ package com.ecospend.vault.controllers;
 import com.ecospend.vault.dto.AmountRequest;
 import com.ecospend.vault.dto.CreateGroupVaultRequest;
 import com.ecospend.vault.dto.GroupVaultView;
+import com.ecospend.vault.dto.JoinGroupVaultByCodeRequest;
 import com.ecospend.vault.dto.VoteRequest;
 import com.ecospend.vault.dto.WithdrawalRequestView;
 import com.ecospend.vault.models.GroupVaultTransaction;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-// Gateway route: /api/vault/groups/** -> stripPrefix(1) -> /vault/groups/**
 @RequestMapping("/vault/groups")
 @RequiredArgsConstructor
 public class GroupVaultController {
@@ -27,13 +27,29 @@ public class GroupVaultController {
     @PostMapping
     public ResponseEntity<GroupVaultView> create(
             @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "X-User-Tier", defaultValue = "FREE") String tier,
             @Valid @RequestBody CreateGroupVaultRequest request) {
-        return new ResponseEntity<>(groupVaultService.create(userId, request), HttpStatus.CREATED);
+        return new ResponseEntity<>(groupVaultService.create(userId, tier, request), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<GroupVaultView>> findMine(@RequestHeader("X-User-Id") UUID userId) {
         return ResponseEntity.ok(groupVaultService.findMine(userId));
+    }
+
+    /** Preview a group vault before joining (no membership required). */
+    @GetMapping("/by-code/{code}")
+    public ResponseEntity<GroupVaultView> findByInviteCode(@PathVariable String code) {
+        return ResponseEntity.ok(groupVaultService.findByInviteCode(code));
+    }
+
+    /** Join via invite code — primary mobile path. Must be registered before /{id} routes. */
+    @PostMapping("/join")
+    public ResponseEntity<GroupVaultView> joinByCode(
+            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "X-User-Tier", defaultValue = "FREE") String tier,
+            @Valid @RequestBody JoinGroupVaultByCodeRequest request) {
+        return ResponseEntity.ok(groupVaultService.joinByInviteCode(userId, tier, request.inviteCode()));
     }
 
     @GetMapping("/{id}")
@@ -53,8 +69,9 @@ public class GroupVaultController {
     @PostMapping("/{id}/join")
     public ResponseEntity<GroupVaultView> join(
             @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "X-User-Tier", defaultValue = "FREE") String tier,
             @PathVariable UUID id) {
-        return ResponseEntity.ok(groupVaultService.join(userId, id));
+        return ResponseEntity.ok(groupVaultService.join(userId, tier, id));
     }
 
     @PostMapping("/{id}/deposit")

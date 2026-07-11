@@ -1,4 +1,3 @@
-
 package com.ecospend.identity.entity;
 
 import jakarta.persistence.*;
@@ -15,8 +14,7 @@ import java.util.UUID;
 
 /**
  * Represents a registered EcoSpend user.
- * Authentication is PIN-based (no email/password) to suit
- * Ghana's informal economy workforce who primarily use phone numbers.
+ * Authentication is phone + password (BCrypt) to match the mobile app.
  */
 @Entity
 @Table(name = "users")
@@ -37,8 +35,8 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "pin_hash", nullable = false)
-    private String pinHash;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
     @Column(length = 100)
     private String email;
