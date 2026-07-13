@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 
 import { useAuth } from '../context/AuthContext';
+import { useFinance } from '../context/FinanceContext';
 import { useGoals } from '../context/GoalsContext';
 import { useVaults } from '../context/VaultContext';
 import { mockUser } from '../data/mock/mockData';
 import type { UserTier } from '../types';
+import { computeSavingsStreak } from '../utils/streak';
 
 export interface ProfileStats {
   goalsCompleted: number;
@@ -41,6 +43,7 @@ export function useProfile(): ProfileData {
   const { user, tier } = useAuth();
   const { completedGoals } = useGoals();
   const { vaults, groupVaults } = useVaults();
+  const { transactions } = useFinance();
 
   return useMemo(() => {
     const name = user?.name ?? mockUser.name;
@@ -55,13 +58,16 @@ export function useProfile(): ProfileData {
       stats: {
         goalsCompleted: completedGoals.length,
         vaultsCreated: vaults.length + groupVaults.length,
-        savingsStreak: 12,
+        savingsStreak: computeSavingsStreak(
+          transactions.map((transaction) => transaction.date),
+        ),
       },
     };
   }, [
     completedGoals.length,
     groupVaults.length,
     tier,
+    transactions,
     user?.name,
     user?.phone,
     vaults.length,

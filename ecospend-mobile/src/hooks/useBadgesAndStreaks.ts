@@ -11,6 +11,7 @@ import type {
   BadgesAndStreaksData,
   StreakStats,
 } from '../types/achievement';
+import { computeSavingsStreak } from '../utils/streak';
 
 interface AchievementMetrics {
   goalsCompleted: number;
@@ -98,7 +99,9 @@ export function useBadgesAndStreaks(): BadgesAndStreaksData {
       vaultsMatured: vaults.filter(
         (vault) => vault.status === 'matured' || vault.status === 'withdrawn',
       ).length,
-      daysActive: 12,
+      daysActive: computeSavingsStreak(
+        transactions.map((transaction) => transaction.date),
+      ),
       transactionsLogged: transactions.length,
     };
 
@@ -117,7 +120,7 @@ export function useBadgesAndStreaks(): BadgesAndStreaksData {
     colors,
     completedGoals.length,
     groupVaults.length,
-    transactions.length,
+    transactions,
     vaults,
   ]);
 }
