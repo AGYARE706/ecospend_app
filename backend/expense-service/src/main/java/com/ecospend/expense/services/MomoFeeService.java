@@ -11,7 +11,7 @@ public class MomoFeeService {
             return BigDecimal.ZERO;
         }
 
-        if ("MTN".equalsIgnoreCase(provider) || "TELECEL".equalsIgnoreCase(provider)) {
+        if ("MTN".equalsIgnoreCase(provider) || "TELECEL".equalsIgnoreCase(provider) || "AT".equalsIgnoreCase(provider)) {
             BigDecimal fee = amount.multiply(new BigDecimal("0.01"));
             BigDecimal maxCap = new BigDecimal("10.00");
             return fee.compareTo(maxCap) > 0 ? maxCap : fee;
