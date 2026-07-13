@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
+import * as securityApi from '../api/securityApi';
 import { useAuth } from '../context/AuthContext';
-import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
 
 export interface ActiveSession {
   id: string;
@@ -18,30 +19,25 @@ export interface PasswordFormErrors {
   confirmPassword?: string;
 }
 
-const MOCK_SESSIONS: ActiveSession[] = [
-  {
-    id: 'session-current',
-    device: 'iPhone 15',
-    platform: 'iOS',
-    location: 'Accra, Ghana',
-    lastActive: 'Active now',
-    isCurrent: true,
-  },
-  {
-    id: 'session-android',
-    device: 'Samsung Galaxy A54',
-    platform: 'Android',
-    location: 'Kumasi, Ghana',
-    lastActive: '2 days ago',
-    isCurrent: false,
-  },
-];
+function toActiveSession(dto: securityApi.SessionDto): ActiveSession {
+  const signedIn = new Date(dto.createdAt);
+  return {
+    id: dto.id,
+    device: dto.current ? 'This device' : 'Signed-in device',
+    platform: 'Mobile',
+    location: 'EcoSpend Mobile',
+    lastActive: `Signed in ${signedIn.toLocaleDateString()}`,
+    isCurrent: dto.current,
+  };
+}
 
 export function useSecurity() {
-  const { signOut } = useAuth();
+  const { signIn, signOut } = useAuth();
 
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [sessions, setSessions] = useState(MOCK_SESSIONS);
+  const [sessions, setSessions] = useState<ActiveSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
   const [showPasswordSheet, setShowPasswordSheet] = useState(false);
   const [showSessionsSheet, setShowSessionsSheet] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -118,30 +114,77 @@ export function useSecurity() {
     }
 
     setIsSavingPassword(true);
-    await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
-    setIsSavingPassword(false);
-    setPasswordSuccessMessage('Password updated successfully.');
-    resetPasswordForm();
-    setShowPasswordSheet(false);
-  }, [resetPasswordForm, validatePasswordForm]);
+    try {
+      const response = await securityApi.changePassword({
+        currentPassword,
+        newPassword,
+      });
+
+      // The server revoked every session and issued this device a new pair —
+      // persist it so the next token refresh doesn't sign the user out.
+      await signIn({
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        tier: String(response.tier),
+        user: response.user,
+      });
+
+      setPasswordSuccessMessage('Password updated successfully.');
+      resetPasswordForm();
+      setShowPasswordSheet(false);
+    } catch (error) {
+      setPasswordErrors({
+        currentPassword: getApiErrorMessage(error, 'Could not update password'),
+      });
+    } finally {
+      setIsSavingPassword(false);
+    }
+  }, [
+    currentPassword,
+    newPassword,
+    resetPasswordForm,
+    signIn,
+    validatePasswordForm,
+  ]);
 
   const toggleTwoFactor = useCallback(() => {
+    // 2FA has no backend yet — this toggle is a local placeholder.
     setTwoFactorEnabled((current) => !current);
+  }, []);
+
+  const refreshSessions = useCallback(async () => {
+    setSessionsLoading(true);
+    try {
+      const list = await securityApi.listSessions();
+      setSessions(list.map(toActiveSession));
+      setSessionsError(null);
+    } catch (error) {
+      setSessionsError(getApiErrorMessage(error, 'Could not load sessions'));
+    } finally {
+      setSessionsLoading(false);
+    }
   }, []);
 
   const openSessionsSheet = useCallback(() => {
     setShowSessionsSheet(true);
-  }, []);
+    void refreshSessions();
+  }, [refreshSessions]);
 
   const closeSessionsSheet = useCallback(() => {
     setShowSessionsSheet(false);
   }, []);
 
-  const revokeSession = useCallback((sessionId: string) => {
+  const revokeSession = useCallback(async (sessionId: string) => {
     setSessions((current) =>
       current.filter((session) => session.id !== sessionId || session.isCurrent),
     );
-  }, []);
+    try {
+      await securityApi.revokeSession(sessionId);
+    } catch (error) {
+      setSessionsError(getApiErrorMessage(error, 'Could not revoke session'));
+      void refreshSessions();
+    }
+  }, [refreshSessions]);
 
   const openLogoutConfirm = useCallback(() => {
     setShowLogoutConfirm(true);
@@ -166,15 +209,25 @@ export function useSecurity() {
 
   const handleDeleteAccount = useCallback(async () => {
     setIsDeletingAccount(true);
-    await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
-    setIsDeletingAccount(false);
-    setShowDeleteConfirm(false);
-    signOut();
+    try {
+      await securityApi.deleteAccount();
+      setShowDeleteConfirm(false);
+      await signOut();
+    } catch {
+      // The account may already be gone server-side; sign out regardless
+      // so no session lingers on this device.
+      setShowDeleteConfirm(false);
+      await signOut();
+    } finally {
+      setIsDeletingAccount(false);
+    }
   }, [signOut]);
 
   return {
     twoFactorEnabled,
     sessions,
+    sessionsLoading,
+    sessionsError,
     activeSessionCount,
     securityStatus,
     showPasswordSheet,

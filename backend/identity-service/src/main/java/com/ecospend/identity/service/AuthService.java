@@ -68,6 +68,11 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid phone number or password");
         }
 
+        if (!user.isActive()) {
+            // Deleted accounts must be indistinguishable from bad credentials.
+            throw new InvalidCredentialsException("Invalid phone number or password");
+        }
+
         return generateTokenPair(user);
     }
 
@@ -86,6 +91,11 @@ public class AuthService {
 
         User user = userRepository.findById(stored.getUserId())
                 .orElseThrow(() -> new InvalidCredentialsException("User not found"));
+
+        if (!user.isActive()) {
+            refreshTokenRepository.deleteByToken(refreshToken);
+            throw new InvalidCredentialsException("Invalid or expired refresh token");
+        }
 
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getSubscriptionTier());
         return AuthResponse.of(newAccessToken, refreshToken, user.getSubscriptionTier(), toUserSummary(user));

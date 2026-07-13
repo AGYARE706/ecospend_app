@@ -1,15 +1,22 @@
 package com.ecospend.identity.service;
 
 import com.ecospend.identity.dto.AuthResponse;
+import com.ecospend.identity.dto.ChangePasswordRequest;
+import com.ecospend.identity.dto.SessionResponse;
 import com.ecospend.identity.dto.UpdateUserProfileRequest;
 import com.ecospend.identity.dto.UserProfileResponse;
 import com.ecospend.identity.entity.User;
+import com.ecospend.identity.exception.InvalidCredentialsException;
 import com.ecospend.identity.exception.UserNotFoundException;
+import com.ecospend.identity.repository.PasswordResetOtpRepository;
+import com.ecospend.identity.repository.RefreshTokenRepository;
 import com.ecospend.identity.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,7 +26,11 @@ public class UserService {
     private static final String TIER_PLUS = "PLUS";
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetOtpRepository passwordResetOtpRepository;
     private final JwtService jwtService;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final AuthService authService;
 
     public UserProfileResponse getMe(UUID userId) {
         return toProfile(findUser(userId));
@@ -55,6 +66,60 @@ public class UserService {
         );
 
         return AuthResponse.of(accessToken, null, user.getSubscriptionTier(), AuthService.toUserSummary(user));
+    }
+
+    /**
+     * Verifies the current password, stores the new hash, then rotates every
+     * session: all refresh tokens are revoked and a fresh pair is issued so
+     * the requesting device stays signed in while other devices drop off.
+     */
+    @Transactional
+    public AuthResponse changePassword(UUID userId, ChangePasswordRequest request) {
+        User user = findUser(userId);
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new InvalidCredentialsException("Current password is incorrect");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        refreshTokenRepository.deleteByUserId(userId);
+        return authService.generateTokenPair(user);
+    }
+
+    public List<SessionResponse> listSessions(UUID userId, String currentToken) {
+        return refreshTokenRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(token -> new SessionResponse(
+                        token.getId(),
+                        token.getCreatedAt(),
+                        token.getExpiresAt(),
+                        currentToken != null && currentToken.equals(token.getToken())
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public void revokeSession(UUID userId, UUID sessionId) {
+        long deleted = refreshTokenRepository.deleteByIdAndUserId(sessionId, userId);
+        if (deleted == 0) {
+            throw new UserNotFoundException("Session not found");
+        }
+    }
+
+    /**
+     * Soft-deletes the account: marks the user inactive and revokes every
+     * refresh token and pending OTP. Login rejects inactive users, and the
+     * row is retained so cross-service references stay resolvable.
+     */
+    @Transactional
+    public void deleteAccount(UUID userId) {
+        User user = findUser(userId);
+        user.setActive(false);
+        userRepository.save(user);
+
+        refreshTokenRepository.deleteByUserId(userId);
+        passwordResetOtpRepository.deleteByPhoneNumber(user.getPhoneNumber());
     }
 
     private User findUser(UUID userId) {
