@@ -29,9 +29,24 @@ export interface WithdrawVaultData {
   formattedCreated: string;
   isConfirmed: boolean;
   isLoading: boolean;
+  momoNumber: string;
+  momoProvider: MomoProvider;
+  momoError: string | null;
+  setMomoNumber: (value: string) => void;
+  setMomoProvider: (value: MomoProvider) => void;
   toggleConfirm: () => void;
   handleConfirm: () => Promise<void>;
 }
+
+export type MomoProvider = 'MTN' | 'TELECEL' | 'AT';
+
+export const MOMO_PROVIDERS: { key: MomoProvider; label: string }[] = [
+  { key: 'MTN', label: 'MTN MoMo' },
+  { key: 'TELECEL', label: 'Telecel Cash' },
+  { key: 'AT', label: 'AT Money' },
+];
+
+const GHANA_PHONE_PATTERN = /^(0|\+233)\d{9}$/;
 
 type WithdrawNavProp = StackNavigationProp<AppStackParamList, 'WithdrawVault'>;
 
@@ -44,6 +59,14 @@ export function useWithdrawVault(
 
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [momoNumber, setMomoNumberState] = useState('');
+  const [momoProvider, setMomoProvider] = useState<MomoProvider>('MTN');
+  const [momoError, setMomoError] = useState<string | null>(null);
+
+  const setMomoNumber = useCallback((value: string) => {
+    setMomoNumberState(value);
+    setMomoError(null);
+  }, []);
 
   const daysRemaining = useMemo(
     () => getDaysRemaining(vault.maturityDate),
@@ -73,24 +96,35 @@ export function useWithdrawVault(
   const handleConfirm = useCallback(async () => {
     if (!isConfirmed) return;
 
+    const trimmedNumber = momoNumber.trim();
+    if (!GHANA_PHONE_PATTERN.test(trimmedNumber)) {
+      setMomoError('Enter the MoMo number to receive the payout (e.g. 0241234567)');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await withdrawVault(vault.id, netAmount, feeAmount, withdrawalType);
+      await withdrawVault(vault.id, netAmount, feeAmount, withdrawalType, {
+        momoNumber: trimmedNumber,
+        momoProvider,
+      });
       navigation.replace('VaultSuccess', {
         isWithdrawal: true,
         vaultName: vault.name,
         amountReceived: netAmount,
         feeCharged: feeAmount,
-        message: 'Withdrawal completed successfully.',
+        message: `GHS ${netAmount.toFixed(2)} is on its way to ${trimmedNumber}.`,
       });
     } catch (error) {
-      console.warn(getApiErrorMessage(error));
+      setMomoError(getApiErrorMessage(error, 'Withdrawal failed'));
     } finally {
       setIsLoading(false);
     }
   }, [
     feeAmount,
     isConfirmed,
+    momoNumber,
+    momoProvider,
     navigation,
     netAmount,
     vault.id,
@@ -108,6 +142,11 @@ export function useWithdrawVault(
     formattedCreated: formatVaultDate(vault.createdDate),
     isConfirmed,
     isLoading,
+    momoNumber,
+    momoProvider,
+    momoError,
+    setMomoNumber,
+    setMomoProvider,
     toggleConfirm,
     handleConfirm,
   };

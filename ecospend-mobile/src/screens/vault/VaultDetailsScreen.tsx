@@ -93,7 +93,7 @@ export default function VaultDetailsScreen({
   }
 
   function handleAddFunds() {
-    navigateApp('CreateVault');
+    navigateApp('AddMoney', { vaultId: vault.id });
   }
 
   return (

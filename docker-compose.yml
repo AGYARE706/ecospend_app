@@ -78,6 +78,22 @@ services:
       postgres:
         condition: service_healthy
 
+  payment-service:
+    build: ./backend/payment-service
+    container_name: ecospend-payment-service
+    env_file: .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
+      PAYSTACK_CALLBACK_URL: ${PAYSTACK_CALLBACK_URL:-ecospend://payments/callback}
+    ports:
+      - "${PAYMENT_SERVICE_PORT:-8085}:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api-gateway:
     build: ./backend/api-gateway
     container_name: ecospend-api-gateway
@@ -91,6 +107,7 @@ services:
       - expense-service
       - vault-service
       - notification-service
+      - payment-service
 
 volumes:
   postgres_data:

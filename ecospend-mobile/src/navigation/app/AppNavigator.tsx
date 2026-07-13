@@ -9,6 +9,7 @@ import CreateGoalScreen from '../../screens/goals/CreateGoalScreen';
 import WeeklyInsightsScreen from '../../screens/insights/WeeklyInsightsScreen';
 import NotificationsScreen from '../../screens/notifications/NotificationsScreen';
 import AddTransactionScreen from '../../screens/transactions/AddTransactionScreen';
+import AddMoneyScreen from '../../screens/vault/AddMoneyScreen';
 import CreateVaultScreen from '../../screens/vault/CreateVaultScreen';
 import VaultSuccessScreen from '../../screens/vault/VaultSuccessScreen';
 import WithdrawVaultScreen from '../../screens/vault/WithdrawVaultScreen';
@@ -41,6 +42,7 @@ export default function AppNavigator() {
           component={AddGoalContributionScreen}
         />
         <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
+        <Stack.Screen name="AddMoney" component={AddMoneyScreen} />
         <Stack.Screen name="WithdrawVault" component={WithdrawVaultScreen} />
         <Stack.Screen name="VaultSuccess" component={VaultSuccessScreen} />
         <Stack.Screen name="CreateGroupVault" component={CreateGroupVaultScreen} />

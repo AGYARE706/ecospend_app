@@ -67,8 +67,9 @@ public class VaultController {
     @PostMapping("/{id}/break")
     public ResponseEntity<Vault> breakVault(
             @RequestHeader("X-User-Id") UUID userId,
-            @PathVariable UUID id) {
-        return ResponseEntity.ok(vaultService.breakVault(userId, id));
+            @PathVariable UUID id,
+            @RequestBody(required = false) AmountRequest payoutDestination) {
+        return ResponseEntity.ok(vaultService.breakVault(userId, id, payoutDestination));
     }
 
     @DeleteMapping("/{id}")

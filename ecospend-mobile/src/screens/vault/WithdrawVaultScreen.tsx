@@ -5,8 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
+import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import { useWithdrawVault } from '../../hooks/useWithdrawVault';
+import { MOMO_PROVIDERS, useWithdrawVault } from '../../hooks/useWithdrawVault';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -57,6 +58,11 @@ export default function WithdrawVaultScreen({
     formattedMaturity,
     isConfirmed,
     isLoading,
+    momoNumber,
+    momoProvider,
+    momoError,
+    setMomoNumber,
+    setMomoProvider,
     toggleConfirm,
     handleConfirm,
   } = useWithdrawVault(vaultId, navigation);
@@ -225,7 +231,46 @@ export default function WithdrawVaultScreen({
             </>
           ) : null}
 
-          {/* ─── 5. Confirmation Checkbox ──────────────────────── */}
+          {/* ─── 5. Payout Destination ─────────────────────────── */}
+          <SectionLabel title="Payout Destination" icon="wallet-outline" />
+          <View style={styles.payoutCard}>
+            <View style={styles.providerRow}>
+              {MOMO_PROVIDERS.map((provider) => (
+                <Pressable
+                  key={provider.key}
+                  onPress={() => setMomoProvider(provider.key)}
+                  style={[
+                    styles.providerChip,
+                    momoProvider === provider.key && styles.providerChipActive,
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: momoProvider === provider.key }}
+                >
+                  <Text
+                    style={[
+                      styles.providerChipText,
+                      momoProvider === provider.key &&
+                        styles.providerChipTextActive,
+                    ]}
+                  >
+                    {provider.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <AppInput
+              label="MoMo number to receive the payout"
+              value={momoNumber}
+              onChangeText={setMomoNumber}
+              placeholder="0241234567"
+              keyboardType="phone-pad"
+              error={momoError ?? undefined}
+              hint="The net amount is transferred to this wallet via Paystack"
+              maxLength={13}
+            />
+          </View>
+
+          {/* ─── 6. Confirmation Checkbox ──────────────────────── */}
           <SectionLabel
             title="Confirmation"
             icon="checkmark-done-circle-outline"
@@ -805,6 +850,40 @@ const createStyles = (colors: ThemeColors) =>
     fontSize: fontSize.xs,
     lineHeight: 18,
     marginLeft: spacing.sm,
+  },
+  payoutCard: {
+    backgroundColor: colors.cardBackground,
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.card,
+    borderWidth: 1.5,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    ...shadowSm,
+  },
+  providerRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  providerChip: {
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.chip,
+    borderWidth: 1.5,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  providerChipActive: {
+    backgroundColor: colors.primaryBackground,
+    borderColor: colors.primary,
+  },
+  providerChipText: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  providerChipTextActive: {
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
   },
   checkboxCard: {
     alignItems: 'center',

@@ -42,16 +42,31 @@ export async function depositToVault(
   return mapVault(data);
 }
 
+export interface PayoutDestination {
+  momoNumber: string;
+  momoProvider: string;
+}
+
 export async function withdrawFromVault(
   id: string,
   amount: number,
+  destination?: PayoutDestination,
 ): Promise<Vault> {
-  const { data } = await apiClient.post(`/api/vault/${id}/withdraw`, { amount });
+  const { data } = await apiClient.post(`/api/vault/${id}/withdraw`, {
+    amount,
+    ...destination,
+  });
   return mapVault(data);
 }
 
-export async function breakVault(id: string): Promise<Vault> {
-  const { data } = await apiClient.post(`/api/vault/${id}/break`);
+export async function breakVault(
+  id: string,
+  destination?: PayoutDestination,
+): Promise<Vault> {
+  const { data } = await apiClient.post(
+    `/api/vault/${id}/break`,
+    destination ?? undefined,
+  );
   return mapVault(data);
 }
 
