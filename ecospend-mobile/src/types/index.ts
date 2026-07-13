@@ -151,27 +151,6 @@ export interface Envelope {
   color: EnvelopeColorKey;
 }
 
-export interface FeeTier {
-  minAmount: number;
-  maxAmount: number | null;
-  flatFee?: number;
-  percentRate?: number;
-  maxFee?: number;
-}
-
-export interface FeeSchedule {
-  provider: ProviderType;
-  approximate: boolean;
-  tiers: FeeTier[];
-}
-
-export interface FeeResult {
-  fee: number;
-  totalCost: number;
-  amount: number;
-  provider: ProviderType;
-}
-
 export interface AddEnvelopePayload {
   category: TransactionCategory;
   monthlyLimit: number;

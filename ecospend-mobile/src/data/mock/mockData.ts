@@ -1,7 +1,6 @@
 import type {
   BudgetEnvelope,
   Envelope,
-  FeeSchedule,
   MonthlySummary,
   SavingsGoal,
   Transaction,
@@ -27,32 +26,6 @@ export const MOCK_SAVE_DELAY_MS = 1000;
 export const MOCK_GOAL_SAVE_DELAY_MS = 800;
 export const MOCK_GOAL_CONTRIBUTE_DELAY_MS = 800;
 export const MOCK_ENVELOPE_SAVE_DELAY_MS = 800;
-
-const STANDARD_FEE_TIERS: FeeSchedule['tiers'] = [
-  { minAmount: 1, maxAmount: 50, flatFee: 0.75 },
-  { minAmount: 51, maxAmount: 100, flatFee: 1.0 },
-  { minAmount: 101, maxAmount: 300, flatFee: 1.5 },
-  { minAmount: 301, maxAmount: 1000, percentRate: 0.02, maxFee: 20 },
-  { minAmount: 1001, maxAmount: null, percentRate: 0.02 },
-];
-
-export const mockFeeSchedules: FeeSchedule[] = [
-  {
-    provider: 'MTN MoMo',
-    approximate: false,
-    tiers: STANDARD_FEE_TIERS,
-  },
-  {
-    provider: 'Telecel Cash',
-    approximate: true,
-    tiers: STANDARD_FEE_TIERS,
-  },
-  {
-    provider: 'AT Money',
-    approximate: true,
-    tiers: STANDARD_FEE_TIERS,
-  },
-];
 
 const currentDate = new Date();
 const currentMonth = currentDate.getMonth() + 1;

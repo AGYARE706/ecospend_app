@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { useFinance } from '../context/FinanceContext';
@@ -10,7 +10,7 @@ import type {
   TransactionCategory,
   TransactionType,
 } from '../types';
-import { calculateMoMoFee } from '../utils/fees';
+import { useLiveMomoFee } from './useLiveMomoFee';
 
 type AddTransactionNavigationProp = StackNavigationProp<
   AppStackParamList,
@@ -44,22 +44,11 @@ export function useAddTransaction(navigation: AddTransactionNavigationProp) {
 
   const parsedAmount = parseFloat(formState.amount);
 
-  const feePreview = useMemo(() => {
-    if (
-      formState.type !== 'expense' ||
-      !formState.provider ||
-      !parsedAmount ||
-      parsedAmount <= 0
-    ) {
-      return null;
-    }
-
-    const providerFee = calculateMoMoFee(parsedAmount, formState.provider);
-    return {
-      providerFee,
-      totalCost: parsedAmount + providerFee,
-    };
-  }, [formState.provider, formState.type, parsedAmount]);
+  const feePreview = useLiveMomoFee(
+    parsedAmount,
+    formState.provider,
+    formState.type === 'expense',
+  );
 
   const setField = useCallback(<K extends FormField>(
     field: K,
