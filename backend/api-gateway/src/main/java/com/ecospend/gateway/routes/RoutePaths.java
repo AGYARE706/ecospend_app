@@ -12,6 +12,12 @@ public final class RoutePaths {
     public static final String VAULT = "/api/vault/**";
     public static final String NOTIFICATIONS = "/api/notifications/**";
     public static final String NOTIFICATIONS_SEND = "/api/notifications/send";
+    public static final String PAYMENTS = "/api/payments/**";
+    public static final String PAYMENTS_WEBHOOK = "/api/payments/webhook";
+
+    /** Service-to-service paths — denied at the gateway, reachable only on the Docker network. */
+    public static final String VAULT_INTERNAL = "/api/vault/internal/**";
+    public static final String PAYMENTS_INTERNAL = "/api/payments/internal/**";
 
     private RoutePaths() {}
 }

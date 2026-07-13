@@ -69,6 +69,7 @@ export type AppStackParamList = {
   MoMoCalculator: undefined;
   // Vault
   CreateVault: undefined;
+  AddMoney: { vaultId: string };
   WithdrawVault: { vaultId: string };
   VaultSuccess: {
     /** Generic success headline (used by CreateVault flow) */

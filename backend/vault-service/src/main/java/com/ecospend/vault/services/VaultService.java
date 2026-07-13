@@ -1,5 +1,6 @@
 package com.ecospend.vault.services;
 
+import com.ecospend.vault.client.PaymentClient;
 import com.ecospend.vault.config.VaultTierPolicy;
 import com.ecospend.vault.dto.AmountRequest;
 import com.ecospend.vault.dto.CreateVaultRequest;
@@ -25,6 +26,7 @@ public class VaultService {
     private final VaultRepository vaultRepository;
     private final VaultTransactionRepository transactionRepository;
     private final VaultTierPolicy vaultTierPolicy;
+    private final PaymentClient paymentClient;
 
     @Transactional
     public Vault create(UUID userId, String tier, CreateVaultRequest request) {
@@ -83,11 +85,21 @@ public class VaultService {
         record(vault, VaultTransaction.Type.FEE, fee, "Platform sustainability fee (2%)");
         record(vault, VaultTransaction.Type.WITHDRAWAL, payout,
                 request.note() != null ? request.note() : "Withdrawal payout");
+
+        // Real money leg: transfer the net amount to the user's MoMo wallet.
+        // If the payout cannot be initiated the transaction rolls back and
+        // the vault balance is untouched. Withdrawals without a destination
+        // stay ledger-only (legacy behaviour).
+        if (request.hasPayoutDestination()) {
+            paymentClient.requestPayout(userId, vaultId, payout,
+                    request.momoNumber(), request.momoProvider(),
+                    "Vault withdrawal (net of 2% fee)");
+        }
         return vaultRepository.save(vault);
     }
 
     @Transactional
-    public Vault breakVault(UUID userId, UUID vaultId) {
+    public Vault breakVault(UUID userId, UUID vaultId, AmountRequest payoutDestination) {
         Vault vault = findOne(userId, vaultId);
         requireActive(vault);
 
@@ -106,6 +118,12 @@ public class VaultService {
 
         vault.setBalance(BigDecimal.ZERO);
         vault.setStatus(Vault.Status.BROKEN);
+
+        if (payoutDestination != null && payoutDestination.hasPayoutDestination()) {
+            paymentClient.requestPayout(userId, vaultId, payout,
+                    payoutDestination.momoNumber(), payoutDestination.momoProvider(),
+                    "Vault early break payout (net of 5% penalty)");
+        }
         return vaultRepository.save(vault);
     }
 

@@ -13,6 +13,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(tierInterceptor).addPathPatterns("/vault/**");
+        // /vault/internal/** is service-to-service (gateway-denied from outside),
+        // so it carries no user tier and skips the tier gate.
+        registry.addInterceptor(tierInterceptor)
+                .addPathPatterns("/vault/**")
+                .excludePathPatterns("/vault/internal/**");
     }
 }

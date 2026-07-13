@@ -7,5 +7,15 @@ import java.math.BigDecimal;
 
 public record AmountRequest(
         @NotNull @Positive BigDecimal amount,
-        String note
-) {}
+        String note,
+        String momoNumber,
+        String momoProvider
+) {
+    public AmountRequest(BigDecimal amount, String note) {
+        this(amount, note, null, null);
+    }
+
+    public boolean hasPayoutDestination() {
+        return momoNumber != null && !momoNumber.isBlank();
+    }
+}

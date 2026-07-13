@@ -10,6 +10,7 @@ import {
 
 import { getApiErrorCode, getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as groupVaultApi from '../api/groupVaultApi';
+import * as paymentsApi from '../api/paymentsApi';
 import * as vaultApi from '../api/vaultApi';
 import { useAuth } from './AuthContext';
 import { buildGroupVaultSummary } from '../data/mock/groupVaults';
@@ -49,11 +50,19 @@ interface VaultContextValue {
   getGroupVaultById: (id: string) => GroupVault | undefined;
   getWithdrawalRequestById: (id: string) => WithdrawalRequest | undefined;
   createVault: (payload: CreateVaultPayload) => Promise<Vault>;
+  /** Starts a Paystack checkout for the amount; balance is credited only after verification. */
+  startPaystackDeposit: (
+    vaultId: string,
+    amount: number,
+  ) => Promise<paymentsApi.DepositView>;
+  /** Polls/asks Paystack to verify; refreshes the vault when the deposit settles. */
+  verifyPaystackDeposit: (reference: string) => Promise<paymentsApi.DepositView>;
   withdrawVault: (
     vaultId: string,
     amountReceived: number,
     feeCharged: number,
     mode?: 'matured' | 'early',
+    destination?: vaultApi.PayoutDestination,
   ) => Promise<void>;
   createGroupVault: (payload: CreateGroupVaultPayload) => Promise<GroupVault>;
   joinGroupVault: (inviteCode: string) => Promise<GroupVault | null>;
@@ -64,7 +73,7 @@ interface VaultContextValue {
 const VaultContext = createContext<VaultContextValue | undefined>(undefined);
 
 export function VaultProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [vaults, setVaults] = useState<Vault[]>([]);
   const [groupVaults, setGroupVaults] = useState<GroupVault[]>([]);
   const [withdrawalRequests, setWithdrawalRequests] = useState<
@@ -177,12 +186,43 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [clearError],
   );
 
+  const startPaystackDeposit = useCallback(
+    async (vaultId: string, amount: number) => {
+      clearError();
+      try {
+        return await paymentsApi.initializeDeposit({
+          vaultId,
+          amount,
+          phone: user?.phone,
+        });
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not start deposit'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
+    },
+    [clearError, user?.phone],
+  );
+
+  const verifyPaystackDeposit = useCallback(
+    async (reference: string) => {
+      const deposit = await paymentsApi.verifyDeposit(reference);
+      if (deposit.status === 'SUCCESS') {
+        // Balance was credited server-side — reload so the UI reflects it.
+        await refreshVaults();
+      }
+      return deposit;
+    },
+    [refreshVaults],
+  );
+
   const withdrawVault = useCallback(
     async (
       vaultId: string,
       _amountReceived: number,
       feeCharged: number,
       mode: 'matured' | 'early' = 'matured',
+      destination?: vaultApi.PayoutDestination,
     ) => {
       clearError();
       try {
@@ -193,8 +233,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
         const updated =
           mode === 'early'
-            ? await vaultApi.breakVault(vaultId)
-            : await vaultApi.withdrawFromVault(vaultId, vault.currentBalance);
+            ? await vaultApi.breakVault(vaultId, destination)
+            : await vaultApi.withdrawFromVault(
+                vaultId,
+                vault.currentBalance,
+                destination,
+              );
 
         setVaults((current) =>
           current.map((item) =>
@@ -318,6 +362,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       getGroupVaultById,
       getWithdrawalRequestById,
       createVault,
+      startPaystackDeposit,
+      verifyPaystackDeposit,
       withdrawVault,
       createGroupVault,
       joinGroupVault,
@@ -338,7 +384,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       loading,
       lookupInviteCode,
       refreshVaults,
+      startPaystackDeposit,
       vaults,
+      verifyPaystackDeposit,
       voteWithdrawal,
       withdrawVault,
       withdrawalRequests,

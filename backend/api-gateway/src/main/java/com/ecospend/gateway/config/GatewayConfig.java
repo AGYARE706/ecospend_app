@@ -38,12 +38,39 @@ public class GatewayConfig {
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://expense-service:8082"))
+                // Deny all service-to-service /internal/ paths from outside
+                .route("deny-internal", r -> r
+                        .path(RoutePaths.VAULT_INTERNAL, RoutePaths.PAYMENTS_INTERNAL)
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            exchange.getResponse().getHeaders()
+                                    .setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"Internal endpoints are service-to-service only\"}"
+                                    .getBytes();
+                            return exchange.getResponse().writeWith(
+                                    Mono.just(exchange.getResponse().bufferFactory().wrap(body)));
+                        }))
+                        .uri("http://vault-service:8083"))
                 .route("vault-service", r -> r
                         .path(RoutePaths.VAULT)
+                        .and().not(p -> p.path(RoutePaths.VAULT_INTERNAL))
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://vault-service:8083"))
+                // Paystack calls back here — open route, HMAC-verified in the service
+                .route("payments-webhook", r -> r
+                        .path(RoutePaths.PAYMENTS_WEBHOOK)
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("http://payment-service:8085"))
+                .route("payment-service", r -> r
+                        .path(RoutePaths.PAYMENTS)
+                        .and().not(p -> p.path(RoutePaths.PAYMENTS_WEBHOOK))
+                        .and().not(p -> p.path(RoutePaths.PAYMENTS_INTERNAL))
+                        .filters(f -> f.stripPrefix(1)
+                                .filter(authenticationFilter.apply(
+                                        new AuthenticationFilter.Config())))
+                        .uri("http://payment-service:8085"))
                 // Block public access to S2S send endpoint (must be before notifications catch-all)
                 .route("deny-notification-send", r -> r
                         .path(RoutePaths.NOTIFICATIONS_SEND)
