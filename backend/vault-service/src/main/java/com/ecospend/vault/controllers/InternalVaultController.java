@@ -1,8 +1,11 @@
 package com.ecospend.vault.controllers;
 
 import com.ecospend.vault.dto.AmountRequest;
+import com.ecospend.vault.dto.GroupVaultView;
 import com.ecospend.vault.dto.InternalDepositRequest;
+import com.ecospend.vault.dto.InternalGroupDepositRequest;
 import com.ecospend.vault.models.Vault;
+import com.ecospend.vault.services.GroupVaultService;
 import com.ecospend.vault.services.VaultService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalVaultController {
 
     private final VaultService vaultService;
+    private final GroupVaultService groupVaultService;
 
     @PostMapping("/deposits")
     public ResponseEntity<Vault> creditVerifiedDeposit(
@@ -31,7 +35,22 @@ public class InternalVaultController {
         Vault vault = vaultService.deposit(
                 request.userId(),
                 request.vaultId(),
-                new AmountRequest(request.amount(), "Paystack deposit " + request.reference()));
+                new AmountRequest(request.amount(), "Wallet transfer " + request.reference()));
         return ResponseEntity.ok(vault);
+    }
+
+    /**
+     * Membership rules (ACTIVE group, ACTIVE member) are still enforced
+     * by GroupVaultService.deposit; only the tier gate is skipped, since
+     * a wallet transfer carries no gateway-injected tier header.
+     */
+    @PostMapping("/group-deposits")
+    public ResponseEntity<GroupVaultView> creditGroupContribution(
+            @Valid @RequestBody InternalGroupDepositRequest request) {
+        GroupVaultView view = groupVaultService.deposit(
+                request.userId(),
+                request.groupId(),
+                new AmountRequest(request.amount(), "Wallet contribution " + request.reference()));
+        return ResponseEntity.ok(view);
     }
 }

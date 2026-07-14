@@ -19,6 +19,7 @@ import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/icons';
 import { useGoals } from '../../context/GoalsContext';
+import { useWallet } from '../../context/WalletContext';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -40,6 +41,8 @@ export default function AddGoalContributionScreen() {
     const { params } = useRoute<AddGoalContributionRouteProp>();
     const navigation = useNavigation();
     const { getGoalById, contributeToGoal, isContributing } = useGoals();
+    const { balance } = useWallet();
+    const walletBalance = balance ?? 0;
     const [amount, setAmount] = useState('');
 
     const goal = getGoalById(params.goalId);
@@ -76,13 +79,20 @@ export default function AddGoalContributionScreen() {
         setAmount((prev) => String(Math.min((Number(prev) || 0) + value, remaining)));
     };
 
+    const effectiveAmount = Math.min(addedAmount, remaining);
+    const hasEnoughBalance = effectiveAmount <= walletBalance;
+
     const handleSave = async () => {
-        if (addedAmount <= 0) {
+        if (effectiveAmount <= 0 || !hasEnoughBalance) {
           return;
         }
 
-        await contributeToGoal(goal.id, Math.min(addedAmount, remaining));
-        navigation.goBack();
+        // Real money: the backend debits the wallet and auto-records
+        // the expense, so only close the sheet when it succeeds.
+        const ok = await contributeToGoal(goal.id, effectiveAmount);
+        if (ok) {
+          navigation.goBack();
+        }
     };
 
     return (
@@ -161,6 +171,12 @@ export default function AddGoalContributionScreen() {
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                     leadingIcon="cash"
+                    hint={`Paid from your wallet — GHS ${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} available`}
+                    error={
+                      effectiveAmount > 0 && !hasEnoughBalance
+                        ? 'Amount exceeds your wallet balance — top up first'
+                        : undefined
+                    }
                 />
 
                 <View style={styles.chipsRow}>
@@ -199,11 +215,12 @@ export default function AddGoalContributionScreen() {
 
             <View style={styles.section}>
                 <AppButton
-                    title="Save Contribution"
+                    title="Contribute from Wallet"
                     onPress={() => {
                       void handleSave();
                     }}
                     loading={isContributing}
+                    disabled={effectiveAmount <= 0 || !hasEnoughBalance}
                     icon="arrow-right"
                     variant="primary"
                     size="lg"

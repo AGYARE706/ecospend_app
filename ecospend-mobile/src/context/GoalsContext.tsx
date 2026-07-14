@@ -12,6 +12,8 @@ import {
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as goalsApi from '../api/goalsApi';
 import { useAuth } from './AuthContext';
+import { useFinance } from './FinanceContext';
+import { useWallet } from './WalletContext';
 import type {
   AddGoalPayload,
   GoalsTabMode,
@@ -31,6 +33,7 @@ interface GoalsContextValue {
   setActiveTab: (tab: GoalsTabMode) => void;
   addGoal: (payload: AddGoalPayload) => Promise<boolean>;
   contributeToGoal: (goalId: string, amount: number) => Promise<boolean>;
+  withdrawFromGoal: (goalId: string, amount: number) => Promise<boolean>;
   updateGoal: (goalId: string, payload: UpdateGoalPayload) => Promise<boolean>;
   deleteGoal: (goalId: string) => Promise<boolean>;
   getGoalById: (goalId: string) => SavingsGoal | undefined;
@@ -46,6 +49,8 @@ const GoalsContext = createContext<GoalsContextValue | undefined>(undefined);
 
 export function GoalsProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
+  const { refreshWallet } = useWallet();
+  const { refreshTransactions } = useFinance();
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<GoalsTabMode>('active');
@@ -143,7 +148,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         setGoals((current) =>
           current.map((goal) => (goal.id === goalId ? updated : goal)),
         );
-        showToast(`GHS ${amount.toFixed(2)} added to ${updated.name}!`);
+        void refreshWallet();
+        void refreshTransactions();
+        showToast(`GHS ${amount.toFixed(2)} moved from wallet to ${updated.name}!`);
         return true;
       } catch (error) {
         showToast(getApiErrorMessage(error, 'Could not contribute'));
@@ -152,7 +159,29 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         setIsContributing(false);
       }
     },
-    [showToast],
+    [refreshTransactions, refreshWallet, showToast],
+  );
+
+  const withdrawFromGoal = useCallback(
+    async (goalId: string, amount: number): Promise<boolean> => {
+      setIsContributing(true);
+      try {
+        const updated = await goalsApi.withdrawFromGoal(goalId, amount);
+        setGoals((current) =>
+          current.map((goal) => (goal.id === goalId ? updated : goal)),
+        );
+        void refreshWallet();
+        void refreshTransactions();
+        showToast(`GHS ${amount.toFixed(2)} moved back to your wallet`);
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not withdraw'));
+        return false;
+      } finally {
+        setIsContributing(false);
+      }
+    },
+    [refreshTransactions, refreshWallet, showToast],
   );
 
   const updateGoal = useCallback(
@@ -203,6 +232,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       setActiveTab,
       addGoal,
       contributeToGoal,
+      withdrawFromGoal,
       updateGoal,
       deleteGoal,
       getGoalById,
@@ -229,6 +259,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       toastMessage,
       totalSaved,
       updateGoal,
+      withdrawFromGoal,
     ],
   );
 

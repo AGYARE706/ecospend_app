@@ -1,8 +1,10 @@
 package com.ecospend.expense.controllers;
 
+import com.ecospend.expense.client.PaymentClient;
 import com.ecospend.expense.dto.ContributeGoalRequest;
 import com.ecospend.expense.dto.TransactionSummaryResponse;
 import com.ecospend.expense.dto.UpdateEnvelopeRequest;
+import com.ecospend.expense.dto.WithdrawGoalRequest;
 import com.ecospend.expense.exception.BadRequestException;
 import com.ecospend.expense.exception.ResourceNotFoundException;
 import com.ecospend.expense.models.BudgetEnvelope;
@@ -11,9 +13,10 @@ import com.ecospend.expense.models.Transaction;
 import com.ecospend.expense.repository.BudgetEnvelopeRepository;
 import com.ecospend.expense.repository.SavingsGoalRepository;
 import com.ecospend.expense.repository.TransactionRepository;
-import com.ecospend.expense.services.MomoFeeService;
+import com.ecospend.expense.services.TransactionRecorder;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -28,23 +31,19 @@ public class FinanceController {
     private final TransactionRepository transactionRepository;
     private final SavingsGoalRepository savingsGoalRepository;
     private final BudgetEnvelopeRepository budgetEnvelopeRepository;
-    private final MomoFeeService momoFeeService;
+    private final TransactionRecorder transactionRecorder;
+    private final PaymentClient paymentClient;
 
     public FinanceController(TransactionRepository transactionRepository,
             SavingsGoalRepository savingsGoalRepository,
             BudgetEnvelopeRepository budgetEnvelopeRepository,
-            MomoFeeService momoFeeService) {
+            TransactionRecorder transactionRecorder,
+            PaymentClient paymentClient) {
         this.transactionRepository = transactionRepository;
         this.savingsGoalRepository = savingsGoalRepository;
         this.budgetEnvelopeRepository = budgetEnvelopeRepository;
-        this.momoFeeService = momoFeeService;
-    }
-
-    @GetMapping("/momo-fee")
-    public ResponseEntity<BigDecimal> getMomoFee(
-            @RequestParam BigDecimal amount,
-            @RequestParam String provider) {
-        return ResponseEntity.ok(momoFeeService.calculateFee(amount, provider));
+        this.transactionRecorder = transactionRecorder;
+        this.paymentClient = paymentClient;
     }
 
     @PostMapping("/transactions")
@@ -53,13 +52,7 @@ public class FinanceController {
             @RequestBody Transaction transaction) {
         transaction.setId(null);
         transaction.setUserId(userId);
-
-        if (transaction.getProvider() != null && !transaction.getProvider().isBlank()) {
-            BigDecimal fee = momoFeeService.calculateFee(transaction.getAmount(), transaction.getProvider());
-            transaction.setMomoFee(fee);
-        } else {
-            transaction.setMomoFee(BigDecimal.ZERO);
-        }
+        transaction.setMomoFee(BigDecimal.ZERO);
 
         return ResponseEntity.ok(transactionRepository.save(transaction));
     }
@@ -137,11 +130,10 @@ public class FinanceController {
         }
         if (details.getType() != null && details.getType().equalsIgnoreCase("INCOME")) {
             tx.setProvider(null);
-            tx.setMomoFee(BigDecimal.ZERO);
         } else if (details.getProvider() != null) {
             tx.setProvider(details.getProvider());
-            tx.setMomoFee(momoFeeService.calculateFee(tx.getAmount(), tx.getProvider()));
         }
+        tx.setMomoFee(BigDecimal.ZERO);
 
         return ResponseEntity.ok(transactionRepository.save(tx));
     }
@@ -197,7 +189,15 @@ public class FinanceController {
         return ResponseEntity.ok(savingsGoalRepository.save(goal));
     }
 
+    /**
+     * Contributes real money from the wallet into a goal. The goal update
+     * and expense record commit only if the wallet debit succeeds — the
+     * debit is the last step, so a 400 (insufficient balance) rolls back.
+     * Contributions may not exceed the amount remaining to the target,
+     * so the wallet debit always equals the amount applied.
+     */
     @PostMapping("/goals/{id}/contribute")
+    @Transactional
     public ResponseEntity<SavingsGoal> contributeToGoal(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") UUID userId,
@@ -205,13 +205,52 @@ public class FinanceController {
         SavingsGoal goal = savingsGoalRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
 
-        BigDecimal next = goal.getCurrentAmount().add(request.amount());
-        if (next.compareTo(goal.getTargetAmount()) > 0) {
-            next = goal.getTargetAmount();
+        BigDecimal remaining = goal.getTargetAmount().subtract(goal.getCurrentAmount());
+        if (request.amount().compareTo(remaining) > 0) {
+            throw new BadRequestException(
+                    "Contribution exceeds the amount remaining to reach this goal (GHS "
+                            + remaining + ")");
         }
-        goal.setCurrentAmount(next);
+
+        goal.setCurrentAmount(goal.getCurrentAmount().add(request.amount()));
         markCompletedIfNeeded(goal);
-        return ResponseEntity.ok(savingsGoalRepository.save(goal));
+        SavingsGoal saved = savingsGoalRepository.save(goal);
+
+        transactionRecorder.record(userId, request.amount(), "EXPENSE", "Savings",
+                "Goal contribution — " + goal.getName());
+        paymentClient.debitWallet(userId, request.amount(),
+                "ecospend-goal-" + UUID.randomUUID());
+
+        return ResponseEntity.ok(saved);
+    }
+
+    /**
+     * Withdraws money from a goal back into the wallet. Goals have no
+     * lock or fee — the only restriction is the goal's own balance.
+     */
+    @PostMapping("/goals/{id}/withdraw")
+    @Transactional
+    public ResponseEntity<SavingsGoal> withdrawFromGoal(
+            @PathVariable UUID id,
+            @RequestHeader("X-User-Id") UUID userId,
+            @Valid @RequestBody WithdrawGoalRequest request) {
+        SavingsGoal goal = savingsGoalRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+
+        if (request.amount().compareTo(goal.getCurrentAmount()) > 0) {
+            throw new BadRequestException("Withdrawal exceeds the goal balance");
+        }
+
+        goal.setCurrentAmount(goal.getCurrentAmount().subtract(request.amount()));
+        markCompletedIfNeeded(goal);
+        SavingsGoal saved = savingsGoalRepository.save(goal);
+
+        transactionRecorder.record(userId, request.amount(), "INCOME", "Savings",
+                "Goal withdrawal — " + goal.getName());
+        paymentClient.creditWallet(userId, request.amount(),
+                "ecospend-goalw-" + UUID.randomUUID());
+
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/goals/{id}")

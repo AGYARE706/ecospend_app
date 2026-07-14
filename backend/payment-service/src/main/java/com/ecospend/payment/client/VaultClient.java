@@ -44,10 +44,30 @@ public class VaultClient {
                             "reference", reference))
                     .retrieve()
                     .toBodilessEntity();
-            log.info("Credited vault {} with GHS {} for deposit {}", vaultId, amountGhs, reference);
+            log.info("Credited vault {} with GHS {} for transfer {}", vaultId, amountGhs, reference);
         } catch (RestClientException e) {
             throw PaymentException.upstream(
-                    "Vault credit failed for deposit " + reference + ": " + e.getMessage());
+                    "Vault credit failed for transfer " + reference + ": " + e.getMessage());
+        }
+    }
+
+    /** Credits the caller's own member balance in a group vault. */
+    public void creditGroup(UUID userId, UUID groupId, BigDecimal amountGhs, String reference) {
+        try {
+            restClient.post()
+                    .uri("/vault/internal/group-deposits")
+                    .body(Map.of(
+                            "userId", userId.toString(),
+                            "groupId", groupId.toString(),
+                            "amount", amountGhs,
+                            "reference", reference))
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("Credited group {} member {} with GHS {} for transfer {}",
+                    groupId, userId, amountGhs, reference);
+        } catch (RestClientException e) {
+            throw PaymentException.upstream(
+                    "Group vault credit failed for transfer " + reference + ": " + e.getMessage());
         }
     }
 }

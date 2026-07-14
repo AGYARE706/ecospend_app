@@ -12,10 +12,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * One row per money movement attempt — a Paystack deposit (pay-in) or a
- * payout transfer to a user's MoMo wallet. The unique reference is the
- * idempotency key: webhook retries and double verifies can never credit
- * a vault twice because status only transitions PENDING → SUCCESS once.
+ * One row per money movement — external Paystack legs (DEPOSIT pay-ins,
+ * PAYOUT transfers to MoMo) and internal wallet moves (CREDIT from vault
+ * or goal payouts, DEBIT into vaults, goals, groups, bills, Plus). The
+ * unique reference is the idempotency key: webhook retries and double
+ * verifies can never credit the wallet twice because status only
+ * transitions PENDING → SUCCESS once, and internal moves short-circuit
+ * when their reference already exists.
  */
 @Entity
 @Table(name = "payment_records")
@@ -24,7 +27,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class PaymentRecord {
 
-    public enum Type { DEPOSIT, PAYOUT }
+    public enum Type { DEPOSIT, PAYOUT, CREDIT, DEBIT }
 
     public enum Status { PENDING, SUCCESS, FAILED }
 

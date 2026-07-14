@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import GhsText from '../ui/GhsText';
@@ -14,16 +14,25 @@ import {
 import type { ThemeColors } from '../../theme';
 
 /**
- * Hero balance card — the focal point of the dashboard. A deep emerald
- * gradient with a soft glow orb and an income / expense split footer.
+ * Hero wallet card — the focal point of the dashboard. Shows the real
+ * EcoSpend wallet balance with Top Up / Send actions, plus this month's
+ * income / expense split footer.
  */
 export interface BalanceCardProps {
   balance: number;
   income: number;
   expense: number;
+  onTopUpPress?: () => void;
+  onSendPress?: () => void;
 }
 
-export default function BalanceCard({ balance, income, expense }: BalanceCardProps) {
+export default function BalanceCard({
+  balance,
+  income,
+  expense,
+  onTopUpPress,
+  onSendPress,
+}: BalanceCardProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   return (
@@ -38,7 +47,7 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
         <View style={styles.glowOrbSm} />
 
         <View style={styles.headerRow}>
-          <Text style={styles.label}>Total Balance</Text>
+          <Text style={styles.label}>Wallet Balance</Text>
           <View style={styles.iconBadge}>
             <Icon name="wallet" size={18} color={colors.white} />
           </View>
@@ -52,6 +61,33 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
           numberOfLines={1}
           adjustsFontSizeToFit
         />
+
+        {onTopUpPress || onSendPress ? (
+          <View style={styles.actionsRow}>
+            {onTopUpPress ? (
+              <Pressable
+                onPress={onTopUpPress}
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Top up wallet"
+              >
+                <Icon name="plus-circle" size={16} color={colors.white} strokeWidth={2.2} />
+                <Text style={styles.actionBtnText}>Top Up</Text>
+              </Pressable>
+            ) : null}
+            {onSendPress ? (
+              <Pressable
+                onPress={onSendPress}
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Send money"
+              >
+                <Icon name="send" size={16} color={colors.white} strokeWidth={2.2} />
+                <Text style={styles.actionBtnText}>Send</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
@@ -134,6 +170,27 @@ const createStyles = (colors: ThemeColors) =>
   },
   balance: {
     marginBottom: spacing.lg,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  actionBtn: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: radius.full,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  actionBtnPressed: {
+    opacity: 0.8,
+  },
+  actionBtnText: {
+    ...typography.label,
+    color: colors.white,
   },
   statsRow: {
     alignItems: 'center',

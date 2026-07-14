@@ -85,21 +85,17 @@ public class VaultService {
         record(vault, VaultTransaction.Type.FEE, fee, "Platform sustainability fee (2%)");
         record(vault, VaultTransaction.Type.WITHDRAWAL, payout,
                 request.note() != null ? request.note() : "Withdrawal payout");
+        Vault saved = vaultRepository.save(vault);
 
-        // Real money leg: transfer the net amount to the user's MoMo wallet.
-        // If the payout cannot be initiated the transaction rolls back and
-        // the vault balance is untouched. Withdrawals without a destination
-        // stay ledger-only (legacy behaviour).
-        if (request.hasPayoutDestination()) {
-            paymentClient.requestPayout(userId, vaultId, payout,
-                    request.momoNumber(), request.momoProvider(),
-                    "Vault withdrawal (net of 2% fee)");
-        }
-        return vaultRepository.save(vault);
+        // Net payout lands in the central wallet; a failed credit rolls
+        // the whole withdrawal back.
+        paymentClient.creditWallet(userId, payout, "ecospend-vw-" + UUID.randomUUID(),
+                "Vault withdrawal — " + vault.getName() + " (net of 2% fee)");
+        return saved;
     }
 
     @Transactional
-    public Vault breakVault(UUID userId, UUID vaultId, AmountRequest payoutDestination) {
+    public Vault breakVault(UUID userId, UUID vaultId) {
         Vault vault = findOne(userId, vaultId);
         requireActive(vault);
 
@@ -118,13 +114,11 @@ public class VaultService {
 
         vault.setBalance(BigDecimal.ZERO);
         vault.setStatus(Vault.Status.BROKEN);
+        Vault saved = vaultRepository.save(vault);
 
-        if (payoutDestination != null && payoutDestination.hasPayoutDestination()) {
-            paymentClient.requestPayout(userId, vaultId, payout,
-                    payoutDestination.momoNumber(), payoutDestination.momoProvider(),
-                    "Vault early break payout (net of 5% penalty)");
-        }
-        return vaultRepository.save(vault);
+        paymentClient.creditWallet(userId, payout, "ecospend-vb-" + UUID.randomUUID(),
+                "Vault break — " + vault.getName() + " (net of 5% penalty)");
+        return saved;
     }
 
     @Transactional

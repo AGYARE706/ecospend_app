@@ -58,9 +58,9 @@ Edit `ecospend-mobile/.env` (create from `.env.example` if needed):
 
 | How you run the app | Set `EXPO_PUBLIC_API_URL` to |
 |---------------------|-----------------------------|
-| Android emulator | `http://10.0.2.2:8080` |
-| iOS simulator | `http://localhost:8080` |
-| Physical phone (same Wi‑Fi / hotspot) | `http://<YOUR_PC_LAN_IP>:8080` |
+| Android emulator    | `http://10.0.2.2:8080` |
+| iOS simulator       | `http://localhost:8080` |
+| Physical phone (same Wi‑Fi / hotspot) | `http://<YOUR_PC_LAN_IP>:8080`|
 
 **Find your PC IP (Windows):**
 

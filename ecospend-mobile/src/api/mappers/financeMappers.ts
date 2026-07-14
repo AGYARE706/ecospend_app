@@ -36,10 +36,6 @@ export function providerFromApi(provider?: string | null): Provider | undefined 
   return API_TO_PROVIDER[provider] ?? API_TO_PROVIDER[provider.toUpperCase()];
 }
 
-export function providerToFeeApi(provider: Provider): string {
-  return PROVIDER_TO_API[provider] ?? 'MTN';
-}
-
 interface ApiTransaction {
   id: string;
   type: string;
@@ -56,6 +52,9 @@ const CATEGORIES: TransactionCategory[] = [
   'Utilities',
   'Business',
   'Savings',
+  'Deposit',
+  'Transfer',
+  'Subscription',
   'Other',
 ];
 

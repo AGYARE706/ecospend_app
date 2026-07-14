@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,14 +40,15 @@ export default function AddMoneyScreen({ route, navigation }: AddMoneyScreenProp
   const { vaultId } = route.params;
   const {
     vault,
+    walletBalance,
     amount,
     setAmount,
     isAmountValid,
+    hasEnoughBalance,
     parsedAmount,
     phase,
     error,
-    handlePay,
-    checkNow,
+    handleDeposit,
     reset,
   } = useAddMoney(vaultId);
 
@@ -58,6 +59,9 @@ export default function AddMoneyScreen({ route, navigation }: AddMoneyScreenProp
       </ScreenWrapper>
     );
   }
+
+  const showTopUpPrompt =
+    isAmountValid && !hasEnoughBalance && phase !== 'success';
 
   return (
     <ScreenWrapper background="page" padded={false}>
@@ -78,59 +82,55 @@ export default function AddMoneyScreen({ route, navigation }: AddMoneyScreenProp
           <View style={styles.vaultCard}>
             <Text style={styles.vaultName}>{vault.name}</Text>
             <Text style={styles.vaultBalance}>
-              Balance {ghs(vault.currentBalance)}
+              Vault balance {ghs(vault.currentBalance)}
             </Text>
+            <View style={styles.walletRow}>
+              <Ionicons name="wallet-outline" size={16} color={colors.primary} />
+              <Text style={styles.walletRowText}>
+                Wallet balance {ghs(walletBalance)}
+              </Text>
+            </View>
           </View>
 
-          {phase === 'input' || phase === 'starting' || phase === 'failed' ? (
+          {phase !== 'success' ? (
             <>
               <AppInput
-                label="Amount to deposit (GHS)"
+                label="Amount to move from wallet (GHS)"
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="0.00"
                 keyboardType="decimal-pad"
                 error={error ?? undefined}
-                hint="You'll pay securely through Paystack — card or Mobile Money"
+                hint="Moves instantly from your EcoSpend wallet into this vault"
               />
               <AppButton
-                title={phase === 'starting' ? 'Opening checkout…' : 'Pay with Paystack'}
-                icon="card-outline"
-                onPress={() => void handlePay()}
-                loading={phase === 'starting'}
-                disabled={!isAmountValid || phase === 'starting'}
+                title={phase === 'processing' ? 'Moving money…' : 'Deposit from Wallet'}
+                icon="wallet-outline"
+                onPress={() => void handleDeposit()}
+                loading={phase === 'processing'}
+                disabled={!isAmountValid || !hasEnoughBalance || phase === 'processing'}
               />
+              {showTopUpPrompt ? (
+                <AppButton
+                  title="Top up wallet first"
+                  variant="outline"
+                  icon="add-circle-outline"
+                  onPress={() => navigation.navigate('TopUpWallet')}
+                />
+              ) : null}
               <Text style={styles.securityNote}>
-                Your vault is only credited after Paystack confirms the payment.
-                EcoSpend never sees your card or PIN details.
+                Vault deposits come from your wallet, so every move is backed by
+                real money and recorded automatically in your transactions.
               </Text>
             </>
-          ) : null}
-
-          {phase === 'awaiting' ? (
-            <View style={styles.stateCard}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.stateTitle}>Waiting for your payment</Text>
-              <Text style={styles.stateBody}>
-                Complete the {ghs(parsedAmount)} payment in the browser window
-                that just opened. This screen updates automatically once
-                Paystack confirms it.
-              </Text>
-              <AppButton
-                title="Check status now"
-                variant="outline"
-                icon="refresh-outline"
-                onPress={() => void checkNow()}
-              />
-            </View>
           ) : null}
 
           {phase === 'success' ? (
             <View style={styles.stateCard}>
               <Ionicons name="checkmark-circle" size={56} color={colors.success} />
-              <Text style={styles.stateTitle}>Deposit confirmed</Text>
+              <Text style={styles.stateTitle}>Deposit complete</Text>
               <Text style={styles.stateBody}>
-                {ghs(parsedAmount)} has been added to “{vault.name}”.
+                {ghs(parsedAmount)} moved from your wallet into “{vault.name}”.
               </Text>
               <AppButton
                 title="Done"
@@ -198,6 +198,17 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       fontSize: fontSize.sm,
       marginTop: spacing.xs,
+    },
+    walletRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    walletRowText: {
+      color: colors.primary,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium,
     },
     securityNote: {
       color: colors.textMuted,

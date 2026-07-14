@@ -112,14 +112,21 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          <BalanceCard balance={balance} income={income} expense={expense} />
+          <BalanceCard
+            balance={balance}
+            income={income}
+            expense={expense}
+            onTopUpPress={() => navigateApp('TopUpWallet')}
+            onSendPress={() => navigateApp('SendMoney')}
+          />
 
           <QuickActionRow
             onAddPress={() => navigateApp('AddTransaction')}
             onGoalsPress={() =>
               tabNavigation?.navigate('GoalsTab', { screen: 'SavingsGoals' })
             }
-            onTransferPress={() => navigateApp('MoMoCalculator')}
+            onTransferPress={() => navigateApp('SendMoney')}
+            onMorePress={() => navigateApp('Bills')}
           />
 
           <DashboardAnalyticsCard analytics={analytics} />

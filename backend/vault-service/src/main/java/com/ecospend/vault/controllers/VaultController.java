@@ -48,13 +48,10 @@ public class VaultController {
         return ResponseEntity.ok(vaultService.findTransactions(userId, id));
     }
 
-    @PostMapping("/{id}/deposit")
-    public ResponseEntity<Vault> deposit(
-            @RequestHeader("X-User-Id") UUID userId,
-            @PathVariable UUID id,
-            @Valid @RequestBody AmountRequest request) {
-        return ResponseEntity.ok(vaultService.deposit(userId, id, request));
-    }
+    // NOTE: there is intentionally no public deposit endpoint. Vaults are
+    // funded exclusively from the central wallet via the payment-service
+    // (POST /api/payments/transfers/vault), which debits real money first
+    // and then credits the vault through /vault/internal/deposits.
 
     @PostMapping("/{id}/withdraw")
     public ResponseEntity<Vault> withdraw(
@@ -67,9 +64,8 @@ public class VaultController {
     @PostMapping("/{id}/break")
     public ResponseEntity<Vault> breakVault(
             @RequestHeader("X-User-Id") UUID userId,
-            @PathVariable UUID id,
-            @RequestBody(required = false) AmountRequest payoutDestination) {
-        return ResponseEntity.ok(vaultService.breakVault(userId, id, payoutDestination));
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(vaultService.breakVault(userId, id));
     }
 
     @DeleteMapping("/{id}")

@@ -40,6 +40,9 @@ paystack:
 vault-service:
   base-url: ${VAULT_SERVICE_URL:http://vault-service:8083}
 
+expense-service:
+  base-url: ${EXPENSE_SERVICE_URL:http://expense-service:8082}
+
 management:
   endpoints:
     web:

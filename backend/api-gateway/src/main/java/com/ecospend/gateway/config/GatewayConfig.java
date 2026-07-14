@@ -22,6 +22,23 @@ public class GatewayConfig {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
+                // Declared first so no service route can ever match an
+                // /internal/ path: those endpoints take identity from the
+                // request body and must stay service-to-service only.
+                .route("deny-internal", r -> r
+                        .path(RoutePaths.VAULT_INTERNAL,
+                                RoutePaths.PAYMENTS_INTERNAL,
+                                RoutePaths.FINANCE_INTERNAL)
+                        .filters(f -> f.filter((exchange, chain) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            exchange.getResponse().getHeaders()
+                                    .setContentType(MediaType.APPLICATION_JSON);
+                            byte[] body = "{\"error\":\"/internal/ endpoints are service-to-service only\"}"
+                                    .getBytes();
+                            return exchange.getResponse().writeWith(
+                                    Mono.just(exchange.getResponse().bufferFactory().wrap(body)));
+                        }))
+                        .uri("http://payment-service:8085"))
                 .route("identity-service", r -> r
                         .path(RoutePaths.AUTH)
                         .filters(f -> f.stripPrefix(1))
@@ -34,23 +51,11 @@ public class GatewayConfig {
                         .uri("http://identity-service:8081"))
                 .route("finance-service", r -> r
                         .path(RoutePaths.FINANCE)
+                        .and().not(p -> p.path(RoutePaths.FINANCE_INTERNAL))
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://expense-service:8082"))
-                // Deny all service-to-service /internal/ paths from outside
-                .route("deny-internal", r -> r
-                        .path(RoutePaths.VAULT_INTERNAL, RoutePaths.PAYMENTS_INTERNAL)
-                        .filters(f -> f.filter((exchange, chain) -> {
-                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                            exchange.getResponse().getHeaders()
-                                    .setContentType(MediaType.APPLICATION_JSON);
-                            byte[] body = "{\"error\":\"Internal endpoints are service-to-service only\"}"
-                                    .getBytes();
-                            return exchange.getResponse().writeWith(
-                                    Mono.just(exchange.getResponse().bufferFactory().wrap(body)));
-                        }))
-                        .uri("http://vault-service:8083"))
                 .route("vault-service", r -> r
                         .path(RoutePaths.VAULT)
                         .and().not(p -> p.path(RoutePaths.VAULT_INTERNAL))
@@ -58,7 +63,8 @@ public class GatewayConfig {
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://vault-service:8083"))
-                // Paystack calls back here — open route, HMAC-verified in the service
+                // Paystack webhook: no JWT — the payment-service verifies the
+                // HMAC-SHA512 x-paystack-signature over the raw body instead.
                 .route("payments-webhook", r -> r
                         .path(RoutePaths.PAYMENTS_WEBHOOK)
                         .filters(f -> f.stripPrefix(1))

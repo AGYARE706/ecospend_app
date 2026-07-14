@@ -50,19 +50,13 @@ interface VaultContextValue {
   getGroupVaultById: (id: string) => GroupVault | undefined;
   getWithdrawalRequestById: (id: string) => WithdrawalRequest | undefined;
   createVault: (payload: CreateVaultPayload) => Promise<Vault>;
-  /** Starts a Paystack checkout for the amount; balance is credited only after verification. */
-  startPaystackDeposit: (
-    vaultId: string,
-    amount: number,
-  ) => Promise<paymentsApi.DepositView>;
-  /** Polls/asks Paystack to verify; refreshes the vault when the deposit settles. */
-  verifyPaystackDeposit: (reference: string) => Promise<paymentsApi.DepositView>;
+  depositFromWallet: (vaultId: string, amount: number) => Promise<Vault>;
+  contributeToGroup: (groupId: string, amount: number) => Promise<GroupVault>;
   withdrawVault: (
     vaultId: string,
     amountReceived: number,
     feeCharged: number,
     mode?: 'matured' | 'early',
-    destination?: vaultApi.PayoutDestination,
   ) => Promise<void>;
   createGroupVault: (payload: CreateGroupVaultPayload) => Promise<GroupVault>;
   joinGroupVault: (inviteCode: string) => Promise<GroupVault | null>;
@@ -73,7 +67,7 @@ interface VaultContextValue {
 const VaultContext = createContext<VaultContextValue | undefined>(undefined);
 
 export function VaultProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [vaults, setVaults] = useState<Vault[]>([]);
   const [groupVaults, setGroupVaults] = useState<GroupVault[]>([]);
   const [withdrawalRequests, setWithdrawalRequests] = useState<
@@ -168,11 +162,21 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         });
 
         if (payload.initialDeposit > 0) {
-          created = await vaultApi.depositToVault(
-            created.id,
-            payload.initialDeposit,
-            'Initial deposit',
-          );
+          // Initial deposit is real money moved from the central wallet.
+          // If the wallet can't cover it, the vault still exists — the
+          // user just funds it later from the vault screen.
+          try {
+            await paymentsApi.transferToVault(created.id, payload.initialDeposit);
+            created = await vaultApi.getVault(created.id);
+          } catch (error) {
+            setLastError(
+              getApiErrorMessage(
+                error,
+                'Vault created, but the initial deposit could not be made',
+              ),
+            );
+            setLastErrorCode(getApiErrorCode(error) ?? null);
+          }
         }
 
         setVaults((current) => [created, ...current]);
@@ -186,34 +190,42 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [clearError],
   );
 
-  const startPaystackDeposit = useCallback(
-    async (vaultId: string, amount: number) => {
+  const depositFromWallet = useCallback(
+    async (vaultId: string, amount: number): Promise<Vault> => {
       clearError();
       try {
-        return await paymentsApi.initializeDeposit({
-          vaultId,
-          amount,
-          phone: user?.phone,
-        });
+        await paymentsApi.transferToVault(vaultId, amount);
+        const updated = await vaultApi.getVault(vaultId);
+        setVaults((current) =>
+          current.map((item) => (item.id === vaultId ? updated : item)),
+        );
+        return updated;
       } catch (error) {
-        setLastError(getApiErrorMessage(error, 'Could not start deposit'));
+        setLastError(getApiErrorMessage(error, 'Could not deposit from wallet'));
         setLastErrorCode(getApiErrorCode(error) ?? null);
         throw error;
       }
     },
-    [clearError, user?.phone],
+    [clearError],
   );
 
-  const verifyPaystackDeposit = useCallback(
-    async (reference: string) => {
-      const deposit = await paymentsApi.verifyDeposit(reference);
-      if (deposit.status === 'SUCCESS') {
-        // Balance was credited server-side — reload so the UI reflects it.
-        await refreshVaults();
+  const contributeToGroup = useCallback(
+    async (groupId: string, amount: number): Promise<GroupVault> => {
+      clearError();
+      try {
+        await paymentsApi.transferToGroup(groupId, amount);
+        const updated = await groupVaultApi.getGroupVault(groupId);
+        setGroupVaults((current) =>
+          current.map((item) => (item.id === groupId ? updated : item)),
+        );
+        return updated;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not contribute from wallet'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
       }
-      return deposit;
     },
-    [refreshVaults],
+    [clearError],
   );
 
   const withdrawVault = useCallback(
@@ -222,7 +234,6 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       _amountReceived: number,
       feeCharged: number,
       mode: 'matured' | 'early' = 'matured',
-      destination?: vaultApi.PayoutDestination,
     ) => {
       clearError();
       try {
@@ -233,12 +244,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
         const updated =
           mode === 'early'
-            ? await vaultApi.breakVault(vaultId, destination)
-            : await vaultApi.withdrawFromVault(
-                vaultId,
-                vault.currentBalance,
-                destination,
-              );
+            ? await vaultApi.breakVault(vaultId)
+            : await vaultApi.withdrawFromVault(vaultId, vault.currentBalance);
 
         setVaults((current) =>
           current.map((item) =>
@@ -362,8 +369,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       getGroupVaultById,
       getWithdrawalRequestById,
       createVault,
-      startPaystackDeposit,
-      verifyPaystackDeposit,
+      depositFromWallet,
+      contributeToGroup,
       withdrawVault,
       createGroupVault,
       joinGroupVault,
@@ -372,8 +379,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     }),
     [
       clearError,
+      contributeToGroup,
       createGroupVault,
       createVault,
+      depositFromWallet,
       getGroupVaultById,
       getVaultById,
       getWithdrawalRequestById,
@@ -384,9 +393,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       loading,
       lookupInviteCode,
       refreshVaults,
-      startPaystackDeposit,
       vaults,
-      verifyPaystackDeposit,
       voteWithdrawal,
       withdrawVault,
       withdrawalRequests,

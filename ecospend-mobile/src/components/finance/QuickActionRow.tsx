@@ -21,7 +21,9 @@ type QuickActionKey = 'add' | 'transfer' | 'goals' | 'more';
 export interface QuickActionRowProps {
   onAddPress: () => void;
   onGoalsPress: () => void;
+  /** Wallet money-out: send to any MoMo number. */
   onTransferPress?: () => void;
+  /** Recurring bills paid from the wallet. */
   onMorePress?: () => void;
 }
 
@@ -35,9 +37,9 @@ const getActions = (
   bg: string;
 }[] => [
   { key: 'add', label: 'Add', icon: 'plus', tint: colors.primary, bg: colors.primaryBackground },
-  { key: 'transfer', label: 'Transfer', icon: 'transfer', tint: colors.accent, bg: colors.accentLight },
+  { key: 'transfer', label: 'Send', icon: 'send', tint: colors.accent, bg: colors.accentLight },
   { key: 'goals', label: 'Goals', icon: 'flag', tint: colors.gold, bg: colors.goldLight },
-  { key: 'more', label: 'More', icon: 'grid', tint: colors.textSecondary, bg: colors.chipBg },
+  { key: 'more', label: 'Bills', icon: 'receipt', tint: colors.textSecondary, bg: colors.chipBg },
 ];
 
 export default function QuickActionRow({

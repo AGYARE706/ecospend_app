@@ -3,7 +3,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 import AmountDisplayInput from '../../components/finance/AmountDisplayInput';
 import CategoryChipGrid from '../../components/finance/CategoryChipGrid';
-import MoMoFeePreview from '../../components/finance/MoMoFeePreview';
 import ProviderChipRow from '../../components/finance/ProviderChipRow';
 import SuccessToast from '../../components/finance/SuccessToast';
 import TypeToggle from '../../components/finance/TypeToggle';
@@ -41,7 +40,6 @@ export default function AddTransactionScreen({
     handleSubmit,
     isLoading,
     errors,
-    feePreview,
     showSuccessToast,
   } = useAddTransaction(navigation);
 
@@ -101,13 +99,6 @@ export default function AddTransactionScreen({
         />
         {errors.category ? (
           <Text style={styles.errorText}>{errors.category}</Text>
-        ) : null}
-
-        {feePreview ? (
-          <MoMoFeePreview
-            providerFee={feePreview.providerFee}
-            totalCost={feePreview.totalCost}
-          />
         ) : null}
       </Card>
 

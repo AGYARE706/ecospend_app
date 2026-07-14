@@ -1,5 +1,6 @@
 package com.ecospend.identity.service;
 
+import com.ecospend.identity.client.PaymentClient;
 import com.ecospend.identity.dto.AuthResponse;
 import com.ecospend.identity.dto.UpdateUserProfileRequest;
 import com.ecospend.identity.dto.UserProfileResponse;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -18,8 +20,12 @@ public class UserService {
 
     private static final String TIER_PLUS = "PLUS";
 
+    /** Annual price of EcoSpend Plus, charged from the central wallet. */
+    static final BigDecimal PLUS_PRICE_GHS = new BigDecimal("36.00");
+
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final PaymentClient paymentClient;
 
     public UserProfileResponse getMe(UUID userId) {
         return toProfile(findUser(userId));
@@ -40,6 +46,12 @@ public class UserService {
         userRepository.save(user);
     }
 
+    /**
+     * Paid upgrade: charges GHS 36 from the user's wallet and only then
+     * flips the tier. The wallet charge is the last step inside the
+     * transaction, so an insufficient balance rolls the tier flip back.
+     * Already-PLUS users are never charged twice.
+     */
     @Transactional
     public AuthResponse upgradeToPlus(UUID userId) {
         User user = findUser(userId);
@@ -47,6 +59,9 @@ public class UserService {
         if (!TIER_PLUS.equals(user.getSubscriptionTier())) {
             user.setSubscriptionTier(TIER_PLUS);
             userRepository.save(user);
+
+            paymentClient.chargeWallet(userId, PLUS_PRICE_GHS,
+                    "ecospend-plus-" + UUID.randomUUID(), "EcoSpend Plus (annual)");
         }
 
         String accessToken = jwtService.generateAccessToken(

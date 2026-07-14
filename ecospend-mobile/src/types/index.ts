@@ -6,6 +6,9 @@ export type TransactionCategory =
   | 'Utilities'
   | 'Business'
   | 'Savings'
+  | 'Deposit'
+  | 'Transfer'
+  | 'Subscription'
   | 'Other';
 
 export type Provider = 'MTN MoMo' | 'Telecel Cash' | 'AT Money';
@@ -149,27 +152,6 @@ export interface Envelope {
   month: number;
   year: number;
   color: EnvelopeColorKey;
-}
-
-export interface FeeTier {
-  minAmount: number;
-  maxAmount: number | null;
-  flatFee?: number;
-  percentRate?: number;
-  maxFee?: number;
-}
-
-export interface FeeSchedule {
-  provider: ProviderType;
-  approximate: boolean;
-  tiers: FeeTier[];
-}
-
-export interface FeeResult {
-  fee: number;
-  totalCost: number;
-  amount: number;
-  provider: ProviderType;
 }
 
 export interface AddEnvelopePayload {
