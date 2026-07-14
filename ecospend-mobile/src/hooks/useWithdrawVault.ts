@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
+import { useFinance } from '../context/FinanceContext';
 import { useVaults } from '../context/VaultContext';
+import { useWallet } from '../context/WalletContext';
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import type { AppStackParamList } from '../navigation/types';
 import type { Vault } from '../types/vault';
@@ -29,24 +31,9 @@ export interface WithdrawVaultData {
   formattedCreated: string;
   isConfirmed: boolean;
   isLoading: boolean;
-  momoNumber: string;
-  momoProvider: MomoProvider;
-  momoError: string | null;
-  setMomoNumber: (value: string) => void;
-  setMomoProvider: (value: MomoProvider) => void;
   toggleConfirm: () => void;
   handleConfirm: () => Promise<void>;
 }
-
-export type MomoProvider = 'MTN' | 'TELECEL' | 'AT';
-
-export const MOMO_PROVIDERS: { key: MomoProvider; label: string }[] = [
-  { key: 'MTN', label: 'MTN MoMo' },
-  { key: 'TELECEL', label: 'Telecel Cash' },
-  { key: 'AT', label: 'AT Money' },
-];
-
-const GHANA_PHONE_PATTERN = /^(0|\+233)\d{9}$/;
 
 type WithdrawNavProp = StackNavigationProp<AppStackParamList, 'WithdrawVault'>;
 
@@ -55,18 +42,12 @@ export function useWithdrawVault(
   navigation: WithdrawNavProp,
 ): WithdrawVaultData {
   const { getVaultById, vaults, withdrawVault } = useVaults();
+  const { refreshWallet } = useWallet();
+  const { refreshTransactions } = useFinance();
   const vault: Vault = getVaultById(vaultId) ?? vaults[0]!;
 
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [momoNumber, setMomoNumberState] = useState('');
-  const [momoProvider, setMomoProvider] = useState<MomoProvider>('MTN');
-  const [momoError, setMomoError] = useState<string | null>(null);
-
-  const setMomoNumber = useCallback((value: string) => {
-    setMomoNumberState(value);
-    setMomoError(null);
-  }, []);
 
   const daysRemaining = useMemo(
     () => getDaysRemaining(vault.maturityDate),
@@ -96,37 +77,30 @@ export function useWithdrawVault(
   const handleConfirm = useCallback(async () => {
     if (!isConfirmed) return;
 
-    const trimmedNumber = momoNumber.trim();
-    if (!GHANA_PHONE_PATTERN.test(trimmedNumber)) {
-      setMomoError('Enter the MoMo number to receive the payout (e.g. 0241234567)');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      await withdrawVault(vault.id, netAmount, feeAmount, withdrawalType, {
-        momoNumber: trimmedNumber,
-        momoProvider,
-      });
+      await withdrawVault(vault.id, netAmount, feeAmount, withdrawalType);
+      void refreshWallet();
+      void refreshTransactions();
       navigation.replace('VaultSuccess', {
         isWithdrawal: true,
         vaultName: vault.name,
         amountReceived: netAmount,
         feeCharged: feeAmount,
-        message: `GHS ${netAmount.toFixed(2)} is on its way to ${trimmedNumber}.`,
+        message: 'The net amount has been credited to your wallet.',
       });
     } catch (error) {
-      setMomoError(getApiErrorMessage(error, 'Withdrawal failed'));
+      console.warn(getApiErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
   }, [
     feeAmount,
     isConfirmed,
-    momoNumber,
-    momoProvider,
     navigation,
     netAmount,
+    refreshTransactions,
+    refreshWallet,
     vault.id,
     vault.name,
     withdrawalType,
@@ -142,11 +116,6 @@ export function useWithdrawVault(
     formattedCreated: formatVaultDate(vault.createdDate),
     isConfirmed,
     isLoading,
-    momoNumber,
-    momoProvider,
-    momoError,
-    setMomoNumber,
-    setMomoProvider,
     toggleConfirm,
     handleConfirm,
   };

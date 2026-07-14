@@ -316,6 +316,14 @@ export default function GoalDetailsScreen() {
           style={styles.button}
         />
         <AppButton
+          title="Withdraw to Wallet"
+          onPress={() => navigateApp('WithdrawFromGoal', { goalId: params.goalId })}
+          variant="outline"
+          size="lg"
+          fullWidth
+          style={styles.button}
+        />
+        <AppButton
           title="Edit Goal"
           onPress={() => navigation.navigate('EditGoal' as any, { goalId: params.goalId })}
           variant="secondary"

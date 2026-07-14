@@ -34,17 +34,8 @@ export async function joinGroupByCode(inviteCode: string): Promise<GroupVault> {
   return mapGroupVault(data);
 }
 
-export async function depositToGroup(
-  id: string,
-  amount: number,
-  note?: string,
-): Promise<GroupVault> {
-  const { data } = await apiClient.post(`/api/vault/groups/${id}/deposit`, {
-    amount,
-    note,
-  });
-  return mapGroupVault(data);
-}
+// NOTE: group contributions go through the wallet — see paymentsApi.transferToGroup.
+// The vault-service no longer exposes a public group deposit endpoint.
 
 export async function listWithdrawals(groupId: string): Promise<WithdrawalRequest[]> {
   const { data } = await apiClient.get(`/api/vault/groups/${groupId}/withdrawals`);

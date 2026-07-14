@@ -1,10 +1,15 @@
 package com.ecospend.payment.services;
 
+import com.ecospend.payment.client.ExpenseClient;
 import com.ecospend.payment.client.PaystackClient;
 import com.ecospend.payment.client.VaultClient;
 import com.ecospend.payment.dto.DepositView;
+import com.ecospend.payment.dto.GroupTransferRequest;
 import com.ecospend.payment.dto.InitializeDepositRequest;
-import com.ecospend.payment.dto.PayoutRequest;
+import com.ecospend.payment.dto.InternalCreditRequest;
+import com.ecospend.payment.dto.InternalDebitRequest;
+import com.ecospend.payment.dto.SendMoneyRequest;
+import com.ecospend.payment.dto.VaultTransferRequest;
 import com.ecospend.payment.exceptions.PaymentException;
 import com.ecospend.payment.models.PaymentRecord;
 import com.ecospend.payment.repository.PaymentRecordRepository;
@@ -14,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,11 +32,17 @@ public class PaymentService {
     private final PaymentRecordRepository paymentRecordRepository;
     private final PaystackClient paystackClient;
     private final VaultClient vaultClient;
+    private final WalletService walletService;
+    private final ExpenseClient expenseClient;
+
+    // ------------------------------------------------------------------
+    // Wallet top-up (money IN via Paystack checkout)
+    // ------------------------------------------------------------------
 
     /**
-     * Phase one of a deposit: record the intent and open a Paystack
-     * checkout. The vault balance is NOT touched here — it is only
-     * credited after Paystack confirms the charge (verify or webhook).
+     * Phase one of a top-up: record the intent and open a Paystack
+     * checkout. The wallet is NOT touched here — it is only credited
+     * after Paystack confirms the charge (verify or webhook).
      */
     @Transactional
     public DepositView initializeDeposit(UUID userId, InitializeDepositRequest request) {
@@ -41,7 +53,6 @@ public class PaymentService {
 
         PaymentRecord record = new PaymentRecord();
         record.setUserId(userId);
-        record.setVaultId(request.vaultId());
         record.setType(PaymentRecord.Type.DEPOSIT);
         record.setAmountGhs(request.amount());
         record.setReference(reference);
@@ -62,8 +73,8 @@ public class PaymentService {
     }
 
     /**
-     * Phase two of a deposit, client-initiated: ask Paystack whether the
-     * charge went through and credit the vault exactly once if so.
+     * Phase two of a top-up, client-initiated: ask Paystack whether the
+     * charge went through and credit the wallet exactly once if so.
      */
     @Transactional
     public DepositView verifyDeposit(UUID userId, String reference) {
@@ -88,9 +99,8 @@ public class PaymentService {
 
     /**
      * Idempotent settlement: only the caller that wins the
-     * PENDING → SUCCESS transition credits the vault. If the vault
-     * credit fails, the transaction rolls back to PENDING so a retry
-     * (webhook redelivery or another verify) can settle it later.
+     * PENDING → SUCCESS transition credits the wallet, so webhook
+     * retries and double verifies can never credit twice.
      */
     @Transactional
     public void settleDeposit(String reference) {
@@ -102,8 +112,9 @@ public class PaymentService {
 
         PaymentRecord record = paymentRecordRepository.findByReference(reference)
                 .orElseThrow(PaymentException::notFound);
-        vaultClient.creditVault(
-                record.getUserId(), record.getVaultId(), record.getAmountGhs(), reference);
+        walletService.credit(record.getUserId(), record.getAmountGhs());
+        expenseClient.recordTransaction(record.getUserId(), record.getAmountGhs(),
+                "INCOME", "Deposit", "Wallet top-up via Paystack");
     }
 
     @Transactional
@@ -111,18 +122,24 @@ public class PaymentService {
         paymentRecordRepository.markFailedIfPending(reference, reason);
     }
 
+    // ------------------------------------------------------------------
+    // Send money (money OUT: wallet → external MoMo via Paystack transfer)
+    // ------------------------------------------------------------------
+
     /**
-     * Payout leg, called service-to-service by the Vault Service after it
-     * has debited the vault and deducted the platform fee. Initiates a
-     * Paystack transfer of the net amount to the user's MoMo wallet.
+     * Debits the wallet and initiates a Paystack transfer to the given
+     * MoMo number. Runs in one transaction: if the transfer cannot be
+     * initiated, the debit rolls back. A transfer that fails later
+     * (webhook transfer.failed) is refunded in {@link #completeTransfer}.
      */
     @Transactional
-    public PaymentRecord payout(PayoutRequest request) {
+    public PaymentRecord sendMoney(UUID userId, SendMoneyRequest request) {
         String reference = "ecospend-pay-" + UUID.randomUUID();
 
+        walletService.debit(userId, request.amount());
+
         PaymentRecord record = new PaymentRecord();
-        record.setUserId(request.userId());
-        record.setVaultId(request.vaultId());
+        record.setUserId(userId);
         record.setType(PaymentRecord.Type.PAYOUT);
         record.setAmountGhs(request.amount());
         record.setReference(reference);
@@ -136,21 +153,164 @@ public class PaymentService {
                 request.momoNumber(),
                 request.momoProvider(),
                 request.recipientName() != null ? request.recipientName() : "EcoSpend user",
-                request.reason() != null ? request.reason() : "EcoSpend vault payout");
+                "EcoSpend wallet transfer");
 
         record.setTransferCode(result.transferCode());
         if (result.success()) {
             record.setStatus(PaymentRecord.Status.SUCCESS);
         }
-        return paymentRecordRepository.save(record);
+        paymentRecordRepository.save(record);
+
+        expenseClient.recordTransaction(userId, request.amount(), "EXPENSE", "Transfer",
+                "Sent to " + request.momoNumber() + " (" + request.momoProvider() + ")");
+        return record;
     }
 
+    /**
+     * Webhook completion for outbound transfers. A failed or reversed
+     * transfer refunds the wallet exactly once (guarded by the
+     * PENDING → FAILED claim).
+     */
     @Transactional
     public void completeTransfer(String reference, boolean success, String message) {
         if (success) {
             paymentRecordRepository.markSuccessIfPending(reference);
-        } else {
-            paymentRecordRepository.markFailedIfPending(reference, message);
+            return;
         }
+
+        int claimed = paymentRecordRepository.markFailedIfPending(reference, message);
+        if (claimed == 0) {
+            return;
+        }
+        PaymentRecord record = paymentRecordRepository.findByReference(reference)
+                .orElseThrow(PaymentException::notFound);
+        if (record.getType() == PaymentRecord.Type.PAYOUT) {
+            walletService.credit(record.getUserId(), record.getAmountGhs());
+            expenseClient.recordTransaction(record.getUserId(), record.getAmountGhs(),
+                    "INCOME", "Transfer", "Refund — MoMo transfer failed");
+            log.info("Refunded wallet for failed transfer {}", reference);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Internal transfers (wallet → vault / group vault)
+    // ------------------------------------------------------------------
+
+    /**
+     * Moves money from the wallet into a personal vault. One transaction:
+     * if the vault credit fails, the wallet debit rolls back.
+     */
+    @Transactional
+    public PaymentRecord transferToVault(UUID userId, VaultTransferRequest request) {
+        String reference = "ecospend-trf-" + UUID.randomUUID();
+
+        walletService.debit(userId, request.amount());
+
+        PaymentRecord record = new PaymentRecord();
+        record.setUserId(userId);
+        record.setVaultId(request.vaultId());
+        record.setType(PaymentRecord.Type.DEBIT);
+        record.setAmountGhs(request.amount());
+        record.setReference(reference);
+        record.setStatus(PaymentRecord.Status.SUCCESS);
+        paymentRecordRepository.save(record);
+
+        vaultClient.creditVault(userId, request.vaultId(), request.amount(), reference);
+
+        expenseClient.recordTransaction(userId, request.amount(),
+                "EXPENSE", "Savings", "Vault deposit from wallet");
+        return record;
+    }
+
+    /**
+     * Moves money from the wallet into the caller's own balance in a
+     * group vault (Digital Susu). Same rollback guarantee as vaults.
+     */
+    @Transactional
+    public PaymentRecord transferToGroup(UUID userId, GroupTransferRequest request) {
+        String reference = "ecospend-trf-" + UUID.randomUUID();
+
+        walletService.debit(userId, request.amount());
+
+        PaymentRecord record = new PaymentRecord();
+        record.setUserId(userId);
+        record.setType(PaymentRecord.Type.DEBIT);
+        record.setAmountGhs(request.amount());
+        record.setReference(reference);
+        record.setStatus(PaymentRecord.Status.SUCCESS);
+        paymentRecordRepository.save(record);
+
+        vaultClient.creditGroup(userId, request.groupId(), request.amount(), reference);
+
+        expenseClient.recordTransaction(userId, request.amount(),
+                "EXPENSE", "Savings", "Group vault contribution from wallet");
+        return record;
+    }
+
+    // ------------------------------------------------------------------
+    // Service-to-service wallet moves (gateway blocks /internal/ paths)
+    // ------------------------------------------------------------------
+
+    /**
+     * Credits the wallet on behalf of another service (vault payouts,
+     * goal withdrawals). Idempotent on the caller-supplied reference.
+     */
+    @Transactional
+    public PaymentRecord internalCredit(InternalCreditRequest request) {
+        var existing = paymentRecordRepository.findByReference(request.reference());
+        if (existing.isPresent()) {
+            log.info("Internal credit {} already applied — skipping", request.reference());
+            return existing.get();
+        }
+
+        PaymentRecord record = new PaymentRecord();
+        record.setUserId(request.userId());
+        record.setType(PaymentRecord.Type.CREDIT);
+        record.setAmountGhs(request.amount());
+        record.setReference(request.reference());
+        record.setStatus(PaymentRecord.Status.SUCCESS);
+        paymentRecordRepository.save(record);
+
+        walletService.credit(request.userId(), request.amount());
+
+        if (request.record()) {
+            expenseClient.recordTransaction(request.userId(), request.amount(),
+                    "INCOME", request.category(), request.note());
+        }
+        return record;
+    }
+
+    /**
+     * Debits the wallet on behalf of another service (goal contributions,
+     * bill payments, Plus upgrade). 400 when the balance cannot cover it;
+     * idempotent on the caller-supplied reference.
+     */
+    @Transactional
+    public PaymentRecord internalDebit(InternalDebitRequest request) {
+        var existing = paymentRecordRepository.findByReference(request.reference());
+        if (existing.isPresent()) {
+            log.info("Internal debit {} already applied — skipping", request.reference());
+            return existing.get();
+        }
+
+        walletService.debit(request.userId(), request.amount());
+
+        PaymentRecord record = new PaymentRecord();
+        record.setUserId(request.userId());
+        record.setType(PaymentRecord.Type.DEBIT);
+        record.setAmountGhs(request.amount());
+        record.setReference(request.reference());
+        record.setStatus(PaymentRecord.Status.SUCCESS);
+        paymentRecordRepository.save(record);
+
+        if (request.record()) {
+            expenseClient.recordTransaction(request.userId(), request.amount(),
+                    "EXPENSE", request.category(), request.note());
+        }
+        return record;
+    }
+
+    public BigDecimal walletBalance(UUID userId) {
+        return walletService.balanceOf(userId);
     }
 }

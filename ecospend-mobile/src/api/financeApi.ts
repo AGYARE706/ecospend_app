@@ -3,7 +3,6 @@ import {
   mapSummary,
   mapTransaction,
   providerToApi,
-  providerToFeeApi,
   toCreateTransactionBody,
 } from './mappers/financeMappers';
 import type {
@@ -80,17 +79,4 @@ export async function updateTransaction(
 
 export async function deleteTransaction(id: string): Promise<void> {
   await apiClient.delete(`/api/finance/transactions/${id}`);
-}
-
-export async function getMomoFee(
-  amount: number,
-  provider: Provider,
-): Promise<number> {
-  const { data } = await apiClient.get<number | string>('/api/finance/momo-fee', {
-    params: {
-      amount,
-      provider: providerToFeeApi(provider),
-    },
-  });
-  return Number(data);
 }

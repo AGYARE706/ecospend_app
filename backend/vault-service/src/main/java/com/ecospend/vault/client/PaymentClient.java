@@ -17,10 +17,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Service-to-service client that asks the Payment Service to transfer a
- * net payout to the user's MoMo wallet. Called inside the withdrawal
- * transaction: if the payout cannot be initiated, the whole withdrawal
- * rolls back and the vault balance is untouched.
+ * Service-to-service client that credits the user's central wallet with
+ * a net payout (withdrawal, break, approved group withdrawal, exit).
+ * Called inside the vault transaction: if the wallet credit cannot be
+ * made, the whole operation rolls back and balances are untouched.
+ * The payment-service auto-records an INCOME transaction for the credit.
  */
 @Component
 public class PaymentClient {
@@ -37,31 +38,25 @@ public class PaymentClient {
                 .build();
     }
 
-    public void requestPayout(
-            UUID userId,
-            UUID vaultId,
-            BigDecimal netAmount,
-            String momoNumber,
-            String momoProvider,
-            String reason) {
+    public void creditWallet(UUID userId, BigDecimal netAmount, String reference, String note) {
         Map<String, Object> body = new HashMap<>();
         body.put("userId", userId.toString());
-        body.put("vaultId", vaultId.toString());
         body.put("amount", netAmount);
-        body.put("momoNumber", momoNumber);
-        body.put("momoProvider", momoProvider);
-        body.put("reason", reason);
+        body.put("reference", reference);
+        body.put("category", "Savings");
+        body.put("note", note);
+        body.put("record", true);
 
         try {
             restClient.post()
-                    .uri("/payments/internal/payouts")
+                    .uri("/payments/internal/credits")
                     .body(body)
                     .retrieve()
                     .toBodilessEntity();
-            log.info("Payout of GHS {} to {} initiated for vault {}", netAmount, momoNumber, vaultId);
+            log.info("Credited wallet of {} with GHS {} ({})", userId, netAmount, reference);
         } catch (RestClientException e) {
             throw new VaultException(HttpStatus.BAD_GATEWAY,
-                    "Payout could not be initiated — withdrawal cancelled: " + e.getMessage());
+                    "Wallet payout could not be completed — operation cancelled: " + e.getMessage());
         }
     }
 }

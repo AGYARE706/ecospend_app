@@ -4,10 +4,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
+/** Wallet top-up request: opens a Paystack checkout for the amount. */
 public record InitializeDepositRequest(
-        @NotNull UUID vaultId,
         @NotNull @Positive BigDecimal amount,
         String phone
 ) {

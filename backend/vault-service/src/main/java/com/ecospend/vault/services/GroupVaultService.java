@@ -1,5 +1,6 @@
 package com.ecospend.vault.services;
 
+import com.ecospend.vault.client.PaymentClient;
 import com.ecospend.vault.config.VaultTierPolicy;
 import com.ecospend.vault.dto.AmountRequest;
 import com.ecospend.vault.dto.CreateGroupVaultRequest;
@@ -31,6 +32,7 @@ public class GroupVaultService {
     private final GroupWithdrawalRequestRepository requestRepository;
     private final GroupWithdrawalVoteRepository voteRepository;
     private final VaultTierPolicy vaultTierPolicy;
+    private final PaymentClient paymentClient;
 
     @Transactional
     public GroupVaultView create(UUID userId, String tier, CreateGroupVaultRequest request) {
@@ -134,6 +136,11 @@ public class GroupVaultService {
                     early ? VaultTransaction.Type.PENALTY : VaultTransaction.Type.FEE,
                     fee, early ? "Early exit fee (5% of own balance)" : "Platform sustainability fee (2%)");
             record(groupId, userId, VaultTransaction.Type.WITHDRAWAL, payout, "Exit payout");
+
+            // Net exit payout lands in the member's central wallet.
+            paymentClient.creditWallet(userId, payout, "ecospend-gx-" + UUID.randomUUID(),
+                    "Group vault exit — " + group.getName()
+                            + (early ? " (net of 5% early fee)" : " (net of 2% fee)"));
         }
 
         member.setBalance(BigDecimal.ZERO);
@@ -258,6 +265,11 @@ public class GroupVaultService {
 
         wr.setStatus(GroupWithdrawalRequest.Status.EXECUTED);
         requestRepository.save(wr);
+
+        // The request id keys the wallet credit, so a replayed execution
+        // can never pay the requester twice.
+        paymentClient.creditWallet(wr.getRequesterId(), payout, "ecospend-gw-" + wr.getId(),
+                "Group vault withdrawal — " + group.getName() + " (net of 2% fee)");
     }
 
     private WithdrawalRequestView currentView(GroupWithdrawalRequest wr, GroupVault group, UUID viewerId) {

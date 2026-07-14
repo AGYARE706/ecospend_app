@@ -74,13 +74,9 @@ public class GroupVaultController {
         return ResponseEntity.ok(groupVaultService.join(userId, tier, id));
     }
 
-    @PostMapping("/{id}/deposit")
-    public ResponseEntity<GroupVaultView> deposit(
-            @RequestHeader("X-User-Id") UUID userId,
-            @PathVariable UUID id,
-            @Valid @RequestBody AmountRequest request) {
-        return ResponseEntity.ok(groupVaultService.deposit(userId, id, request));
-    }
+    // NOTE: there is intentionally no public deposit endpoint. Group
+    // contributions come from the central wallet via the payment-service
+    // (POST /api/payments/transfers/group → /vault/internal/group-deposits).
 
     @PostMapping("/{id}/exit")
     public ResponseEntity<GroupVaultView> exit(

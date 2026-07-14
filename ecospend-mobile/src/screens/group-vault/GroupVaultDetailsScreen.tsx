@@ -13,6 +13,7 @@ import {
   useGroupVaultDetails,
   type GroupContributionTimelineItem,
 } from '../../hooks/useGroupVaultDetails';
+import { navigateApp } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -209,7 +210,9 @@ export default function GroupVaultDetailsScreen() {
                 title="Contribute Funds"
                 variant="outline"
                 icon="add-circle-outline"
-                onPress={() => navigation.navigate('GroupVaultDashboard')}
+                onPress={() =>
+                  navigateApp('ContributeGroup', { groupVaultId: vault.id })
+                }
               />
             </View>
             <View style={styles.actionSpacer} />

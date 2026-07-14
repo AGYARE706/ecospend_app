@@ -55,6 +55,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of("INVALID_OTP", ex.getMessage(), 400);
     }
 
+    @ExceptionHandler(PaymentRequiredException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handlePaymentRequired(PaymentRequiredException ex) {
+        return ErrorResponse.of("PAYMENT_FAILED", ex.getMessage(), 400);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {

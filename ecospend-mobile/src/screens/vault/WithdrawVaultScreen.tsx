@@ -5,9 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
-import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import { MOMO_PROVIDERS, useWithdrawVault } from '../../hooks/useWithdrawVault';
+import { useWithdrawVault } from '../../hooks/useWithdrawVault';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -58,11 +57,6 @@ export default function WithdrawVaultScreen({
     formattedMaturity,
     isConfirmed,
     isLoading,
-    momoNumber,
-    momoProvider,
-    momoError,
-    setMomoNumber,
-    setMomoProvider,
     toggleConfirm,
     handleConfirm,
   } = useWithdrawVault(vaultId, navigation);
@@ -234,40 +228,12 @@ export default function WithdrawVaultScreen({
           {/* ─── 5. Payout Destination ─────────────────────────── */}
           <SectionLabel title="Payout Destination" icon="wallet-outline" />
           <View style={styles.payoutCard}>
-            <View style={styles.providerRow}>
-              {MOMO_PROVIDERS.map((provider) => (
-                <Pressable
-                  key={provider.key}
-                  onPress={() => setMomoProvider(provider.key)}
-                  style={[
-                    styles.providerChip,
-                    momoProvider === provider.key && styles.providerChipActive,
-                  ]}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: momoProvider === provider.key }}
-                >
-                  <Text
-                    style={[
-                      styles.providerChipText,
-                      momoProvider === provider.key &&
-                        styles.providerChipTextActive,
-                    ]}
-                  >
-                    {provider.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <AppInput
-              label="MoMo number to receive the payout"
-              value={momoNumber}
-              onChangeText={setMomoNumber}
-              placeholder="0241234567"
-              keyboardType="phone-pad"
-              error={momoError ?? undefined}
-              hint="The net amount is transferred to this wallet via Paystack"
-              maxLength={13}
-            />
+            <Text style={styles.payoutDestinationTitle}>EcoSpend Wallet</Text>
+            <Text style={styles.payoutDestinationBody}>
+              The net amount of {ghs(fees.netAmount)} is credited to your
+              wallet instantly and recorded in your transactions. From the
+              wallet you can spend it, save it, or send it to any MoMo number.
+            </Text>
           </View>
 
           {/* ─── 6. Confirmation Checkbox ──────────────────────── */}
@@ -884,6 +850,17 @@ const createStyles = (colors: ThemeColors) =>
   providerChipTextActive: {
     color: colors.primary,
     fontWeight: fontWeight.semibold,
+  },
+  payoutDestinationTitle: {
+    color: colors.textDark,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.xs,
+  },
+  payoutDestinationBody: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
   },
   checkboxCard: {
     alignItems: 'center',

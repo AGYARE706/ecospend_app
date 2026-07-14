@@ -67,11 +67,6 @@ export default function TransactionsListScreen() {
             title="Transactions"
             subtitle="Track income and spending"
             onNotificationPress={() => navigateApp('Notifications')}
-            onCalculatorPress={() =>
-              navigation
-                .getParent<StackNavigationProp<AppStackParamList>>()
-                ?.navigate('MoMoCalculator')
-            }
           />
 
           {loading ? (

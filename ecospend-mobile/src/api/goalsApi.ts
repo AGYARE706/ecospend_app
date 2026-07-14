@@ -31,11 +31,30 @@ export async function deleteGoal(id: string): Promise<void> {
   await apiClient.delete(`/api/finance/goals/${id}`);
 }
 
+/**
+ * Contributes real money from the wallet into the goal. The backend
+ * debits the wallet, rejects amounts above the remaining-to-target, and
+ * auto-records an EXPENSE transaction.
+ */
 export async function contributeToGoal(
   id: string,
   amount: number,
 ): Promise<SavingsGoal> {
   const { data } = await apiClient.post(`/api/finance/goals/${id}/contribute`, {
+    amount,
+  });
+  return mapGoal(data);
+}
+
+/**
+ * Withdraws money from the goal back into the wallet (no lock, no fee).
+ * The backend credits the wallet and auto-records an INCOME transaction.
+ */
+export async function withdrawFromGoal(
+  id: string,
+  amount: number,
+): Promise<SavingsGoal> {
+  const { data } = await apiClient.post(`/api/finance/goals/${id}/withdraw`, {
     amount,
   });
   return mapGoal(data);

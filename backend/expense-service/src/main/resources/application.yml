@@ -31,6 +31,9 @@ spring:
     out-of-order: true
     locations: classpath:db/migration
 
+payment-service:
+  base-url: ${PAYMENT_SERVICE_URL:http://payment-service:8085}
+
 logging:
   level:
     org.hibernate.SQL: DEBUG

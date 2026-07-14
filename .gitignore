@@ -19,6 +19,12 @@ mobile/dist/
 mobile/build/
 mobile/*.log
 mobile/.metro-health-check*
+ecospend-mobile/node_modules/
+ecospend-mobile/.expo/
+ecospend-mobile/dist/
+ecospend-mobile/build/
+ecospend-mobile/*.log
+.cursor/
 
 # IDE
 .idea/

@@ -2,7 +2,6 @@ package com.ecospend.payment.controllers;
 
 import com.ecospend.payment.dto.DepositView;
 import com.ecospend.payment.dto.InitializeDepositRequest;
-import com.ecospend.payment.dto.PayoutRequest;
 import com.ecospend.payment.models.PaymentRecord;
 import com.ecospend.payment.services.PaymentService;
 import jakarta.validation.Valid;
@@ -47,14 +46,5 @@ public class PaymentController {
     public ResponseEntity<List<PaymentRecord>> history(
             @RequestHeader("X-User-Id") UUID userId) {
         return ResponseEntity.ok(paymentService.history(userId));
-    }
-
-    /**
-     * Service-to-service payout from the Vault Service. The gateway blocks
-     * /internal/ paths, so this is unreachable from outside the network.
-     */
-    @PostMapping("/internal/payouts")
-    public ResponseEntity<PaymentRecord> payout(@Valid @RequestBody PayoutRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.payout(request));
     }
 }

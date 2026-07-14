@@ -18,7 +18,6 @@ import {
   setSignOutListener,
   updateStoredUser,
 } from '../api/authTokenAccessor';
-import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import { registerPushTokenIfAvailable } from '../api/registerPushToken';
 import * as usersApi from '../api/usersApi';
 import type { UserTier } from '../types';
@@ -161,28 +160,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateStoredUser(nextUser);
   }, []);
 
+  /**
+   * Paid upgrade: the backend charges GHS 36 from the wallet before
+   * flipping the tier, so failures (e.g. insufficient balance) are
+   * rethrown for the caller to surface to the user.
+   */
   const upgradeToPlus = useCallback(async (): Promise<boolean> => {
-    try {
-      const response = await usersApi.upgradeToPlus();
-      const nextUser = response.user ?? user ?? { name: '', phone: '' };
-      if (response.refreshToken) {
-        await persistSession({
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          tier: response.tier,
-          user: nextUser,
-        });
-      } else {
-        await persistAccessTokenAndTier(response.accessToken, response.tier);
-        await updateStoredUser(nextUser);
-      }
-      setUser(nextUser);
-      setTier('PLUS');
-      return true;
-    } catch (error) {
-      console.warn('upgradeToPlus failed', getApiErrorMessage(error));
-      return false;
+    const response = await usersApi.upgradeToPlus();
+    const nextUser = response.user ?? user ?? { name: '', phone: '' };
+    if (response.refreshToken) {
+      await persistSession({
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        tier: response.tier,
+        user: nextUser,
+      });
+    } else {
+      await persistAccessTokenAndTier(response.accessToken, response.tier);
+      await updateStoredUser(nextUser);
     }
+    setUser(nextUser);
+    setTier('PLUS');
+    return true;
   }, [user]);
 
   const value = useMemo<AuthContextValue>(

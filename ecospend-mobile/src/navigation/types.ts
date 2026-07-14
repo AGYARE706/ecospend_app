@@ -63,10 +63,15 @@ export type AppStackParamList = {
   // Goals
   CreateGoal: undefined;
   AddGoalContribution: { goalId: string };
+  WithdrawFromGoal: { goalId: string };
   // Budget (fullscreen modal — accessible from Dashboard + Goals)
   BudgetEnvelopes: undefined;
-  // Calculator (fullscreen modal — accessible from Dashboard + Transactions)
-  MoMoCalculator: undefined;
+  // Wallet (money in/out of the app via Paystack)
+  TopUpWallet: undefined;
+  SendMoney: undefined;
+  // Bills (recurring subscriptions paid from the wallet)
+  Bills: undefined;
+  AddBill: undefined;
   // Vault
   CreateVault: undefined;
   AddMoney: { vaultId: string };
@@ -83,6 +88,7 @@ export type AppStackParamList = {
   // Group Vault
   CreateGroupVault: undefined;
   JoinGroupVault: undefined;
+  ContributeGroup: { groupVaultId: string };
   // Global overlays
   Notifications: undefined;
   WeeklyInsights: undefined;

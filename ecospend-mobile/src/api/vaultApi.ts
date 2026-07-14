@@ -30,43 +30,19 @@ export async function createVault(payload: {
   return mapVault(data);
 }
 
-export async function depositToVault(
-  id: string,
-  amount: number,
-  note?: string,
-): Promise<Vault> {
-  const { data } = await apiClient.post(`/api/vault/${id}/deposit`, {
-    amount,
-    note,
-  });
-  return mapVault(data);
-}
-
-export interface PayoutDestination {
-  momoNumber: string;
-  momoProvider: string;
-}
+// NOTE: vault deposits go through the wallet — see paymentsApi.transferToVault.
+// The vault-service no longer exposes a public deposit endpoint.
 
 export async function withdrawFromVault(
   id: string,
   amount: number,
-  destination?: PayoutDestination,
 ): Promise<Vault> {
-  const { data } = await apiClient.post(`/api/vault/${id}/withdraw`, {
-    amount,
-    ...destination,
-  });
+  const { data } = await apiClient.post(`/api/vault/${id}/withdraw`, { amount });
   return mapVault(data);
 }
 
-export async function breakVault(
-  id: string,
-  destination?: PayoutDestination,
-): Promise<Vault> {
-  const { data } = await apiClient.post(
-    `/api/vault/${id}/break`,
-    destination ?? undefined,
-  );
+export async function breakVault(id: string): Promise<Vault> {
+  const { data } = await apiClient.post(`/api/vault/${id}/break`);
   return mapVault(data);
 }
 

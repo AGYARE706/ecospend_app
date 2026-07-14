@@ -1,3 +1,3 @@
 -- Runs once when the Postgres container is first created.
 -- Table creation is handled by each service's Flyway migrations.
--- Intentionally left empty.
+-- Intentionally left empty — do not add DDL here.

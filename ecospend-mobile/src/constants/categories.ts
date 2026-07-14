@@ -38,6 +38,21 @@ export const CATEGORY_CONFIG: Record<TransactionCategory, CategoryConfig> = {
     circleBackground: 'successLight',
     label: 'Savings',
   },
+  Deposit: {
+    emoji: '💰',
+    circleBackground: 'successLight',
+    label: 'Deposit',
+  },
+  Transfer: {
+    emoji: '📤',
+    circleBackground: 'blueLight',
+    label: 'Transfer',
+  },
+  Subscription: {
+    emoji: '📅',
+    circleBackground: 'warningLight',
+    label: 'Subscription',
+  },
   Other: {
     emoji: '📦',
     circleBackground: 'divider',
@@ -62,6 +77,9 @@ export const CATEGORY_VISUALS: Record<TransactionCategory, CategoryVisual> = {
   Utilities: { icon: 'bulb', tint: 'gold', background: 'goldLight' },
   Business: { icon: 'briefcase', tint: 'accent', background: 'accentLight' },
   Savings: { icon: 'bank', tint: 'primary', background: 'primaryBackground' },
+  Deposit: { icon: 'wallet', tint: 'primary', background: 'primaryBackground' },
+  Transfer: { icon: 'send', tint: 'blue', background: 'blueLight' },
+  Subscription: { icon: 'receipt', tint: 'gold', background: 'goldLight' },
   Other: { icon: 'box', tint: 'textSecondary', background: 'chipBg' },
 };
 
@@ -78,6 +96,9 @@ export const ALL_CATEGORIES: TransactionCategory[] = [
   'Utilities',
   'Business',
   'Savings',
+  'Deposit',
+  'Transfer',
+  'Subscription',
   'Other',
 ];
 
