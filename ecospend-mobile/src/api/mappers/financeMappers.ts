@@ -1,17 +1,10 @@
 import type {
-  AddTransactionPayload,
   MonthlySummary,
   Provider,
   Transaction,
   TransactionCategory,
   TransactionType,
 } from '../../types';
-
-const PROVIDER_TO_API: Record<Provider, string> = {
-  'MTN MoMo': 'MTN',
-  'Telecel Cash': 'TELECEL',
-  'AT Money': 'AT',
-};
 
 const API_TO_PROVIDER: Record<string, Provider> = {
   MTN: 'MTN MoMo',
@@ -21,13 +14,6 @@ const API_TO_PROVIDER: Record<string, Provider> = {
   'Telecel Cash': 'Telecel Cash',
   'AT Money': 'AT Money',
 };
-
-export function providerToApi(provider?: Provider): string | undefined {
-  if (!provider) {
-    return undefined;
-  }
-  return PROVIDER_TO_API[provider] ?? provider;
-}
 
 export function providerFromApi(provider?: string | null): Provider | undefined {
   if (!provider) {
@@ -50,6 +36,8 @@ const CATEGORIES: TransactionCategory[] = [
   'Food',
   'Transport',
   'Utilities',
+  'Rent',
+  'Fees',
   'Business',
   'Savings',
   'Deposit',
@@ -81,16 +69,6 @@ export function mapTransaction(dto: ApiTransaction): Transaction {
     provider: providerFromApi(dto.provider),
     notes: dto.notes ?? undefined,
     date: dto.createdAt ?? new Date().toISOString(),
-  };
-}
-
-export function toCreateTransactionBody(payload: AddTransactionPayload) {
-  return {
-    type: payload.type.toUpperCase(),
-    amount: payload.amount,
-    category: payload.category,
-    provider: providerToApi(payload.provider),
-    notes: payload.notes,
   };
 }
 

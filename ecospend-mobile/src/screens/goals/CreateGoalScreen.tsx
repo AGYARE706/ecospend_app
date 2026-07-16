@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/ui/Card';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
+import CalendarPicker from '../../components/ui/CalendarPicker';
 import { Icon } from '../../components/ui/icons';
 import { useGoals } from '../../context/GoalsContext';
 import {
@@ -47,6 +48,41 @@ export default function CreateGoalScreen() {
     targetDate: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  // Suggested equal contributions to hit the target by the deadline —
+  // recomputed live as the amount or date changes.
+  const suggestion = useMemo(() => {
+    const amount = parseFloat(formData.targetAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return null;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.targetDate)) {
+      return null;
+    }
+    const [y, m, d] = formData.targetDate.split('-').map(Number);
+    const deadline = new Date(y, m - 1, d);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Math.round((deadline.getTime() - today.getTime()) / 86_400_000);
+    if (days < 7) {
+      return null;
+    }
+
+    const weeks = Math.max(1, Math.floor(days / 7));
+    const months = Math.floor(days / 30);
+    return {
+      dateLabel: deadline.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+      weekly: amount / weeks,
+      weeks,
+      monthly: months >= 1 ? amount / months : null,
+      months,
+    };
+  }, [formData.targetAmount, formData.targetDate]);
 
   const handleCategorySelect = (categoryId: string) => {
     setFormData((prev) => ({ ...prev, category: categoryId }));
@@ -79,16 +115,10 @@ export default function CreateGoalScreen() {
     }
 
     const targetAmount = parseFloat(formData.targetAmount);
-    let deadline: string | null = null;
-
-    if (formData.targetDate.includes('/')) {
-      const [month, day, year] = formData.targetDate.split('/');
-      if (month && day && year) {
-        deadline = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      }
-    } else if (/^\d{4}-\d{2}-\d{2}$/.test(formData.targetDate)) {
-      deadline = formData.targetDate;
-    }
+    // The calendar always writes YYYY-MM-DD and never allows past dates.
+    const deadline = /^\d{4}-\d{2}-\d{2}$/.test(formData.targetDate)
+      ? formData.targetDate
+      : null;
 
     await addGoal({
       name: formData.title.trim(),
@@ -167,7 +197,16 @@ export default function CreateGoalScreen() {
                     },
                   ]}
                 >
-                  <Text style={styles.categoryEmoji}>{category.emoji}</Text>
+                  <Icon
+                    name={category.icon}
+                    size={20}
+                    color={
+                      formData.category === categoryId
+                        ? colors.onPrimary
+                        : colors.textSecondary
+                    }
+                    strokeWidth={1.9}
+                  />
                 </View>
                 <Text
                   style={[
@@ -213,30 +252,81 @@ export default function CreateGoalScreen() {
           />
         </View>
 
-        {/* Target Date Input */}
+        {/* Target Date — calendar picker, past dates disabled */}
         <View style={[styles.formSection, styles.formSectionLast]}>
-          <AppInput
-            label="Target Date"
-            value={formData.targetDate}
-            onChangeText={(text) => {
-              setFormData((prev) => ({ ...prev, targetDate: text }));
-              setErrors((prev) => ({ ...prev, targetDate: '' }));
-            }}
-            placeholder="MM/DD/YYYY"
-            error={errors.targetDate}
-          />
+          <Text style={[typography.label, styles.sectionLabel]}>Target Date</Text>
+          <TouchableOpacity
+            style={[styles.dateField, errors.targetDate ? styles.dateFieldError : null]}
+            onPress={() => setShowCalendar((current) => !current)}
+            accessibilityRole="button"
+            accessibilityLabel="Choose target date"
+          >
+            <Icon name="calendar" size={18} color={colors.textMuted} strokeWidth={1.9} />
+            <Text
+              style={[
+                styles.dateFieldText,
+                !formData.targetDate && styles.dateFieldPlaceholder,
+              ]}
+            >
+              {suggestion?.dateLabel ??
+                (formData.targetDate || 'Tap to pick a date')}
+            </Text>
+            <Icon
+              name={showCalendar ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={colors.textMuted}
+              strokeWidth={2}
+            />
+          </TouchableOpacity>
+          {errors.targetDate ? (
+            <Text style={styles.errorText}>{errors.targetDate}</Text>
+          ) : null}
+          {showCalendar ? (
+            <View style={styles.calendarWrap}>
+              <CalendarPicker
+                value={formData.targetDate || null}
+                onSelect={(isoDate) => {
+                  setFormData((prev) => ({ ...prev, targetDate: isoDate }));
+                  setErrors((prev) => ({ ...prev, targetDate: '' }));
+                  setShowCalendar(false);
+                }}
+              />
+            </View>
+          ) : null}
         </View>
       </Card>
 
-      {/* Recommendation Card */}
-      <Card variant="primary" padding="md" style={styles.recommendationCard}>
+      {/* Suggested contribution plan (or a generic tip until inputs are in) */}
+      <Card variant="primary" padding="sm" style={styles.recommendationCard}>
         <View style={styles.recommendationContent}>
-          <Text style={styles.recommendationEmoji}>💡</Text>
+          <View style={styles.recommendationIcon}>
+            <Icon name="bulb" size={18} color={colors.onPrimary} strokeWidth={1.9} />
+          </View>
           <View style={styles.recommendationText}>
-            <Text style={[typography.label, styles.recommendationTitle]}>Pro Tip</Text>
-            <Text style={[typography.bodySm, styles.recommendationSubtitle]}>
-              Break down large goals into monthly targets for better tracking
-            </Text>
+            {suggestion ? (
+              <>
+                <Text style={[typography.label, styles.recommendationTitle]}>
+                  Suggested contributions
+                </Text>
+                <Text style={[typography.bodySm, styles.recommendationSubtitle]}>
+                  To reach GHS {(parseFloat(formData.targetAmount) || 0).toLocaleString()} by{' '}
+                  {suggestion.dateLabel}, save about GHS {suggestion.weekly.toFixed(2)} weekly
+                  ({suggestion.weeks} weeks)
+                  {suggestion.monthly !== null
+                    ? ` or GHS ${suggestion.monthly.toFixed(2)} monthly (${suggestion.months} month${suggestion.months === 1 ? '' : 's'})`
+                    : ''}
+                  .
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={[typography.label, styles.recommendationTitle]}>Pro Tip</Text>
+                <Text style={[typography.bodySm, styles.recommendationSubtitle]}>
+                  Set an amount and a target date to see the weekly and monthly
+                  savings needed to get there.
+                </Text>
+              </>
+            )}
           </View>
         </View>
       </Card>
@@ -356,14 +446,11 @@ const createStyles = (colors: ThemeColors) =>
     opacity: 1,
   },
   categoryCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  categoryEmoji: {
-    fontSize: 28,
   },
   categoryLabel: {
     fontSize: fontSize.sm,
@@ -374,6 +461,33 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.primary,
     fontWeight: fontWeight.semibold,
   },
+  dateField: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderColor: colors.border,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  dateFieldError: {
+    borderColor: colors.error,
+  },
+  dateFieldText: {
+    color: colors.textDark,
+    flex: 1,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
+  },
+  dateFieldPlaceholder: {
+    color: colors.textLight,
+    fontWeight: fontWeight.regular,
+  },
+  calendarWrap: {
+    marginTop: spacing.sm,
+  },
   recommendationCard: {
     marginBottom: spacing.lg,
   },
@@ -382,9 +496,14 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: 'flex-start',
     gap: spacing.md,
   },
-  recommendationEmoji: {
-    fontSize: 24,
-    marginTop: spacing.smd,
+  recommendationIcon: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: radius.full,
+    height: 34,
+    justifyContent: 'center',
+    marginTop: spacing.xs,
+    width: 34,
   },
   recommendationText: {
     flex: 1,

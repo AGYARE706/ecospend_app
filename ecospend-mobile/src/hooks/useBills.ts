@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 import * as billsApi from '../api/billsApi';
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import { useAuth } from '../context/AuthContext';
+import { useEnvelopes } from '../context/EnvelopesContext';
 import { useFinance } from '../context/FinanceContext';
 import { useWallet } from '../context/WalletContext';
 import type { Bill } from '../api/billsApi';
@@ -13,6 +14,7 @@ export function useBills() {
   const { isAuthenticated } = useAuth();
   const { balance, refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
 
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +51,7 @@ export function useBills() {
         );
         void refreshWallet();
         void refreshTransactions();
+        void refreshEnvelopes();
         Alert.alert(
           'Bill paid',
           `GHS ${bill.amount.toFixed(2)} paid for ${bill.name} from your wallet.`,
@@ -62,7 +65,7 @@ export function useBills() {
         setPayingId(null);
       }
     },
-    [refreshTransactions, refreshWallet],
+    [refreshEnvelopes, refreshTransactions, refreshWallet],
   );
 
   const removeBill = useCallback(async (bill: Bill) => {

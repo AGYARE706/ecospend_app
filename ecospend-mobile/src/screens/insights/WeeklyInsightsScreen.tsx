@@ -1,14 +1,16 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import SpendingTrendChart from '../../components/insights/SpendingTrendChart';
 import GhsText from '../../components/ui/GhsText';
+import { Icon } from '../../components/ui/icons';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import { CATEGORY_CONFIG } from '../../constants/categories';
+import { getCategoryVisual } from '../../constants/categories';
+import { useFinance } from '../../context/FinanceContext';
 import { useWeeklyInsights } from '../../hooks/useWeeklyInsights';
 import type { AppStackParamList } from '../../navigation/types';
 import {
@@ -35,6 +37,23 @@ export default function WeeklyInsightsScreen() {
   const navigation = useNavigation<WeeklyInsightsNavProp>();
   const { summary, topCategory, largestTransaction, spendingTrend, monthEndProjection } =
     useWeeklyInsights();
+  const { incomeTarget, getMonthlySummary, refreshTransactions } = useFinance();
+
+  // Every insight here is derived from FinanceContext's transaction list,
+  // which only refetches on auth change — pull the latest on every visit
+  // so a transaction made elsewhere shows up immediately, not just after
+  // an app restart.
+  useFocusEffect(
+    useCallback(() => {
+      void refreshTransactions();
+    }, [refreshTransactions]),
+  );
+
+  const receivedIncome = getMonthlySummary().totalIncome;
+  const incomePercent =
+    incomeTarget > 0
+      ? Math.min(Math.round((receivedIncome / incomeTarget) * 100), 100)
+      : 0;
 
   const trendIsUp = spendingTrend.direction === 'up';
   const trendIsFlat = spendingTrend.direction === 'flat';
@@ -86,7 +105,6 @@ export default function WeeklyInsightsScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.summaryCard}
           >
-            <View style={styles.summaryGlow} />
 
             <View style={styles.summaryHeader}>
               <View style={styles.summaryIconBadge}>
@@ -131,9 +149,12 @@ export default function WeeklyInsightsScreen() {
                 <>
                   <View style={styles.categoryRow}>
                     <View style={styles.categoryEmojiWrap}>
-                      <Text style={styles.categoryEmoji}>
-                        {CATEGORY_CONFIG[topCategory.category].emoji}
-                      </Text>
+                      <Icon
+                        name={getCategoryVisual(topCategory.category).icon}
+                        size={20}
+                        color={colors.warning}
+                        strokeWidth={1.9}
+                      />
                     </View>
                     <View style={styles.categoryTextBlock}>
                       <Text style={styles.categoryName} numberOfLines={1}>{topCategory.category}</Text>
@@ -179,7 +200,6 @@ export default function WeeklyInsightsScreen() {
                     adjustsFontSizeToFit
                   />
                   <Text style={styles.largestCategory} numberOfLines={1}>
-                    {CATEGORY_CONFIG[largestTransaction.category].emoji}{' '}
                     {largestTransaction.category}
                   </Text>
                   <Text style={styles.cardMeta} numberOfLines={2}>
@@ -280,7 +300,78 @@ export default function WeeklyInsightsScreen() {
                   amount={monthEndProjection.projectedExpenses}
                 />
               </View>
+
+              {monthEndProjection.daysElapsed <= 3 ? (
+                <View style={styles.projectionCaveat}>
+                  <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+                  <Text style={styles.projectionCaveatText}>
+                    Early in the month — this projects your first{' '}
+                    {monthEndProjection.daysElapsed}{' '}
+                    {monthEndProjection.daysElapsed === 1 ? 'day' : 'days'} of activity
+                    across the rest of the month, so it will even out as more days
+                    of real activity come in.
+                  </Text>
+                </View>
+              ) : null}
             </InsightCard>
+
+            {incomeTarget > 0 ? (
+              <InsightCard style={styles.fullWidthCard}>
+                <CardHeader
+                  icon="trending-up-outline"
+                  iconColor={colors.success}
+                  iconBackground={colors.successLight}
+                  title="Income vs Expected"
+                />
+
+                <View style={styles.categoryRow}>
+                  <View style={styles.categoryTextBlock}>
+                    <Text style={styles.projectionLabel}>
+                      Received this month
+                    </Text>
+                    <GhsText
+                      amount={receivedIncome}
+                      size="md"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    />
+                  </View>
+                  <View style={styles.categoryTextBlock}>
+                    <Text style={styles.projectionLabel}>Expected</Text>
+                    <GhsText
+                      amount={incomeTarget}
+                      size="md"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      style={styles.largestCategory}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${incomePercent}%`,
+                        backgroundColor:
+                          receivedIncome >= incomeTarget
+                            ? colors.success
+                            : colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+
+                <Text style={styles.cardMeta}>
+                  {receivedIncome >= incomeTarget
+                    ? `Expected income reached, with GHS ${(receivedIncome - incomeTarget).toFixed(2)} extra — a good month to top up a vault or goal.`
+                    : receivedIncome >= incomeTarget * monthProgress
+                      ? `On pace: ${incomePercent}% received with ${Math.round((1 - monthProgress) * 100)}% of the month left.`
+                      : `Behind pace: you'd normally have ~GHS ${(incomeTarget * monthProgress).toFixed(0)} by now. If this holds, plan spending for a lighter month.`}
+                </Text>
+              </InsightCard>
+            ) : null}
           </View>
 
           <Text style={styles.footerHint}>
@@ -467,7 +558,7 @@ const createStyles = (colors: ThemeColors) =>
   },
   summaryCard: {
     borderRadius: radius.heroCard,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     overflow: 'hidden',
     padding: spacing.lg,
     ...shadowMd,
@@ -593,15 +684,12 @@ const createStyles = (colors: ThemeColors) =>
   },
   categoryEmojiWrap: {
     alignItems: 'center',
-    backgroundColor: colors.chipBg,
+    backgroundColor: colors.warningLight,
     borderRadius: radius.md,
     height: 40,
     justifyContent: 'center',
     marginRight: spacing.sm,
     width: 40,
-  },
-  categoryEmoji: {
-    fontSize: fontSize.lg,
   },
   categoryTextBlock: {
     flex: 1,
@@ -737,6 +825,21 @@ const createStyles = (colors: ThemeColors) =>
   projectionStats: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  projectionCaveat: {
+    alignItems: 'flex-start',
+    backgroundColor: colors.pageBackground,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+  },
+  projectionCaveatText: {
+    color: colors.textMuted,
+    flex: 1,
+    fontSize: fontSize.xs,
+    lineHeight: 16,
   },
   projectionStat: {
     backgroundColor: colors.pageBackground,

@@ -4,6 +4,8 @@ export type TransactionCategory =
   | 'Food'
   | 'Transport'
   | 'Utilities'
+  | 'Rent'
+  | 'Fees'
   | 'Business'
   | 'Savings'
   | 'Deposit'
@@ -66,20 +68,6 @@ export interface TransactionSummaryBar {
   income: number;
   expense: number;
   net: number;
-}
-
-export interface AddTransactionPayload {
-  type: TransactionType;
-  amount: number;
-  category: TransactionCategory;
-  provider?: Provider;
-  notes?: string;
-  date: string;
-}
-
-export interface AddTransactionFormErrors {
-  amount?: string;
-  category?: string;
 }
 
 export type GoalColorKey =

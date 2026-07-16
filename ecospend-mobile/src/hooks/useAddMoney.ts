@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
+import { useEnvelopes } from '../context/EnvelopesContext';
 import { useFinance } from '../context/FinanceContext';
 import { useVaults } from '../context/VaultContext';
 import { useWallet } from '../context/WalletContext';
@@ -21,6 +22,7 @@ export function useAddMoney(vaultId: string) {
   const { getVaultById, vaults, depositFromWallet } = useVaults();
   const { balance, refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
   const vault: Vault | undefined = getVaultById(vaultId) ?? vaults[0];
 
   const [amount, setAmount] = useState('');
@@ -49,6 +51,7 @@ export function useAddMoney(vaultId: string) {
       setPhase('success');
       void refreshWallet();
       void refreshTransactions();
+      void refreshEnvelopes();
     } catch (err) {
       setPhase('failed');
       setError(getApiErrorMessage(err, 'Could not move money into the vault'));
@@ -58,6 +61,7 @@ export function useAddMoney(vaultId: string) {
     hasEnoughBalance,
     isAmountValid,
     parsedAmount,
+    refreshEnvelopes,
     refreshTransactions,
     refreshWallet,
     vault,

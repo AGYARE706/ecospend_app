@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import AppButton from '../ui/AppButton';
 import GhsText from '../ui/GhsText';
+import { Icon } from '../ui/icons';
+import { getCategoryVisual } from '../../constants/categories';
 import {
   cardShadow,
   fontSize,
@@ -61,8 +63,18 @@ export default function EnvelopeCard({ envelope, index, onEdit }: EnvelopeCardPr
   return (
     <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
       <View style={styles.headerRow}>
-        <View style={[styles.emojiCircle, { backgroundColor: colors[envelope.color] }]}>
-          <Text style={styles.emoji}>{envelope.emoji}</Text>
+        <View
+          style={[
+            styles.emojiCircle,
+            { backgroundColor: colors[getCategoryVisual(envelope.category).background] },
+          ]}
+        >
+          <Icon
+            name={getCategoryVisual(envelope.category).icon}
+            size={20}
+            color={colors[getCategoryVisual(envelope.category).tint]}
+            strokeWidth={1.9}
+          />
         </View>
         <View style={styles.headerText}>
           <Text style={styles.category}>{envelope.category}</Text>
@@ -128,13 +140,10 @@ const createStyles = (colors: ThemeColors) =>
   emojiCircle: {
     alignItems: 'center',
     borderRadius: radius.full,
-    height: 44,
+    height: 42,
     justifyContent: 'center',
     marginRight: spacing.sm,
-    width: 44,
-  },
-  emoji: {
-    fontSize: fontSize.xl,
+    width: 42,
   },
   headerText: {
     flex: 1,

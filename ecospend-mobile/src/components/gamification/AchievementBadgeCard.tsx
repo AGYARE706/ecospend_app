@@ -136,7 +136,6 @@ export function StreakHeroCard({
       end={{ x: 1, y: 1 }}
       style={styles.streakCard}
     >
-      <View style={styles.streakGlow} />
 
       <View style={styles.streakTopRow}>
         <View style={styles.streakIconRing}>

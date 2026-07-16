@@ -26,6 +26,7 @@ public final class RoutePaths {
     public static final String VAULT_INTERNAL = "/api/vault/internal/**";
     public static final String PAYMENTS_INTERNAL = "/api/payments/internal/**";
     public static final String FINANCE_INTERNAL = "/api/finance/internal/**";
+    public static final String USERS_INTERNAL = "/api/users/internal/**";
 
     private RoutePaths() {}
 }

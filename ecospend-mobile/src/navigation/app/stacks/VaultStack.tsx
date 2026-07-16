@@ -1,7 +1,9 @@
 import { createStackNavigator } from '@react-navigation/stack';
 
+import GroupVaultActivityScreen from '../../../screens/group-vault/GroupVaultActivityScreen';
 import GroupVaultDashboardScreen from '../../../screens/group-vault/GroupVaultDashboardScreen';
 import GroupVaultDetailsScreen from '../../../screens/group-vault/GroupVaultDetailsScreen';
+import GroupVaultMembersScreen from '../../../screens/group-vault/GroupVaultMembersScreen';
 import WithdrawalApprovalScreen from '../../../screens/group-vault/WithdrawalApprovalScreen';
 import VaultDashboardScreen from '../../../screens/vault/VaultDashboardScreen';
 import VaultDetailsScreen from '../../../screens/vault/VaultDetailsScreen';
@@ -23,6 +25,14 @@ export default function VaultStack() {
       <Stack.Screen
         name="GroupVaultDetails"
         component={GroupVaultDetailsScreen}
+      />
+      <Stack.Screen
+        name="GroupVaultActivity"
+        component={GroupVaultActivityScreen}
+      />
+      <Stack.Screen
+        name="GroupVaultMembers"
+        component={GroupVaultMembersScreen}
       />
       <Stack.Screen
         name="WithdrawalApproval"

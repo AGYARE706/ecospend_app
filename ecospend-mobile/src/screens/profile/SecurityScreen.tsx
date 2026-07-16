@@ -72,7 +72,7 @@ export default function SecurityScreen() {
   } = useSecurity();
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -257,7 +257,6 @@ function SecurityStatusCard({
       end={{ x: 1, y: 1 }}
       style={styles.statusCard}
     >
-      <View style={styles.statusGlow} />
       <View style={styles.statusTopRow}>
         <View style={styles.statusIconRing}>
           <Ionicons name="shield-checkmark" size={22} color={colors.white} />

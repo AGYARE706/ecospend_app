@@ -23,12 +23,16 @@ export const outlineIcons: Record<string, IconRenderer> = {
       <Path d="M9.5 21v-5.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V21" />
     </Fragment>
   ),
-  list: () => (
+  list: (c) => (
     <Fragment>
       <Line x1="8" y1="6" x2="20" y2="6" />
       <Line x1="8" y1="12" x2="20" y2="12" />
       <Line x1="8" y1="18" x2="20" y2="18" />
-      <Path d="M4 6h.01M4 12h.01M4 18h.01" />
+      {/* Real circles, not sub-pixel "h.01" dashes — those intermittently
+          disappear on Android's SVG renderer. */}
+      <Circle cx="4" cy="6" r="1.1" fill={c} stroke="none" />
+      <Circle cx="4" cy="12" r="1.1" fill={c} stroke="none" />
+      <Circle cx="4" cy="18" r="1.1" fill={c} stroke="none" />
     </Fragment>
   ),
   grid: () => (

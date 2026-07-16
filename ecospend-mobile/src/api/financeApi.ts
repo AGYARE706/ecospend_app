@@ -1,27 +1,10 @@
 import { apiClient } from './apiClient';
-import {
-  mapSummary,
-  mapTransaction,
-  providerToApi,
-  toCreateTransactionBody,
-} from './mappers/financeMappers';
-import type {
-  AddTransactionPayload,
-  MonthlySummary,
-  Provider,
-  Transaction,
-  TransactionCategory,
-  TransactionType,
-} from '../types';
+import { mapSummary, mapTransaction } from './mappers/financeMappers';
+import type { MonthlySummary, Transaction } from '../types';
 
-export type UpdateTransactionApiPayload = Partial<{
-  type: TransactionType;
-  amount: number;
-  category: TransactionCategory;
-  provider: Provider;
-  notes: string;
-  date: string;
-}>;
+// NOTE: there is intentionally no create or update here. Transactions are
+// recorded automatically by the backend when real money moves through
+// Paystack/the wallet, and are immutable afterwards for integrity.
 
 export async function listTransactions(): Promise<Transaction[]> {
   const { data } = await apiClient.get('/api/finance/transactions');
@@ -40,43 +23,22 @@ export async function getTransactionSummary(
   return mapSummary(data);
 }
 
-export async function createTransaction(
-  payload: AddTransactionPayload,
-): Promise<Transaction> {
-  const { data } = await apiClient.post(
-    '/api/finance/transactions',
-    toCreateTransactionBody(payload),
-  );
-  return mapTransaction(data);
-}
-
-export async function updateTransaction(
-  id: string,
-  payload: UpdateTransactionApiPayload,
-): Promise<Transaction> {
-  const body: Record<string, unknown> = {};
-  if (payload.type !== undefined) {
-    body.type = payload.type.toUpperCase();
-  }
-  if (payload.amount !== undefined) {
-    body.amount = payload.amount;
-  }
-  if (payload.category !== undefined) {
-    body.category = payload.category;
-  }
-  if (payload.notes !== undefined) {
-    body.notes = payload.notes;
-  }
-  if (payload.type === 'income') {
-    body.provider = null;
-  } else if (payload.provider !== undefined) {
-    body.provider = providerToApi(payload.provider);
-  }
-
-  const { data } = await apiClient.put(`/api/finance/transactions/${id}`, body);
-  return mapTransaction(data);
-}
-
 export async function deleteTransaction(id: string): Promise<void> {
   await apiClient.delete(`/api/finance/transactions/${id}`);
+}
+
+/** Expected fixed income per month — 0 means "not set". */
+export async function getIncomeTarget(): Promise<number> {
+  const { data } = await apiClient.get<{ monthlyAmount: number | string }>(
+    '/api/finance/income-target',
+  );
+  return Number(data.monthlyAmount);
+}
+
+export async function setIncomeTarget(monthlyAmount: number): Promise<number> {
+  const { data } = await apiClient.put<{ monthlyAmount: number | string }>(
+    '/api/finance/income-target',
+    { monthlyAmount },
+  );
+  return Number(data.monthlyAmount);
 }

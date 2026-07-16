@@ -18,6 +18,7 @@ import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/icons';
+import InfoTooltip from '../../components/ui/InfoTooltip';
 import { useGoals } from '../../context/GoalsContext';
 import { useWallet } from '../../context/WalletContext';
 import type { AppStackParamList } from '../../navigation/types';
@@ -81,6 +82,7 @@ export default function AddGoalContributionScreen() {
 
     const effectiveAmount = Math.min(addedAmount, remaining);
     const hasEnoughBalance = effectiveAmount <= walletBalance;
+    const exceedsRemaining = addedAmount > remaining && remaining > 0;
 
     const handleSave = async () => {
         if (effectiveAmount <= 0 || !hasEnoughBalance) {
@@ -117,16 +119,15 @@ export default function AddGoalContributionScreen() {
                     <Text style={[typography.h3, styles.headerTitle]}>EcoSpend</Text>
                 </View>
 
-                <TouchableOpacity style={styles.iconButton}>
-                    <Icon name="bell" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
+                <InfoTooltip
+                  title="Contributing to a goal"
+                  body="This moves real money — the amount is debited from your EcoSpend wallet immediately and recorded as an expense. Goals have no lock period and no fee, and you can withdraw any amount back to your wallet at any time from the goal's details screen."
+                />
             </View>
 
             <View style={styles.heroSection}>
                 <View style={styles.heroOrb}>
-                    <View style={styles.heroOrbInner}>
-                        <Icon name="sparkles" size={30} color={colors.primary} />
-                    </View>
+                    <Icon name="sparkles" size={24} color={colors.primary} />
                 </View>
                 <Text style={[typography.h2, styles.heroTitle]}>Keep Growing</Text>
                 <Text style={[typography.body, styles.heroSubtitle]}>
@@ -135,7 +136,7 @@ export default function AddGoalContributionScreen() {
             </View>
 
             <View style={styles.section}>
-                <Card variant="default" padding="lg" style={styles.goalCard}>
+                <Card variant="default" padding="md" style={styles.goalCard}>
                     <View style={styles.goalTopRow}>
                         <View style={styles.goalCopy}>
                             <Text style={[typography.overline, styles.goalEyebrow]} numberOfLines={1}>{goalTitle.toUpperCase()}</Text>
@@ -146,7 +147,7 @@ export default function AddGoalContributionScreen() {
                         </View>
 
                         <View style={styles.progressBadge}>
-                            <Text style={styles.progressBadgeText}>25% Complete</Text>
+                            <Text style={styles.progressBadgeText}>{Math.round(currentProgress)}% Complete</Text>
                         </View>
                     </View>
 
@@ -179,6 +180,16 @@ export default function AddGoalContributionScreen() {
                     }
                 />
 
+                {exceedsRemaining ? (
+                  <View style={styles.capBanner}>
+                    <Icon name="alert-circle" size={16} color={colors.warning} />
+                    <Text style={styles.capBannerText}>
+                      That's more than this goal needs — we'll only take GHS{' '}
+                      {remaining.toFixed(2)} from your wallet and mark the goal complete.
+                    </Text>
+                  </View>
+                ) : null}
+
                 <View style={styles.chipsRow}>
                     {quickAmounts.map((value) => (
                         <TouchableOpacity
@@ -193,7 +204,7 @@ export default function AddGoalContributionScreen() {
             </View>
 
             <View style={styles.section}>
-                <Card variant="outlined" padding="md" style={styles.previewCard}>
+                <Card variant="outlined" padding="sm" style={styles.previewCard}>
                     <View style={styles.previewHeader}>
                         <Text style={styles.previewLabel}>Projection</Text>
                         <Text style={styles.previewPercent}>{previewPercentage}</Text>
@@ -286,20 +297,10 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: 'center',
         backgroundColor: colors.primaryBackground,
         borderRadius: 999,
-        height: 160,
+        height: 56,
         justifyContent: 'center',
-        marginBottom: spacing.md,
-        width: 160,
-    },
-    heroOrbInner: {
-        alignItems: 'center',
-        backgroundColor: colors.cardBackground,
-        borderColor: colors.primaryBackground,
-        borderRadius: 999,
-        borderWidth: 1,
-        height: 96,
-        justifyContent: 'center',
-        width: 96,
+        marginBottom: spacing.smd,
+        width: 56,
     },
     heroTitle: {
         color: colors.textPrimary,
@@ -373,6 +374,21 @@ const createStyles = (colors: ThemeColors) =>
     },
     goalMetaTextRight: {
         textAlign: 'right',
+    },
+    capBanner: {
+        alignItems: 'flex-start',
+        backgroundColor: colors.warningLight,
+        borderRadius: radius.md,
+        flexDirection: 'row',
+        gap: spacing.sm,
+        marginTop: spacing.sm,
+        padding: spacing.sm,
+    },
+    capBannerText: {
+        color: colors.textPrimary,
+        flex: 1,
+        fontSize: fontSize.xs,
+        lineHeight: 18,
     },
     chipsRow: {
         flexDirection: 'row',

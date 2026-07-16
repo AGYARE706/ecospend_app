@@ -7,15 +7,13 @@ import { Icon } from './icons';
 import type { IconName } from './icons';
 
 /**
- * icon — preferred: an SVG icon rendered inside a tinted medallion
- * emoji — legacy fallback medallion glyph (used when no icon is provided)
+ * icon — single-color SVG icon rendered inside a tinted medallion
  * title — primary empty state message
  * subtitle — secondary helper text below the title
  * actionLabel / onAction — optional call-to-action button
  */
 export interface EmptyStateProps {
   icon?: IconName | (string & {});
-  emoji?: string;
   title: string;
   subtitle: string;
   actionLabel?: string;
@@ -23,8 +21,7 @@ export interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  icon,
-  emoji,
+  icon = 'sparkles',
   title,
   subtitle,
   actionLabel,
@@ -35,11 +32,7 @@ export default function EmptyState({
   return (
     <View style={styles.container}>
       <View style={styles.medallion}>
-        {icon ? (
-          <Icon name={icon} size={34} color={colors.primary} strokeWidth={1.6} />
-        ) : (
-          <Text style={styles.emoji}>{emoji ?? '✨'}</Text>
-        )}
+        <Icon name={icon} size={32} color={colors.primary} strokeWidth={1.6} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
@@ -69,13 +62,10 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: 'center',
     backgroundColor: colors.primaryBackground,
     borderRadius: radius.full,
-    height: 84,
+    height: 76,
     justifyContent: 'center',
-    marginBottom: spacing.lg,
-    width: 84,
-  },
-  emoji: {
-    fontSize: 34,
+    marginBottom: spacing.md,
+    width: 76,
   },
   title: {
     ...typography.subheading,

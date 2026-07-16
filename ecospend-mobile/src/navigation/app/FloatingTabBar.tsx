@@ -26,7 +26,7 @@ export default function FloatingTabBar({
       style={[
         styles.outer,
         {
-          paddingBottom: bottomInset + spacing.xs,
+          paddingBottom: bottomInset + spacing.xxs,
           backgroundColor: colors.pageBackground,
         },
       ]}
@@ -107,16 +107,16 @@ export default function FloatingTabBar({
 const styles = StyleSheet.create({
   outer: {
     paddingHorizontal: spacing.sm,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
   },
   bar: {
     borderRadius: radius.xxl,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xxs,
-    minHeight: 72,
+    minHeight: 58,
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   tab: {
     alignItems: 'center',
@@ -124,9 +124,9 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xxs,
     justifyContent: 'center',
-    minHeight: 56,
+    minHeight: 46,
     paddingHorizontal: spacing.xxs,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xxs,
   },
   activeTab: {
     paddingHorizontal: spacing.xs,

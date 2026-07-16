@@ -1,6 +1,8 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   CompositeNavigationProp,
+  useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -9,6 +11,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import DashboardAnalyticsCard from '../../components/dashboard/DashboardAnalyticsCard';
 import DashboardInsightTeaser from '../../components/dashboard/DashboardInsightTeaser';
 import { Icon } from '../../components/ui/icons';
+import CollapsedHeaderBar from '../../components/ui/CollapsedHeaderBar';
+import FadeSlideIn from '../../components/ui/FadeSlideIn';
 import IconButton from '../../components/ui/IconButton';
 import AvatarInitials from '../../components/finance/AvatarInitials';
 import BalanceCard from '../../components/finance/BalanceCard';
@@ -21,7 +25,9 @@ import SectionHeader from '../../components/ui/SectionHeader';
 import SkeletonBox from '../../components/ui/SkeletonBox';
 import { useAuth } from '../../context/AuthContext';
 import { mockUser } from '../../data/mock/mockData';
+import { useCollapsingHeader } from '../../hooks/useCollapsingHeader';
 import { useDashboard } from '../../hooks/useDashboard';
+import { useUnreadNotificationsCount } from '../../hooks/useUnreadNotificationsCount';
 import { navigateApp } from '../../navigation/navigationRef';
 import type {
   DashboardStackParamList,
@@ -70,14 +76,23 @@ export default function DashboardScreen() {
     weeklyInsight,
     analytics,
     loading,
+    refresh,
   } = useDashboard();
 
   const fullName = user?.name ?? mockUser.name;
+  const unreadNotifications = useUnreadNotificationsCount();
 
   const tabNavigation = navigation.getParent<BottomTabNavigationProp<TabParamList>>();
+  const { onScroll, scrollEventThrottle, heroStyle, barStyle } = useCollapsingHeader();
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       {loading ? (
         <View style={styles.loadingContent}>
           <SkeletonBox height={28} width="70%" />
@@ -88,11 +103,28 @@ export default function DashboardScreen() {
           <SkeletonBox height={120} style={styles.skeletonGap} />
         </View>
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
+        <>
+          <CollapsedHeaderBar
+            title="Dashboard"
+            rightActions={
+              <IconButton
+                icon="bell"
+                variant="soft"
+                size="sm"
+                onPress={() => navigateApp('Notifications')}
+                accessibilityLabel="Notifications"
+                badgeCount={unreadNotifications}
+              />
+            }
+            style={barStyle}
+          />
+          <Animated.ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
+          >
+          <Animated.View style={[styles.header, heroStyle]}>
             <View style={styles.headerTextBlock}>
               <Text style={styles.greeting}>{`${getGreeting()},`}</Text>
               <Text style={styles.userName} numberOfLines={1}>
@@ -107,90 +139,111 @@ export default function DashboardScreen() {
                 variant="soft"
                 onPress={() => navigateApp('Notifications')}
                 accessibilityLabel="Notifications"
+                badgeCount={unreadNotifications}
               />
-              <AvatarInitials name={fullName} />
+              <Pressable
+                onPress={() =>
+                  tabNavigation?.navigate('ProfileTab', { screen: 'Profile' })
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Open profile"
+                hitSlop={spacing.xs}
+              >
+                <AvatarInitials name={fullName} photoUrl={user?.photoUrl} />
+              </Pressable>
             </View>
-          </View>
+          </Animated.View>
 
-          <BalanceCard
-            balance={balance}
-            income={income}
-            expense={expense}
-            onTopUpPress={() => navigateApp('TopUpWallet')}
-            onSendPress={() => navigateApp('SendMoney')}
-          />
-
-          <QuickActionRow
-            onAddPress={() => navigateApp('AddTransaction')}
-            onGoalsPress={() =>
-              tabNavigation?.navigate('GoalsTab', { screen: 'SavingsGoals' })
-            }
-            onTransferPress={() => navigateApp('SendMoney')}
-            onMorePress={() => navigateApp('Bills')}
-          />
-
-          <DashboardAnalyticsCard analytics={analytics} />
-
-          <SectionHeader
-            title="Budget This Month"
-            icon="pie-chart-outline"
-            actionLabel="See all"
-            onActionPress={() => navigateApp('BudgetEnvelopes')}
-          />
-
-          <ScrollView
-            horizontal
-            nestedScrollEnabled
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.budgetScroll}
-          >
-            {budgetEnvelopes.map((envelope) => (
-              <BudgetEnvelopeCard key={envelope.id} envelope={envelope} />
-            ))}
-          </ScrollView>
-
-          <SectionHeader
-            title="Recent Transactions"
-            icon="receipt-outline"
-            actionLabel="See all"
-            onActionPress={() =>
-              tabNavigation?.navigate('TransactionsTab', {
-                screen: 'TransactionsList',
-              })
-            }
-          />
-
-          {recentTransactions.length === 0 ? (
-            <EmptyState
-              emoji="📭"
-              title="No transactions yet"
-              subtitle="Your recent activity will appear here."
+          <FadeSlideIn delay={0}>
+            <BalanceCard
+              balance={balance}
+              income={income}
+              expense={expense}
+              onTopUpPress={() => navigateApp('TopUpWallet')}
+              onSendPress={() => navigateApp('SendMoney')}
             />
-          ) : (
-            <View style={styles.transactionsCard}>
-              {recentTransactions.map((transaction, index) => (
-                <TransactionListItem
-                  key={transaction.id}
-                  transaction={transaction}
-                  variant="flat"
-                  showDivider={index < recentTransactions.length - 1}
-                  onPress={() =>
-                    tabNavigation?.navigate('TransactionsTab', {
-                      screen: 'TransactionDetails',
-                      params: { transactionId: transaction.id },
-                      initial: false,
-                    })
-                  }
-                />
-              ))}
-            </View>
-          )}
+          </FadeSlideIn>
 
-          <DashboardInsightTeaser
-            insight={weeklyInsight}
-            onPress={() => navigateApp('WeeklyInsights')}
-          />
-        </ScrollView>
+          <FadeSlideIn delay={70}>
+            <QuickActionRow
+              onAddPress={() => navigateApp('TopUpWallet')}
+              onGoalsPress={() =>
+                tabNavigation?.navigate('GoalsTab', { screen: 'SavingsGoals' })
+              }
+              onTransferPress={() => navigateApp('SendMoney')}
+              onMorePress={() => navigateApp('Bills')}
+            />
+          </FadeSlideIn>
+
+          <FadeSlideIn delay={140}>
+            <DashboardAnalyticsCard analytics={analytics} />
+          </FadeSlideIn>
+
+          <FadeSlideIn delay={210}>
+            <SectionHeader
+              title="Budget this month"
+              actionLabel="See all"
+              onActionPress={() => navigateApp('BudgetEnvelopes')}
+            />
+
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.budgetScroll}
+            >
+              {budgetEnvelopes.map((envelope) => (
+                <BudgetEnvelopeCard key={envelope.id} envelope={envelope} />
+              ))}
+            </ScrollView>
+          </FadeSlideIn>
+
+          <FadeSlideIn delay={280}>
+            <SectionHeader
+              title="Recent transactions"
+              actionLabel="See all"
+              onActionPress={() =>
+                tabNavigation?.navigate('TransactionsTab', {
+                  screen: 'TransactionsList',
+                })
+              }
+            />
+
+            {recentTransactions.length === 0 ? (
+              <EmptyState
+                icon="receipt"
+                title="No transactions yet"
+                subtitle="Your recent activity will appear here."
+              />
+            ) : (
+              <View style={styles.transactionsCard}>
+                {recentTransactions.map((transaction, index) => (
+                  <TransactionListItem
+                    key={transaction.id}
+                    transaction={transaction}
+                    variant="flat"
+                    showDivider={index < recentTransactions.length - 1}
+                    onPress={() =>
+                      tabNavigation?.navigate('TransactionsTab', {
+                        screen: 'TransactionDetails',
+                        params: { transactionId: transaction.id },
+                        initial: false,
+                      })
+                    }
+                  />
+                ))}
+              </View>
+            )}
+          </FadeSlideIn>
+
+          <FadeSlideIn delay={350}>
+            <DashboardInsightTeaser
+              insight={weeklyInsight}
+              onPress={() => navigateApp('WeeklyInsights')}
+            />
+          </FadeSlideIn>
+          </Animated.ScrollView>
+        </>
       )}
     </ScreenWrapper>
   );
@@ -203,7 +256,7 @@ const createStyles = (colors: ThemeColors) =>
     paddingTop: spacing.lg,
   },
   scrollContent: {
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
@@ -214,7 +267,7 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: 'flex-start',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.mlg,
   },
   headerTextBlock: {
     flex: 1,
@@ -240,7 +293,7 @@ const createStyles = (colors: ThemeColors) =>
     gap: spacing.sm,
   },
   budgetScroll: {
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
     paddingRight: spacing.lg,
   },
   transactionsCard: {
@@ -248,7 +301,7 @@ const createStyles = (colors: ThemeColors) =>
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.mlg,
     overflow: 'hidden',
     ...cardShadow,
   },

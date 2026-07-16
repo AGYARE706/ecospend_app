@@ -1,6 +1,7 @@
 package com.ecospend.payment.services;
 
 import com.ecospend.payment.client.ExpenseClient;
+import com.ecospend.payment.client.NotificationClient;
 import com.ecospend.payment.client.PaystackClient;
 import com.ecospend.payment.client.VaultClient;
 import com.ecospend.payment.dto.DepositView;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -34,6 +36,7 @@ public class PaymentService {
     private final VaultClient vaultClient;
     private final WalletService walletService;
     private final ExpenseClient expenseClient;
+    private final NotificationClient notificationClient;
 
     // ------------------------------------------------------------------
     // Wallet top-up (money IN via Paystack checkout)
@@ -115,6 +118,10 @@ public class PaymentService {
         walletService.credit(record.getUserId(), record.getAmountGhs());
         expenseClient.recordTransaction(record.getUserId(), record.getAmountGhs(),
                 "INCOME", "Deposit", "Wallet top-up via Paystack");
+
+        notificationClient.send(record.getUserId(), "Wallet top-up confirmed",
+                String.format("GHS %.2f was added to your wallet via Paystack.", record.getAmountGhs()),
+                "WALLET_TOPUP", Map.of("reference", reference));
     }
 
     @Transactional
@@ -161,7 +168,10 @@ public class PaymentService {
         }
         paymentRecordRepository.save(record);
 
-        expenseClient.recordTransaction(userId, request.amount(), "EXPENSE", "Transfer",
+        String category = request.category() == null || request.category().isBlank()
+                ? "Other"
+                : request.category();
+        expenseClient.recordTransaction(userId, request.amount(), "EXPENSE", category,
                 "Sent to " + request.momoNumber() + " (" + request.momoProvider() + ")");
         return record;
     }

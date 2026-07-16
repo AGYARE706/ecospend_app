@@ -169,6 +169,16 @@ const light = {
   providerTelecel: '#E53935',
   providerAt: '#1565C0',
 
+  // ---- Data viz: categorical series, fixed order, never cycled ----
+  // Validated (lightness band, chroma floor, CVD separation, contrast)
+  // against the light surface; series identity always ships with a
+  // labeled legend swatch, never color alone.
+  chart1: palette.green[600],
+  chart2: palette.gold[600],
+  chart3: palette.info[600],
+  chart4: '#8E4EC6',
+  chart5: '#0D9488',
+
   // ---- Hero / on-color overlays ----
   heroOverlay: 'rgba(255,255,255,0.16)',
   heroDivider: 'rgba(255,255,255,0.22)',
@@ -274,6 +284,15 @@ export const darkColors: ThemeColors = {
   providerMtn: '#FFCC00',
   providerTelecel: '#E53935',
   providerAt: '#1565C0',
+
+  // ---- Data viz: categorical series, fixed order, never cycled ----
+  // Mid-tone steps re-validated against the dark surface (not a flip
+  // of the light set).
+  chart1: palette.green[500],
+  chart2: palette.gold[600],
+  chart3: palette.info[500],
+  chart4: '#9D5FD3',
+  chart5: palette.teal[500],
 
   // ---- Hero / on-color overlays ----
   heroOverlay: 'rgba(255,255,255,0.16)',

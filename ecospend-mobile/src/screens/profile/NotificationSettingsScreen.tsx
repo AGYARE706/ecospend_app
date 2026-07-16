@@ -46,7 +46,7 @@ export default function NotificationSettingsScreen() {
   const allDisabled = enabledCount === 0;
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -162,7 +162,6 @@ function SummaryCard({
       end={{ x: 1, y: 1 }}
       style={styles.summaryCard}
     >
-      <View style={styles.summaryGlow} />
       <View style={styles.summaryTopRow}>
         <View style={styles.summaryIconRing}>
           <Ionicons name="notifications" size={20} color={colors.white} />

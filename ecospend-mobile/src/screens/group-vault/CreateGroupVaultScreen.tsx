@@ -67,6 +67,7 @@ export default function CreateGroupVaultScreen({
     daysRemaining,
     formattedDate,
     canAddMember,
+    planPreview,
     setField,
     selectPreset,
     adjustMemberLimit,
@@ -118,7 +119,6 @@ export default function CreateGroupVaultScreen({
             end={{ x: 1, y: 1 }}
             style={styles.banner}
           >
-            <View style={styles.bannerGlow} />
             <View style={styles.bannerIconRing}>
               <Ionicons name="people" size={22} color={colors.white} />
             </View>
@@ -181,10 +181,63 @@ export default function CreateGroupVaultScreen({
                   Each of {totalSlots} members contributes{' '}
                   <Text style={styles.perMemberAmount}>
                     {ghs(perMemberTarget)}
-                  </Text>
+                  </Text>{' '}
+                  in total
                 </Text>
               </View>
             ) : null}
+          </View>
+
+          {/* ─── Contribution Frequency ───────────────────────── */}
+          <SectionLabel title="Contribution Plan" icon="repeat-outline" />
+          <View style={styles.card}>
+            <Text style={styles.fieldLabel}>How often do members contribute?</Text>
+            <View style={styles.presetRow}>
+              {(['WEEKLY', 'MONTHLY'] as const).map((cadence) => (
+                <Pressable
+                  key={cadence}
+                  onPress={() => setField('contributionFrequency', cadence)}
+                  style={[
+                    styles.cadenceChip,
+                    form.contributionFrequency === cadence && styles.cadenceChipActive,
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{
+                    selected: form.contributionFrequency === cadence,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.cadenceChipText,
+                      form.contributionFrequency === cadence &&
+                        styles.cadenceChipTextActive,
+                    ]}
+                  >
+                    {cadence === 'WEEKLY' ? 'Weekly' : 'Monthly'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {planPreview ? (
+              <View style={styles.perMemberRow}>
+                <Ionicons name="calendar-outline" size={13} color={colors.primary} />
+                <Text style={styles.perMemberText}>
+                  Auto plan:{' '}
+                  <Text style={styles.perMemberAmount}>
+                    {ghs(planPreview.instalmentAmount)}
+                  </Text>{' '}
+                  per member per {planPreview.cadenceLabel} ×{' '}
+                  {planPreview.instalmentCount} instalments until {formattedDate}.
+                  Everyone gets reminders as each date nears.
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.fieldHint}>
+                Set a target amount and date to see each member's automatic
+                schedule.
+              </Text>
+            )}
           </View>
 
           {/* ─── Target Date ──────────────────────────────────── */}
@@ -1172,6 +1225,27 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
+  },
+  cadenceChip: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    flex: 1,
+    paddingVertical: spacing.sm,
+  },
+  cadenceChipActive: {
+    backgroundColor: colors.primaryBackground,
+    borderColor: colors.primary,
+  },
+  cadenceChipText: {
+    color: colors.textGrey,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  cadenceChipTextActive: {
+    color: colors.primary,
   },
   dateDisplay: {
     alignItems: 'center',

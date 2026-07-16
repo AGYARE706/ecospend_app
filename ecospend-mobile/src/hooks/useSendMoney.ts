@@ -2,8 +2,10 @@ import { useCallback, useState } from 'react';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as paymentsApi from '../api/paymentsApi';
+import { useEnvelopes } from '../context/EnvelopesContext';
 import { useFinance } from '../context/FinanceContext';
 import { useWallet } from '../context/WalletContext';
+import type { TransactionCategory } from '../types';
 
 export type MomoProvider = 'MTN' | 'TELECEL' | 'AT';
 
@@ -19,16 +21,19 @@ export type SendMoneyPhase = 'input' | 'sending' | 'success' | 'failed';
 
 /**
  * Wallet money-out: sends the amount to an external MoMo number via a
- * Paystack transfer (auto-succeeds in simulated mode). An EXPENSE
- * transaction is auto-recorded server-side.
+ * Paystack transfer (auto-succeeds in simulated mode). The user must
+ * say what the money is for — the category lands on the auto-recorded
+ * EXPENSE so budget analysis stays meaningful.
  */
 export function useSendMoney() {
   const { balance, refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
 
   const [amount, setAmount] = useState('');
   const [momoNumber, setMomoNumber] = useState('');
   const [momoProvider, setMomoProvider] = useState<MomoProvider>('MTN');
+  const [category, setCategory] = useState<TransactionCategory | null>(null);
   const [phase, setPhase] = useState<SendMoneyPhase>('input');
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +53,10 @@ export function useSendMoney() {
       setError('Amount exceeds your wallet balance');
       return;
     }
+    if (!category) {
+      setError('Select what you are spending on');
+      return;
+    }
     const trimmedNumber = momoNumber.trim();
     if (!GHANA_PHONE_PATTERN.test(trimmedNumber)) {
       setError('Enter a valid MoMo number (e.g. 0241234567)');
@@ -60,20 +69,26 @@ export function useSendMoney() {
         amount: parsedAmount,
         momoNumber: trimmedNumber,
         momoProvider,
+        category,
       });
       setPhase('success');
       void refreshWallet();
       void refreshTransactions();
+      // The send was tagged with a spending category — reflect it against
+      // that category's budget envelope, if the user tracks one.
+      void refreshEnvelopes();
     } catch (err) {
       setPhase('failed');
       setError(getApiErrorMessage(err, 'Could not send the money'));
     }
   }, [
+    category,
     hasEnoughBalance,
     isAmountValid,
     momoNumber,
     momoProvider,
     parsedAmount,
+    refreshEnvelopes,
     refreshTransactions,
     refreshWallet,
   ]);
@@ -91,6 +106,8 @@ export function useSendMoney() {
     setMomoNumber,
     momoProvider,
     setMomoProvider,
+    category,
+    setCategory,
     parsedAmount,
     isAmountValid,
     hasEnoughBalance,

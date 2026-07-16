@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import {
   CompositeNavigationProp,
   useNavigation,
@@ -7,16 +7,19 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import FilterTabRow from '../../components/finance/FilterTabRow';
-import FloatingActionButton from '../../components/finance/FloatingActionButton';
 import SummaryChipRow from '../../components/finance/SummaryChipRow';
 import TransactionListItem from '../../components/finance/TransactionListItem';
 import TransactionSectionCard from '../../components/finance/TransactionSectionCard';
+import CollapsedHeaderBar from '../../components/ui/CollapsedHeaderBar';
 import EmptyState from '../../components/ui/EmptyState';
+import IconButton from '../../components/ui/IconButton';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SearchInput from '../../components/ui/SearchInput';
 import SkeletonBox from '../../components/ui/SkeletonBox';
+import { useCollapsingHeader } from '../../hooks/useCollapsingHeader';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useUnreadNotificationsCount } from '../../hooks/useUnreadNotificationsCount';
 import { navigateApp } from '../../navigation/navigationRef';
 import type {
   AppStackParamList,
@@ -46,27 +49,40 @@ export default function TransactionsListScreen() {
     loading,
     isEmpty,
   } = useTransactions();
-
-  const openAddTransaction = () => {
-    navigation
-      .getParent<StackNavigationProp<AppStackParamList>>()
-      ?.navigate('AddTransaction');
-  };
+  const unreadNotifications = useUnreadNotificationsCount();
+  const { onScroll, scrollEventThrottle, heroStyle, barStyle } = useCollapsingHeader();
 
   return (
-    <ScreenWrapper background="page" padded={false}>
-      <ScrollView
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
+      <CollapsedHeaderBar
+        title="Transactions"
+        rightActions={
+          <IconButton
+            icon="bell"
+            variant="soft"
+            size="sm"
+            onPress={() => navigateApp('Notifications')}
+            accessibilityLabel="Notifications"
+            badgeCount={unreadNotifications}
+          />
+        }
+        style={barStyle}
+      />
+      <Animated.ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
       >
-        <View style={styles.paddedTop}>
+        <Animated.View style={[styles.paddedTop, heroStyle]}>
           <ScreenHeader
             title="Transactions"
-            subtitle="Track income and spending"
+            subtitle="Recorded automatically as money moves"
             onNotificationPress={() => navigateApp('Notifications')}
+            notificationBadgeCount={unreadNotifications}
           />
 
           {loading ? (
@@ -83,7 +99,7 @@ export default function TransactionsListScreen() {
               <SearchInput value={searchQuery} onChangeText={setSearchQuery} />
             </>
           )}
-        </View>
+        </Animated.View>
 
         {!loading && isEmpty ? (
           <EmptyState
@@ -114,9 +130,7 @@ export default function TransactionsListScreen() {
             ))}
           </View>
         ) : null}
-      </ScrollView>
-
-      <FloatingActionButton onPress={openAddTransaction} />
+      </Animated.ScrollView>
     </ScreenWrapper>
   );
 }
@@ -126,8 +140,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    // Clear the floating action button (60px + 24px offset) so the last row stays tappable.
-    paddingBottom: spacing.xxxl + spacing.xl,
+    paddingBottom: spacing.xs,
   },
   paddedTop: {
     paddingHorizontal: spacing.lg,

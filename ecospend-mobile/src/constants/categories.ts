@@ -28,6 +28,16 @@ export const CATEGORY_CONFIG: Record<TransactionCategory, CategoryConfig> = {
     circleBackground: 'warningLight',
     label: 'Utilities',
   },
+  Rent: {
+    emoji: '🏠',
+    circleBackground: 'blueLight',
+    label: 'Rent',
+  },
+  Fees: {
+    emoji: '🧾',
+    circleBackground: 'divider',
+    label: 'Fees',
+  },
   Business: {
     emoji: '💼',
     circleBackground: 'blueLight',
@@ -75,6 +85,8 @@ export const CATEGORY_VISUALS: Record<TransactionCategory, CategoryVisual> = {
   Food: { icon: 'utensils', tint: 'warning', background: 'warningLight' },
   Transport: { icon: 'car', tint: 'blue', background: 'blueLight' },
   Utilities: { icon: 'bulb', tint: 'gold', background: 'goldLight' },
+  Rent: { icon: 'key', tint: 'purple', background: 'purpleLight' },
+  Fees: { icon: 'tag', tint: 'tealDeep', background: 'tealDeepLight' },
   Business: { icon: 'briefcase', tint: 'accent', background: 'accentLight' },
   Savings: { icon: 'bank', tint: 'primary', background: 'primaryBackground' },
   Deposit: { icon: 'wallet', tint: 'primary', background: 'primaryBackground' },
@@ -94,6 +106,8 @@ export const ALL_CATEGORIES: TransactionCategory[] = [
   'Food',
   'Transport',
   'Utilities',
+  'Rent',
+  'Fees',
   'Business',
   'Savings',
   'Deposit',
@@ -102,23 +116,40 @@ export const ALL_CATEGORIES: TransactionCategory[] = [
   'Other',
 ];
 
+/**
+ * Concrete spending categories the user picks from when sending money —
+ * what the payment was FOR. Deliberately excludes bookkeeping categories
+ * (Deposit, Transfer, Savings, Subscription) which are assigned
+ * automatically by their own flows.
+ */
+export const SPENDING_CATEGORIES: TransactionCategory[] = [
+  'Food',
+  'Transport',
+  'Utilities',
+  'Rent',
+  'Fees',
+  'Business',
+  'Other',
+];
+
 export const PROVIDERS = ['MTN MoMo', 'Telecel Cash', 'AT Money'] as const;
 
 /**
- * Goal categories for savings goals
+ * Goal categories for savings goals — single-color SVG icons only,
+ * consistent with the rest of the icon system.
  */
 export interface GoalCategoryConfig {
-  emoji: string;
+  icon: string;
   label: string;
 }
 
 export const GOAL_CATEGORIES: Record<string, GoalCategoryConfig> = {
-  emergency: { emoji: '🚨', label: 'Emergency Fund' },
-  vacation: { emoji: '✈️', label: 'Vacation' },
-  education: { emoji: '🎓', label: 'Education' },
-  home: { emoji: '🏠', label: 'Home' },
-  car: { emoji: '🚗', label: 'Vehicle' },
-  debt: { emoji: '💳', label: 'Debt Payment' },
-  investment: { emoji: '📈', label: 'Investment' },
-  other: { emoji: '🎯', label: 'Other' },
+  emergency: { icon: 'alert-triangle', label: 'Emergency Fund' },
+  vacation: { icon: 'sun', label: 'Vacation' },
+  education: { icon: 'document', label: 'Education' },
+  home: { icon: 'home', label: 'Home' },
+  car: { icon: 'car', label: 'Vehicle' },
+  debt: { icon: 'cash', label: 'Debt Payment' },
+  investment: { icon: 'trending-up', label: 'Investment' },
+  other: { icon: 'target', label: 'Other' },
 };

@@ -6,8 +6,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -36,6 +38,7 @@ type JoinGroupVaultNavProp = StackNavigationProp<
   AppStackParamList,
   'JoinGroupVault'
 >;
+type JoinGroupVaultRouteProp = RouteProp<AppStackParamList, 'JoinGroupVault'>;
 
 interface JoinGroupVaultScreenProps {
   navigation: JoinGroupVaultNavProp;
@@ -68,6 +71,7 @@ export default function JoinGroupVaultScreen({
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { tier } = useAuth();
+  const { params } = useRoute<JoinGroupVaultRouteProp>();
   const { lookupInviteCode, joinGroupVault, lastError } = useVaults();
   const [rawCode, setRawCode] = useState('');
   const [lookupState, setLookupState] = useState<
@@ -111,6 +115,14 @@ export default function JoinGroupVaultScreen({
     if (lookupTimer.current) clearTimeout(lookupTimer.current);
   }, []);
 
+  // Arriving from a "You're invited" notification prefills and looks up the code.
+  useEffect(() => {
+    if (params?.inviteCode) {
+      handleCodeChange(params.inviteCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── Join ──────────────────────────────────────────────────────────────
   const handleJoin = useCallback(async () => {
     if (!foundVault) return;
@@ -126,6 +138,7 @@ export default function JoinGroupVaultScreen({
       }
       navigation.replace('VaultSuccess', {
         message: `You've joined "${joined.name}"! Your contribution will help reach the shared goal.`,
+        groupVaultId: joined.id,
       });
     } finally {
       setIsJoining(false);

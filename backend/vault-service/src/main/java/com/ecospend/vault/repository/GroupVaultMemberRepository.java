@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface GroupVaultMemberRepository extends JpaRepository<GroupVaultMember, UUID> {
     List<GroupVaultMember> findByGroupId(UUID groupId);
+    List<GroupVaultMember> findByGroupIdAndStatus(UUID groupId, GroupVaultMember.Status status);
     List<GroupVaultMember> findByUserId(UUID userId);
     Optional<GroupVaultMember> findByGroupIdAndUserId(UUID groupId, UUID userId);
     long countByGroupId(UUID groupId);

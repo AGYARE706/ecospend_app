@@ -142,7 +142,7 @@ export default function AddGoalSheet({
 
       {projectedWeekly !== null ? (
         <View style={styles.previewCard}>
-          <Text style={styles.previewEmoji}>⚡</Text>
+          <Icon name="flash" size={18} color={colors.primary} />
           <Text style={styles.previewText}>
             You need to save{' '}
             <Text style={styles.previewAmount}>
@@ -207,11 +207,8 @@ const createStyles = (colors: ThemeColors) =>
     marginBottom: spacing.md,
     padding: spacing.md,
   },
-  previewEmoji: {
-    fontSize: fontSize.lg,
-    marginRight: spacing.sm,
-  },
   previewText: {
+    marginLeft: spacing.sm,
     color: colors.primary,
     flex: 1,
     fontSize: fontSize.sm,

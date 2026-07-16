@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { useAuth } from '../../context/AuthContext';
 import { useEditProfile } from '../../hooks/useEditProfile';
+import { useProfilePhoto } from '../../hooks/useProfilePhoto';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -38,6 +40,7 @@ export default function EditProfileScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<EditProfileNavProp>();
+  const { user } = useAuth();
   const {
     fullName,
     formattedPhone,
@@ -48,9 +51,10 @@ export default function EditProfileScreen() {
     handleSave,
     handleCancel,
   } = useEditProfile(navigation);
+  const { pickAndUpload, isUploading } = useProfilePhoto();
 
   return (
-    <ScreenWrapper background="page" keyboardAvoiding padded={false}>
+    <ScreenWrapper background="page" keyboardAvoiding padded={false} edges={['top']}>
       <View style={styles.screen}>
         {/* Header */}
         <View style={styles.header}>
@@ -80,15 +84,26 @@ export default function EditProfileScreen() {
           {/* Profile Photo */}
           <View style={styles.photoSection}>
             <View style={styles.photoRing}>
-              <LinearGradient
-                colors={[colors.primaryDark, colors.primary]}
-                style={styles.photoAvatar}
-              >
-                <Text style={styles.photoInitials}>
-                  {getInitials(fullName || 'User')}
-                </Text>
-              </LinearGradient>
+              {user?.photoUrl ? (
+                <Image source={{ uri: user.photoUrl }} style={styles.photoAvatar} />
+              ) : (
+                <LinearGradient
+                  colors={[colors.primaryDark, colors.primary]}
+                  style={styles.photoAvatar}
+                >
+                  <Text style={styles.photoInitials}>
+                    {getInitials(fullName || 'User')}
+                  </Text>
+                </LinearGradient>
+              )}
+              {isUploading ? (
+                <View style={styles.photoUploadingOverlay}>
+                  <ActivityIndicator color={colors.white} />
+                </View>
+              ) : null}
               <Pressable
+                onPress={() => void pickAndUpload()}
+                disabled={isUploading}
                 style={({ pressed }) => [
                   styles.cameraBtn,
                   pressed && styles.cameraBtnPressed,
@@ -101,16 +116,20 @@ export default function EditProfileScreen() {
             </View>
 
             <Pressable
+              onPress={() => void pickAndUpload()}
+              disabled={isUploading}
               style={({ pressed }) => [
                 styles.changePhotoBtn,
                 pressed && styles.changePhotoBtnPressed,
               ]}
             >
               <Ionicons name="image-outline" size={16} color={colors.primary} />
-              <Text style={styles.changePhotoText}>Change Photo</Text>
+              <Text style={styles.changePhotoText}>
+                {isUploading ? 'Uploading…' : 'Change Photo'}
+              </Text>
             </Pressable>
             <Text style={styles.photoHint}>
-              JPG or PNG. Max size 5 MB.
+              JPG or PNG. Automatically resized and compressed.
             </Text>
           </View>
 
@@ -262,6 +281,15 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.white,
     fontSize: fontSize.xxxl,
     fontWeight: fontWeight.bold,
+  },
+  photoUploadingOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: radius.full,
+    height: 96,
+    justifyContent: 'center',
+    position: 'absolute',
+    width: 96,
   },
   cameraBtn: {
     alignItems: 'center',

@@ -88,6 +88,7 @@ export function useWithdrawVault(
         amountReceived: netAmount,
         feeCharged: feeAmount,
         message: 'The net amount has been credited to your wallet.',
+        vaultId: vault.id,
       });
     } catch (error) {
       console.warn(getApiErrorMessage(error));

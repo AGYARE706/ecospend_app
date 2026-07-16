@@ -5,7 +5,6 @@ import type {
   TransactionSummaryBar,
   WeeklyInsight,
 } from '../types';
-import { CATEGORY_CONFIG } from '../constants/categories';
 import { formatGroupLabel } from './formatDate';
 
 export function filterTransactions(
@@ -132,8 +131,4 @@ export function computeWeeklyInsight(transactions: Transaction[]): WeeklyInsight
     heading: "This week's insight",
     message: `${category} is your top spend this week — GHS ${stats.total.toFixed(0)} in ${stats.count} transaction${stats.count === 1 ? '' : 's'}`,
   };
-}
-
-export function getCategoryEmoji(category: Transaction['category']): string {
-  return CATEGORY_CONFIG[category].emoji;
 }

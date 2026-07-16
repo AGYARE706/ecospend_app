@@ -56,37 +56,41 @@ export default function VaultSuccessScreen() {
   const vaultName = params?.vaultName ?? 'My Vault';
   const amountReceived = params?.amountReceived;
   const feeCharged = params?.feeCharged;
+  const vaultId = params?.vaultId;
+  const groupVaultId = params?.groupVaultId;
+  const isGroupFlow = groupVaultId !== undefined;
 
   // Reference is stable for the lifetime of this screen render
   const ref = mockRef();
   const timestamp = nowTimestamp();
 
+  // navigate() (not reset()) so the Vault tab's existing stack — with
+  // VaultDashboard ("My Vaults") as its root — is preserved underneath;
+  // reset() was rebuilding it with only the target screen, leaving the
+  // tab permanently stuck there with no way back to My Vaults.
   function goToDashboard() {
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: 'MainTabs',
-          params: { screen: 'VaultTab', params: { screen: 'VaultDashboard' } },
-        },
-      ],
+    navigation.navigate('MainTabs', {
+      screen: 'VaultTab',
+      params: { screen: 'VaultDashboard' },
     });
   }
 
-  function goToHistory() {
-    // Pop back to the vault stack then navigate to history
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: 'MainTabs',
-          params: {
-            screen: 'VaultTab',
-            params: { screen: 'VaultHistory', params: { vaultId: 'vault-emergency' } },
-          },
-        },
-      ],
-    });
+  function goToDetail() {
+    if (isGroupFlow && groupVaultId) {
+      navigation.navigate('MainTabs', {
+        screen: 'VaultTab',
+        params: { screen: 'GroupVaultDetails', params: { groupVaultId } },
+      });
+      return;
+    }
+    if (vaultId) {
+      navigation.navigate('MainTabs', {
+        screen: 'VaultTab',
+        params: { screen: 'VaultHistory', params: { vaultId } },
+      });
+      return;
+    }
+    goToDashboard();
   }
 
   return (
@@ -226,19 +230,21 @@ export default function VaultSuccessScreen() {
         {/* ─── Sticky actions ────────────────────────────────────── */}
         <View style={styles.footer}>
           <Pressable
-            onPress={goToHistory}
+            onPress={goToDetail}
             style={({ pressed }) => [
               styles.primaryBtn,
               pressed && styles.btnPressed,
             ]}
           >
             <Ionicons
-              name="time-outline"
+              name={isGroupFlow ? 'people-outline' : 'time-outline'}
               size={20}
               color={colors.white}
               style={styles.btnIcon}
             />
-            <Text style={styles.primaryBtnText}>View Vault History</Text>
+            <Text style={styles.primaryBtnText}>
+              {isGroupFlow ? 'View Group Vault' : 'View Vault History'}
+            </Text>
           </Pressable>
 
           <Pressable

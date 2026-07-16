@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import CategoryChipGrid from '../../components/finance/CategoryChipGrid';
+import { SPENDING_CATEGORIES } from '../../constants/categories';
 import { MOMO_PROVIDERS, useSendMoney } from '../../hooks/useSendMoney';
 import type { AppStackParamList } from '../../navigation/types';
 import {
@@ -42,6 +44,8 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
     setMomoNumber,
     momoProvider,
     setMomoProvider,
+    category,
+    setCategory,
     parsedAmount,
     isAmountValid,
     hasEnoughBalance,
@@ -88,6 +92,13 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
                 error={error ?? undefined}
               />
 
+              <Text style={styles.fieldLabel}>What are you spending on?</Text>
+              <CategoryChipGrid
+                selectedCategory={category}
+                onSelect={setCategory}
+                categories={SPENDING_CATEGORIES}
+              />
+
               <Text style={styles.fieldLabel}>Recipient provider</Text>
               <View style={styles.providerRow}>
                 {MOMO_PROVIDERS.map((provider) => (
@@ -128,7 +139,7 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
                 icon="send-outline"
                 onPress={() => void handleSend()}
                 loading={phase === 'sending'}
-                disabled={!isAmountValid || phase === 'sending'}
+                disabled={!isAmountValid || !category || phase === 'sending'}
               />
               {showTopUpPrompt ? (
                 <AppButton

@@ -80,7 +80,7 @@ export default function HelpSupportScreen() {
   } = useHelpSupport();
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -191,7 +191,6 @@ function HeroCard({ supportEmail }: { supportEmail: string }) {
       end={{ x: 1, y: 1 }}
       style={styles.heroCard}
     >
-      <View style={styles.heroGlow} />
       <View style={styles.heroTopRow}>
         <View style={styles.heroIconRing}>
           <Ionicons name="headset-outline" size={22} color={colors.white} />

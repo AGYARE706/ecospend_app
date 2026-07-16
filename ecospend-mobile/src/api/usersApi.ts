@@ -6,6 +6,7 @@ export interface UserProfileResponse {
   name: string;
   phone: string;
   tier: string;
+  photoUrl?: string | null;
   createdAt?: string;
 }
 
@@ -16,6 +17,14 @@ export async function getMe(): Promise<UserProfileResponse> {
 
 export async function updateMe(payload: { name: string }): Promise<UserProfileResponse> {
   const { data } = await apiClient.put<UserProfileResponse>('/api/users/me', payload);
+  return data;
+}
+
+/** photoBase64 is a data URI, e.g. "data:image/jpeg;base64,...". */
+export async function updateProfilePhoto(photoBase64: string): Promise<UserProfileResponse> {
+  const { data } = await apiClient.put<UserProfileResponse>('/api/users/me/photo', {
+    photoBase64,
+  });
   return data;
 }
 

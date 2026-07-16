@@ -13,8 +13,13 @@ const CATEGORIES: TransactionCategory[] = [
   'Food',
   'Transport',
   'Utilities',
+  'Rent',
+  'Fees',
   'Business',
   'Savings',
+  'Deposit',
+  'Transfer',
+  'Subscription',
   'Other',
 ];
 

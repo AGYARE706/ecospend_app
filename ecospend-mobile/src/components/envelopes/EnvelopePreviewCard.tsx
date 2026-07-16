@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Icon } from '../ui/icons';
+import { getCategoryVisual } from '../../constants/categories';
 import { fontSize, fontWeight, radius, spacing, useTheme, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
 import type { Envelope } from '../../types';
@@ -17,13 +19,11 @@ import EnvelopeProgressBar from './EnvelopeProgressBar';
  */
 export interface EnvelopePreviewCardProps {
   category: string;
-  emoji: string;
   monthlyLimit: number;
 }
 
 export default function EnvelopePreviewCard({
   category,
-  emoji,
   monthlyLimit,
 }: EnvelopePreviewCardProps) {
   const { colors } = useTheme();
@@ -31,7 +31,7 @@ export default function EnvelopePreviewCard({
   const previewEnvelope: Envelope = {
     id: 'preview',
     category: 'Other',
-    emoji,
+    emoji: '',
     monthlyLimit,
     currentSpend: 0,
     month: 1,
@@ -41,12 +41,18 @@ export default function EnvelopePreviewCard({
 
   const percent = getEnvelopePercent(previewEnvelope);
   const status = getEnvelopeStatus(previewEnvelope);
+  const visual = getCategoryVisual(category);
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.emojiCircle}>
-          <Text style={styles.emoji}>{emoji}</Text>
+          <Icon
+            name={visual.icon}
+            size={18}
+            color={colors[visual.tint]}
+            strokeWidth={1.9}
+          />
         </View>
         <View style={styles.headerText}>
           <Text style={styles.category}>{category}</Text>
@@ -90,9 +96,6 @@ const createStyles = (colors: ThemeColors) =>
     justifyContent: 'center',
     marginRight: spacing.sm,
     width: 40,
-  },
-  emoji: {
-    fontSize: fontSize.lg,
   },
   headerText: {
     flex: 1,

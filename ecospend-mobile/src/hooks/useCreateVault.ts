@@ -150,7 +150,7 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
 
     setIsLoading(true);
     try {
-      await createVault({
+      const created = await createVault({
         name: form.vaultName.trim(),
         targetAmount: parsedTarget,
         initialDeposit: parsedDeposit,
@@ -159,6 +159,7 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
 
       navigation.replace('VaultSuccess', {
         message: `"${form.vaultName.trim()}" vault created successfully!`,
+        vaultId: created.id,
       });
     } catch (error) {
       setErrors({

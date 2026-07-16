@@ -54,13 +54,15 @@ export default function App() {
           <AuthProvider>
             <WalletProvider>
               <FinanceProvider>
-                <GoalsProvider>
-                  <EnvelopesProvider>
+                {/* Envelopes must wrap Goals/Vault: their contribute flows
+                    call useEnvelopes() to refresh spend after an expense. */}
+                <EnvelopesProvider>
+                  <GoalsProvider>
                     <VaultProvider>
                       <ThemedApp />
                     </VaultProvider>
-                  </EnvelopesProvider>
-                </GoalsProvider>
+                  </GoalsProvider>
+                </EnvelopesProvider>
               </FinanceProvider>
             </WalletProvider>
           </AuthProvider>

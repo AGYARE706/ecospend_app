@@ -93,7 +93,7 @@ export default function AddBillScreen({ navigation }: AddBillScreenProps) {
         }
       />
 
-      <Card style={styles.card}>
+      <Card padding="sm" style={styles.card}>
         <AppInput
           label="Name"
           value={name}

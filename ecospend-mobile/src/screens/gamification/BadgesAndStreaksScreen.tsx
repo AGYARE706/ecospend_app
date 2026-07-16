@@ -38,7 +38,7 @@ export default function BadgesAndStreaksScreen() {
   } = useBadgesAndStreaks();
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable

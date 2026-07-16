@@ -25,6 +25,7 @@ import type { UserTier } from '../types';
 export interface AuthUser {
   name: string;
   phone: string;
+  photoUrl?: string | null;
 }
 
 export interface AuthSession {
@@ -42,6 +43,7 @@ interface AuthContextValue {
   signIn: (session: AuthSession) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
+  updatePhoto: (photoBase64: string) => Promise<void>;
   upgradeToPlus: () => Promise<boolean>;
 }
 
@@ -87,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (cancelled) {
             return;
           }
-          setUser({ name: profile.name, phone: profile.phone });
+          setUser({ name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl });
           setTier(
             profile.tier === 'PLUS' || profile.tier === 'PREMIUM' ? 'PLUS' : 'FREE',
           );
@@ -136,6 +138,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(true);
     // Push token registration is a no-op until expo-notifications supplies a token.
     void registerPushTokenIfAvailable(null).catch(() => undefined);
+
+    // The login/register response only carries name+phone. If this account
+    // already has a saved photo from an earlier session, fetch it now so it
+    // doesn't appear "lost" after logging back in.
+    try {
+      const profile = await usersApi.getMe();
+      const fullUser = { name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl };
+      setUser(fullUser);
+      await updateStoredUser(fullUser);
+    } catch {
+      // Keep the bare session.user already set — not fatal.
+    }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -155,7 +169,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const profile = await usersApi.updateMe({ name: updates.name.trim() });
-    const nextUser = { name: profile.name, phone: profile.phone };
+    const nextUser = { name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl };
+    setUser(nextUser);
+    await updateStoredUser(nextUser);
+  }, []);
+
+  const updatePhoto = useCallback(async (photoBase64: string) => {
+    const profile = await usersApi.updateProfilePhoto(photoBase64);
+    const nextUser = { name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl };
     setUser(nextUser);
     await updateStoredUser(nextUser);
   }, []);
@@ -167,7 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const upgradeToPlus = useCallback(async (): Promise<boolean> => {
     const response = await usersApi.upgradeToPlus();
-    const nextUser = response.user ?? user ?? { name: '', phone: '' };
+    // AuthResponse's user summary carries only name/phone — preserve the
+    // photo already held in state rather than silently dropping it.
+    const nextUser = {
+      ...(response.user ?? user ?? { name: '', phone: '' }),
+      photoUrl: user?.photoUrl,
+    };
     if (response.refreshToken) {
       await persistSession({
         accessToken: response.accessToken,
@@ -193,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       updateProfile,
+      updatePhoto,
       upgradeToPlus,
     }),
     [
@@ -202,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       tier,
       updateProfile,
+      updatePhoto,
       upgradeToPlus,
       user,
     ],

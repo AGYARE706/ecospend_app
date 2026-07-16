@@ -28,7 +28,8 @@ public class GatewayConfig {
                 .route("deny-internal", r -> r
                         .path(RoutePaths.VAULT_INTERNAL,
                                 RoutePaths.PAYMENTS_INTERNAL,
-                                RoutePaths.FINANCE_INTERNAL)
+                                RoutePaths.FINANCE_INTERNAL,
+                                RoutePaths.USERS_INTERNAL)
                         .filters(f -> f.filter((exchange, chain) -> {
                             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                             exchange.getResponse().getHeaders()
@@ -45,6 +46,7 @@ public class GatewayConfig {
                         .uri("http://identity-service:8081"))
                 .route("identity-users", r -> r
                         .path(RoutePaths.USERS)
+                        .and().not(p -> p.path(RoutePaths.USERS_INTERNAL))
                         .filters(f -> f.stripPrefix(1)
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
