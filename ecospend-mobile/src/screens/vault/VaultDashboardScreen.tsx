@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
@@ -8,9 +8,11 @@ import VaultEmptyState from '../../components/vault/VaultEmptyState';
 import VaultQuickActions from '../../components/vault/VaultQuickActions';
 import VaultSummaryCard from '../../components/vault/VaultSummaryCard';
 import { useVaultTheme } from '../../components/vault/vaultTheme';
+import CollapsedHeaderBar from '../../components/ui/CollapsedHeaderBar';
 import IconButton from '../../components/ui/IconButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useAuth } from '../../context/AuthContext';
+import { useCollapsingHeader } from '../../hooks/useCollapsingHeader';
 import { useVaultDashboard } from '../../hooks/useVaultDashboard';
 import { navigateApp, navigateToSubscription } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
@@ -53,14 +55,31 @@ export default function VaultDashboardScreen() {
     navigation.navigate('GroupVaultDashboard');
   };
 
+  const { onScroll, scrollEventThrottle, heroStyle, barStyle } = useCollapsingHeader();
+
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={[styles.screen, { backgroundColor: theme.background }]}>
-        <ScrollView
+        <CollapsedHeaderBar
+          title="My Vaults"
+          rightActions={
+            <IconButton
+              icon="add"
+              variant="soft"
+              size="sm"
+              onPress={openCreateVault}
+              accessibilityLabel="Create vault"
+            />
+          }
+          style={barStyle}
+        />
+        <Animated.ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
         >
-          <View style={styles.header}>
+          <Animated.View style={[styles.header, heroStyle]}>
             <View style={styles.headerTextBlock}>
               <Text style={[styles.title, { color: theme.text }]}>My Vaults</Text>
               <Text style={[styles.subtitle, { color: theme.textMuted }]}>
@@ -86,7 +105,7 @@ export default function VaultDashboardScreen() {
                 style={{ backgroundColor: theme.chipBg }}
               />
             </View>
-          </View>
+          </Animated.View>
 
           {!isEmpty ? (
             <>
@@ -120,7 +139,7 @@ export default function VaultDashboardScreen() {
           ) : (
             <VaultEmptyState theme={theme} onCreateVault={openCreateVault} />
           )}
-        </ScrollView>
+        </Animated.ScrollView>
 
         {!isEmpty ? <FloatingActionButton onPress={openCreateVault} /> : null}
       </View>
@@ -133,7 +152,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxxl + spacing.xxl,
+    // Clears the screen's own floating action button (60px + 24px offset).
+    paddingBottom: spacing.xxxl + spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },

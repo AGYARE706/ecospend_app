@@ -69,8 +69,21 @@ export function getNotificationTypeLabel(type: NotificationType): string {
       return 'Goal Completed';
     case 'weekly_insight':
       return 'Weekly Insight';
+    case 'group_vault_reminder':
+      return 'Contribution Due';
+    case 'group_vault_invite':
+      return 'Group Vault Invite';
     case 'group_vault_vote':
       return 'Group Vault Vote';
+    case 'group_vault_withdrawal_update':
+      return 'Withdrawal Update';
+    case 'group_vault_activity':
+      return 'Group Vault Activity';
+    case 'plus_upgrade':
+      return 'EcoSpend Plus';
+    case 'wallet_topup':
+      return 'Wallet Top-up';
+    case 'system':
     default:
       return 'Notification';
   }
@@ -123,6 +136,49 @@ export function getNotificationVisual(
         iconBackground: colors.purpleLight,
         accentColor: colors.purple,
       };
+    case 'group_vault_reminder':
+      return {
+        icon: 'alarm-outline',
+        iconColor: colors.warning,
+        iconBackground: colors.warningLight,
+        accentColor: colors.warning,
+      };
+    case 'group_vault_invite':
+      return {
+        icon: 'mail-open-outline',
+        iconColor: colors.purple,
+        iconBackground: colors.purpleLight,
+        accentColor: colors.purple,
+      };
+    case 'group_vault_withdrawal_update':
+      return {
+        icon: 'cash-outline',
+        iconColor: colors.blue,
+        iconBackground: colors.blueLight,
+        accentColor: colors.blue,
+      };
+    case 'group_vault_activity':
+      return {
+        icon: 'people-circle-outline',
+        iconColor: colors.purple,
+        iconBackground: colors.purpleLight,
+        accentColor: colors.purple,
+      };
+    case 'plus_upgrade':
+      return {
+        icon: 'star-outline',
+        iconColor: colors.primary,
+        iconBackground: colors.primaryBackground,
+        accentColor: colors.primary,
+      };
+    case 'wallet_topup':
+      return {
+        icon: 'wallet-outline',
+        iconColor: colors.success,
+        iconBackground: colors.successLight,
+        accentColor: colors.success,
+      };
+    case 'system':
     default:
       return {
         icon: 'notifications-outline',

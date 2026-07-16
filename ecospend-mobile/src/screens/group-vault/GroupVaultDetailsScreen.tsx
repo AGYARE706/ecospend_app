@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -7,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
+import InfoTooltip from '../../components/ui/InfoTooltip';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import {
   formatGroupVaultDate,
@@ -26,7 +28,12 @@ import {
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
-import type { GroupVaultMember, WithdrawalRequest } from '../../types/groupVault';
+import type {
+  GroupVaultMember,
+  MemberInstalment,
+  MemberPlanState,
+  WithdrawalRequest,
+} from '../../types/groupVault';
 
 type GroupVaultDetailsRouteProp = RouteProp<
   VaultStackParamList,
@@ -59,8 +66,12 @@ export default function GroupVaultDetailsScreen() {
     timeline,
   } = useGroupVaultDetails(params.groupVaultId);
 
+  const me = vault.members.find((member) => member.isMe);
+  const isAdmin = me?.role === 'admin';
+  const myPlan = me ? vault.memberPlans?.find((plan) => plan.userId === me.id) : undefined;
+
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -78,7 +89,26 @@ export default function GroupVaultDetailsScreen() {
             <Text style={styles.headerSub}>{vault.name}</Text>
           </View>
           <View style={styles.headerAction}>
-            <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
+            <InfoTooltip title="How this group vault works">
+              <View style={styles.tooltipList}>
+                <TooltipPoint
+                  icon="people-outline"
+                  text="Everyone contributes into their own balance inside the group — contributions are never pooled into one shared pot."
+                />
+                <TooltipPoint
+                  icon="calendar-outline"
+                  text={`Contributions follow an automatic ${vault.contributionFrequency === 'WEEKLY' ? 'weekly' : 'monthly'} plan (see the timeline below) — you'll get reminders as each date nears.`}
+                />
+                <TooltipPoint
+                  icon="checkmark-done-outline"
+                  text="A withdrawal only pays out once a strict majority of active members approve it."
+                />
+                <TooltipPoint
+                  icon="cash-outline"
+                  text="An approved withdrawal charges a 2% fee. Leaving the group early (before the maturity date) charges 5% instead — both only ever apply to your own balance, never anyone else's."
+                />
+              </View>
+            </InfoTooltip>
           </View>
         </View>
 
@@ -93,7 +123,6 @@ export default function GroupVaultDetailsScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.summaryCard}
           >
-            <View style={styles.summaryGlow} />
             <Text style={styles.summaryLabel}>Group Name</Text>
             <Text style={styles.summaryTitle}>{vault.name}</Text>
             <Text style={styles.summaryGoal}>{vault.goalName}</Text>
@@ -119,6 +148,34 @@ export default function GroupVaultDetailsScreen() {
             </View>
           </LinearGradient>
 
+          {/* Invite more members — admin-only, so membership growth stays
+              under the creator's control rather than any member being able
+              to circulate the join code. */}
+          {vault.inviteCode && isAdmin ? (
+            <View style={styles.inviteCard}>
+              <View style={styles.inviteTextBlock}>
+                <Text style={styles.inviteLabel}>Invite code</Text>
+                <Text style={styles.inviteCode}>{vault.inviteCode}</Text>
+              </View>
+              <Pressable
+                onPress={() =>
+                  void Share.share({
+                    message: `Join my EcoSpend group vault "${vault.name}" — use invite code ${vault.inviteCode} in the app to join.`,
+                  })
+                }
+                style={({ pressed }) => [
+                  styles.inviteShareBtn,
+                  pressed && styles.inviteShareBtnPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Share invite code"
+              >
+                <Ionicons name="share-outline" size={16} color={colors.primary} />
+                <Text style={styles.inviteShareText}>Share</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           {/* 2. Members Section */}
           <SectionHeader title="Members" icon="people-outline" />
           <View style={styles.card}>
@@ -127,38 +184,70 @@ export default function GroupVaultDetailsScreen() {
                 key={member.id}
                 member={member}
                 contribution={memberContributionMap[member.id] ?? 0}
+                planStatus={
+                  vault.memberPlans?.find((plan) => plan.userId === member.id)
+                    ?.status
+                }
                 isLast={index === vault.members.length - 1}
               />
             ))}
           </View>
 
-          {/* 3. Progress Visualization */}
-          <SectionHeader title="Progress Visualization" icon="stats-chart-outline" />
+          {/* My Instalments — which ones I've paid, ticked off at a glance */}
+          {myPlan && myPlan.instalments.length > 0 ? (
+            <>
+              <SectionHeader
+                title="My Instalments"
+                icon="checkmark-done-circle-outline"
+                right={
+                  <InfoTooltip
+                    title="My Instalments"
+                    body="Each square is one instalment in your contribution plan. It ticks green once your balance in this vault reaches that instalment's running total — you can pay ahead, so ticks can jump forward as soon as you contribute enough."
+                  />
+                }
+              />
+              <View style={styles.card}>
+                <InstalmentStrip instalments={myPlan.instalments} />
+              </View>
+            </>
+          ) : null}
+
+          {/* Quick links — real history and, for the admin, member management */}
+          <View style={styles.quickLinksRow}>
+            <QuickLinkRow
+              icon="time-outline"
+              label="Activity & History"
+              onPress={() =>
+                navigation.navigate('GroupVaultActivity', { groupVaultId: vault.id })
+              }
+              isLast={!isAdmin}
+            />
+            {isAdmin ? (
+              <QuickLinkRow
+                icon="people-circle-outline"
+                label="Manage Members"
+                onPress={() =>
+                  navigation.navigate('GroupVaultMembers', { groupVaultId: vault.id })
+                }
+                isLast
+              />
+            ) : null}
+          </View>
+
+          {/* 3. Funding Progress — one value, shown honestly as a progress bar */}
+          <SectionHeader title="Funding Progress" icon="stats-chart-outline" />
           <View style={styles.card}>
             <View style={styles.chartHeader}>
-              <Text style={styles.chartTitle}>Funding Path</Text>
+              <Text style={styles.chartTitle}>{progressPct}% funded</Text>
               <Text style={styles.chartMeta}>
                 {daysRemaining > 0 ? `${daysRemaining} days left` : 'Matured'}
               </Text>
             </View>
 
-            <View style={styles.chartArea}>
-              <View style={styles.chartYLabels}>
-                <Text style={styles.chartYText}>100%</Text>
-                <Text style={styles.chartYText}>75%</Text>
-                <Text style={styles.chartYText}>50%</Text>
-                <Text style={styles.chartYText}>25%</Text>
-                <Text style={styles.chartYText}>0%</Text>
-              </View>
-              <View style={styles.chartCanvas}>
-                <View style={styles.chartGrid} />
-                <View style={styles.chartGridMid} />
-                <View style={styles.chartGridLow} />
-                <View style={styles.chartLineContainer}>
-                  <View style={[styles.chartLineBar, { height: `${Math.max(8, progressPct)}%` }]} />
-                  <View style={[styles.chartDot, { bottom: `${Math.max(8, progressPct)}%` }]} />
-                </View>
-              </View>
+            <View style={styles.fundTrack}>
+              <View
+                style={[styles.fundFill, { width: `${Math.min(Math.max(progressPct, 1), 100)}%` }]}
+              />
             </View>
 
             <View style={styles.chartStatsRow}>
@@ -169,7 +258,16 @@ export default function GroupVaultDetailsScreen() {
           </View>
 
           {/* 4. Approval Requests */}
-          <SectionHeader title="Approval Requests" icon="hourglass-outline" />
+          <SectionHeader
+            title="Approval Requests"
+            icon="hourglass-outline"
+            right={
+              <InfoTooltip
+                title="Approval Requests"
+                body="A withdrawal request needs approval from more than half of active members to execute. If enough members reject it — making a majority impossible — it's automatically rejected. Once approved, a 2% fee is deducted and the net amount is paid to the requester's wallet."
+              />
+            }
+          />
           <View style={styles.card}>
             {pendingRequests.length === 0 ? (
               <Text style={styles.emptyText}>No active withdrawal approvals right now.</Text>
@@ -239,9 +337,11 @@ export default function GroupVaultDetailsScreen() {
 function SectionHeader({
   title,
   icon,
+  right,
 }: {
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
+  right?: ReactNode;
 }) {
   const sectionStyles = useThemedStyles(createSectionStyles);
   const { colors } = useTheme();
@@ -249,21 +349,81 @@ function SectionHeader({
     <View style={sectionStyles.row}>
       <Ionicons name={icon} size={15} color={colors.primary} />
       <Text style={sectionStyles.title}>{title}</Text>
+      {right ? <View style={sectionStyles.right}>{right}</View> : null}
     </View>
   );
 }
 
+function TooltipPoint({
+  icon,
+  text,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+}) {
+  const pointStyles = useThemedStyles(createTooltipPointStyles);
+  const { colors } = useTheme();
+  return (
+    <View style={pointStyles.row}>
+      <Ionicons name={icon} size={16} color={colors.primary} style={pointStyles.icon} />
+      <Text style={pointStyles.text}>{text}</Text>
+    </View>
+  );
+}
+
+const createTooltipPointStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    row: {
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+      marginBottom: spacing.md,
+    },
+    icon: {
+      marginRight: spacing.sm,
+      marginTop: 2,
+    },
+    text: {
+      color: colors.textSecondary,
+      flex: 1,
+      fontSize: fontSize.sm,
+      lineHeight: 20,
+    },
+  });
+
 function MemberRow({
   member,
   contribution,
+  planStatus,
   isLast,
 }: {
   member: GroupVaultMember;
   contribution: number;
+  planStatus?: MemberPlanState;
   isLast: boolean;
 }) {
   const memberStyles = useThemedStyles(createMemberStyles);
+  const { colors } = useTheme();
   const isAdmin = member.role === 'admin';
+
+  // Plan status beats the generic role pill: members care whether
+  // everyone is keeping up with the contribution schedule.
+  const statusLabel =
+    planStatus === 'COMPLETED'
+      ? 'Completed'
+      : planStatus === 'BEHIND'
+        ? 'Behind'
+        : planStatus === 'ON_TRACK'
+          ? 'On track'
+          : isAdmin
+            ? 'Lead'
+            : 'Active';
+  const statusColor =
+    planStatus === 'COMPLETED'
+      ? colors.success
+      : planStatus === 'BEHIND'
+        ? colors.warning
+        : colors.primary;
+
   return (
     <View style={[memberStyles.row, isLast && memberStyles.rowLast]}>
       <View style={[memberStyles.avatar, isAdmin && memberStyles.avatarAdmin]}>
@@ -277,9 +437,9 @@ function MemberRow({
       </View>
       <View style={memberStyles.right}>
         <Text style={memberStyles.amount}>{ghs(contribution)}</Text>
-        <View style={[memberStyles.statusPill, isAdmin && memberStyles.statusPillAdmin]}>
-          <Text style={[memberStyles.statusText, isAdmin && memberStyles.statusTextAdmin]}>
-            {isAdmin ? 'Lead' : 'Active'}
+        <View style={[memberStyles.statusPill, { backgroundColor: `${statusColor}1A` }]}>
+          <Text style={[memberStyles.statusText, { color: statusColor }]}>
+            {statusLabel}
           </Text>
         </View>
       </View>
@@ -354,18 +514,22 @@ function TimelineItem({
 }) {
   const timelineStyles = useThemedStyles(createTimelineStyles);
   const { colors } = useTheme();
-  const icon =
+  const icon: keyof typeof Ionicons.glyphMap =
     item.kind === 'created'
       ? 'flag-outline'
-      : item.kind === 'milestone'
-        ? 'sparkles-outline'
-        : 'add-circle-outline';
+      : item.kind === 'past'
+        ? 'checkmark-circle-outline'
+        : item.kind === 'next'
+          ? 'notifications-outline'
+          : 'time-outline';
   const tone =
-    item.kind === 'milestone'
-      ? colors.blue
-      : item.kind === 'created'
-        ? colors.warning
-        : colors.primary;
+    item.kind === 'created'
+      ? colors.warning
+      : item.kind === 'past'
+        ? colors.success
+        : item.kind === 'next'
+          ? colors.primary
+          : colors.blue;
 
   return (
     <View style={timelineStyles.row}>
@@ -377,17 +541,126 @@ function TimelineItem({
       </View>
       <View style={timelineStyles.content}>
         <View style={timelineStyles.top}>
-          <Text style={timelineStyles.name}>{item.memberName}</Text>
+          <Text style={timelineStyles.name}>{item.title}</Text>
           <Text style={timelineStyles.date}>{formatGroupVaultDate(item.date)}</Text>
         </View>
         {item.note ? <Text style={timelineStyles.note}>{item.note}</Text> : null}
-        {item.amount > 0 ? (
-          <Text style={timelineStyles.amount}>+ {ghs(item.amount)}</Text>
-        ) : null}
       </View>
     </View>
   );
 }
+
+function InstalmentStrip({ instalments }: { instalments: MemberInstalment[] }) {
+  const stripStyles = useThemedStyles(createInstalmentStripStyles);
+  const { colors } = useTheme();
+  const paidCount = instalments.filter((item) => item.paid).length;
+
+  return (
+    <View>
+      <Text style={stripStyles.summary}>
+        {paidCount} of {instalments.length} completed
+      </Text>
+      <View style={stripStyles.grid}>
+        {instalments.map((item) => (
+          <View
+            key={item.index}
+            style={[stripStyles.slot, item.paid && stripStyles.slotPaid]}
+          >
+            {item.paid ? (
+              <Ionicons name="checkmark" size={14} color={colors.white} />
+            ) : (
+              <Text style={stripStyles.slotIndex}>{item.index}</Text>
+            )}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function QuickLinkRow({
+  icon,
+  label,
+  onPress,
+  isLast,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  isLast?: boolean;
+}) {
+  const rowStyles = useThemedStyles(createQuickLinkStyles);
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        rowStyles.row,
+        !isLast && rowStyles.rowBorder,
+        pressed && rowStyles.rowPressed,
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Text style={rowStyles.label}>{label}</Text>
+      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+    </Pressable>
+  );
+}
+
+const createInstalmentStripStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    summary: {
+      color: colors.textDark,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      marginBottom: spacing.sm,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+    },
+    slot: {
+      alignItems: 'center',
+      backgroundColor: colors.chipBg,
+      borderRadius: radius.md,
+      height: 28,
+      justifyContent: 'center',
+      width: 28,
+    },
+    slotPaid: {
+      backgroundColor: colors.success,
+    },
+    slotIndex: {
+      color: colors.textMuted,
+      fontSize: 10,
+      fontWeight: fontWeight.semibold,
+    },
+  });
+
+const createQuickLinkStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    row: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    rowBorder: {
+      borderBottomColor: colors.divider,
+      borderBottomWidth: 1,
+    },
+    rowPressed: {
+      opacity: 0.85,
+    },
+    label: {
+      color: colors.textDark,
+      flex: 1,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+    },
+  });
 
 const createSectionStyles = (colors: ThemeColors) =>
   StyleSheet.create({
@@ -404,6 +677,9 @@ const createSectionStyles = (colors: ThemeColors) =>
     letterSpacing: 0.5,
     marginLeft: spacing.xs,
     textTransform: 'uppercase',
+  },
+  right: {
+    marginLeft: 'auto',
   },
 });
 
@@ -684,6 +960,52 @@ const createStyles = (colors: ThemeColors) =>
     padding: spacing.lg,
     ...shadowMd,
   },
+  tooltipList: {
+    paddingTop: spacing.xs,
+  },
+  inviteCard: {
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    ...shadowSm,
+  },
+  inviteTextBlock: {
+    flex: 1,
+  },
+  inviteLabel: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  inviteCode: {
+    color: colors.textDark,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 2,
+  },
+  inviteShareBtn: {
+    alignItems: 'center',
+    backgroundColor: colors.primaryBackground,
+    borderRadius: radius.full,
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  inviteShareBtnPressed: {
+    opacity: 0.85,
+  },
+  inviteShareText: {
+    color: colors.primary,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    marginLeft: spacing.xs,
+  },
   summaryGlow: {
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: radius.full,
@@ -771,6 +1093,16 @@ const createStyles = (colors: ThemeColors) =>
     padding: spacing.md,
     ...shadowSm,
   },
+  quickLinksRow: {
+    backgroundColor: colors.cardBackground,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+    overflow: 'hidden',
+    ...shadowSm,
+  },
   chartHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -853,6 +1185,18 @@ const createStyles = (colors: ThemeColors) =>
     height: 12,
     position: 'absolute',
     width: 12,
+  },
+  fundTrack: {
+    backgroundColor: colors.divider,
+    borderRadius: radius.full,
+    height: 10,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+  },
+  fundFill: {
+    backgroundColor: colors.chart1,
+    borderRadius: radius.full,
+    height: '100%',
   },
   chartStatsRow: {
     flexDirection: 'row',

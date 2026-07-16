@@ -17,7 +17,7 @@ export interface SavingsRateRingProps {
 
 const CIRCUMFERENCE = 2 * Math.PI * 45;
 
-export default function SavingsRateRing({ rate, size = 72 }: SavingsRateRingProps) {
+export default function SavingsRateRing({ rate, size = 68 }: SavingsRateRingProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const clampedRate = Math.max(0, Math.min(100, rate));
@@ -30,16 +30,16 @@ export default function SavingsRateRing({ rate, size = 72 }: SavingsRateRingProp
           cx="50"
           cy="50"
           r="45"
-          stroke={colors.chipBg}
-          strokeWidth="10"
+          stroke={colors.divider}
+          strokeWidth="7"
           fill="none"
         />
         <Circle
           cx="50"
           cy="50"
           r="45"
-          stroke={colors.primary}
-          strokeWidth="10"
+          stroke={colors.chart1}
+          strokeWidth="7"
           fill="none"
           strokeDasharray={strokeDash}
           strokeLinecap="round"

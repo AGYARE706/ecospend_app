@@ -19,6 +19,10 @@ export async function createGroupVault(payload: {
   targetAmount: number;
   lockedUntil: string;
   maxMembers: number;
+  /** WEEKLY | MONTHLY — cadence of the automatic contribution plan. */
+  contributionFrequency: string;
+  /** Phone numbers to invite immediately after creation. */
+  memberPhones?: string[];
 }): Promise<GroupVault> {
   const { data } = await apiClient.post('/api/vault/groups', payload);
   return mapGroupVault(data);

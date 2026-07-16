@@ -92,7 +92,7 @@ export default function WithdrawFromGoalScreen() {
           </View>
 
           <View style={styles.section}>
-            <Card variant="default" padding="lg" style={styles.goalCard}>
+            <Card variant="default" padding="sm" style={styles.goalCard}>
               <Text style={[typography.overline, styles.goalEyebrow]} numberOfLines={1}>
                 {goal.name.toUpperCase()}
               </Text>

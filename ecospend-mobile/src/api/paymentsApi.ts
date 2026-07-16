@@ -57,11 +57,16 @@ export async function verifyDeposit(reference: string): Promise<DepositView> {
   return data;
 }
 
-/** Sends money from the wallet to an external MoMo number via Paystack. */
+/**
+ * Sends money from the wallet to an external MoMo number via Paystack.
+ * The spending category lands on the auto-recorded expense so budget
+ * analysis reflects what the money was spent on.
+ */
 export async function sendMoney(payload: {
   amount: number;
   momoNumber: string;
   momoProvider: string;
+  category: string;
 }): Promise<PaymentRecordView> {
   const { data } = await apiClient.post<PaymentRecordView>(
     '/api/payments/withdrawals',

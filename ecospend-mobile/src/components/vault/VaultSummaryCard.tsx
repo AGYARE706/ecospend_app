@@ -34,7 +34,6 @@ export default function VaultSummaryCard({
       end={{ x: 1, y: 1 }}
       style={styles.card}
     >
-      <View style={styles.glowOrb} />
 
       <View style={styles.headerRow}>
         <View style={styles.iconBadge}>

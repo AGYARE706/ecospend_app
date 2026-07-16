@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import { useAuth } from '../context/AuthContext';
+import { useEnvelopes } from '../context/EnvelopesContext';
 import { useFinance } from '../context/FinanceContext';
 import { useTheme } from '../context/ThemeContext';
 import { useWallet } from '../context/WalletContext';
@@ -31,6 +32,7 @@ export function useSubscription() {
   const { tier, upgradeToPlus } = useAuth();
   const { refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
   const { colors } = useTheme();
   const [isUpgrading, setIsUpgrading] = useState(false);
 
@@ -131,6 +133,7 @@ export function useSubscription() {
         // the expense — refresh both so the UI reflects it immediately.
         void refreshWallet();
         void refreshTransactions();
+        void refreshEnvelopes();
         Alert.alert(
           'Welcome to Plus!',
           `GHS ${PLUS_ANNUAL_PRICE.toFixed(2)} was paid from your wallet.`,
@@ -146,7 +149,14 @@ export function useSubscription() {
     } finally {
       setIsUpgrading(false);
     }
-  }, [isPlus, isUpgrading, refreshTransactions, refreshWallet, upgradeToPlus]);
+  }, [
+    isPlus,
+    isUpgrading,
+    refreshEnvelopes,
+    refreshTransactions,
+    refreshWallet,
+    upgradeToPlus,
+  ]);
 
   return {
     tier,

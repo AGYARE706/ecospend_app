@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
@@ -47,9 +48,11 @@ export function useNotifications(navigation: NotificationsNavigationProp) {
     }
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.read).length,
@@ -162,6 +165,24 @@ function navigateFromAction(
               requestId: action.requestId,
             },
           },
+        });
+        break;
+      case 'group_vault_details':
+        navigation.navigate('MainTabs', {
+          screen: 'VaultTab',
+          params: {
+            screen: 'GroupVaultDetails',
+            params: { groupVaultId: action.groupVaultId },
+          },
+        });
+        break;
+      case 'join_group_vault':
+        navigation.navigate('JoinGroupVault', { inviteCode: action.inviteCode });
+        break;
+      case 'subscription':
+        navigation.navigate('MainTabs', {
+          screen: 'ProfileTab',
+          params: { screen: 'Subscription' },
         });
         break;
       case 'none':

@@ -1,5 +1,6 @@
 package com.ecospend.vault.services;
 
+import com.ecospend.vault.client.NotificationClient;
 import com.ecospend.vault.client.PaymentClient;
 import com.ecospend.vault.config.VaultTierPolicy;
 import com.ecospend.vault.dto.AmountRequest;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -27,6 +29,7 @@ public class VaultService {
     private final VaultTransactionRepository transactionRepository;
     private final VaultTierPolicy vaultTierPolicy;
     private final PaymentClient paymentClient;
+    private final NotificationClient notificationClient;
 
     @Transactional
     public Vault create(UUID userId, String tier, CreateVaultRequest request) {
@@ -91,6 +94,12 @@ public class VaultService {
         // the whole withdrawal back.
         paymentClient.creditWallet(userId, payout, "ecospend-vw-" + UUID.randomUUID(),
                 "Vault withdrawal — " + vault.getName() + " (net of 2% fee)");
+
+        notificationClient.send(userId, "Vault matured",
+                String.format("\"%s\" has matured — GHS %.2f was withdrawn to your wallet.",
+                        vault.getName(), payout),
+                "VAULT_MATURED", Map.of("vaultId", vault.getId().toString()));
+
         return saved;
     }
 

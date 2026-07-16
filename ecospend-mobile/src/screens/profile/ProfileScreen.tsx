@@ -1,12 +1,15 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import AvatarInitials from '../../components/finance/AvatarInitials';
 import { Icon } from '../../components/ui/icons';
 import type { IconName } from '../../components/ui/icons';
+import CollapsedHeaderBar from '../../components/ui/CollapsedHeaderBar';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useAuth } from '../../context/AuthContext';
+import { useCollapsingHeader } from '../../hooks/useCollapsingHeader';
 import { useProfile } from '../../hooks/useProfile';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
@@ -57,37 +60,28 @@ const appearanceOptions: Array<{
   { value: 'system', label: 'System', icon: 'device' },
 ];
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
-}
-
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<ProfileNavigationProp>();
   const { signOut } = useAuth();
-  const { name, formattedPhone, isPlus, stats } = useProfile();
+  const { name, formattedPhone, photoUrl, isPlus, stats } = useProfile();
+  const { onScroll, scrollEventThrottle, heroStyle, barStyle } = useCollapsingHeader();
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
-        <ScrollView
+        <CollapsedHeaderBar title="Profile" style={barStyle} />
+        <Animated.ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
         >
           {/* Profile Header */}
-          <View style={styles.headerCard}>
+          <Animated.View style={[styles.headerCard, heroStyle]}>
             <View style={styles.avatarRing}>
-              <LinearGradient
-                colors={[colors.primaryDark, colors.primary]}
-                style={styles.avatar}
-              >
-                <Text style={styles.avatarText}>{getInitials(name)}</Text>
-              </LinearGradient>
+              <AvatarInitials name={name} photoUrl={photoUrl} size={84} />
               <View style={styles.avatarBadge}>
                 <Icon name="checkmark" size={12} color={colors.white} />
               </View>
@@ -98,7 +92,7 @@ export default function ProfileScreen() {
               <Icon name="call-outline" size={14} color={colors.textMuted} />
               <Text style={styles.phone} numberOfLines={1}>{formattedPhone}</Text>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Membership Card */}
           {isPlus ? (
@@ -108,7 +102,6 @@ export default function ProfileScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.membershipCard}
             >
-              <View style={styles.membershipGlow} />
               <View style={styles.membershipTop}>
                 <View style={styles.membershipIconRing}>
                   <Icon name="star" size={18} color={colors.white} />
@@ -213,7 +206,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.bottomSpacer} />
-        </ScrollView>
+        </Animated.ScrollView>
       </View>
     </ScreenWrapper>
   );
@@ -474,7 +467,7 @@ const createStyles = (colors: ThemeColors) =>
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
@@ -493,19 +486,6 @@ const createStyles = (colors: ThemeColors) =>
   avatarRing: {
     marginBottom: spacing.md,
     position: 'relative',
-  },
-  avatar: {
-    alignItems: 'center',
-    borderRadius: radius.full,
-    height: 84,
-    justifyContent: 'center',
-    width: 84,
-    ...shadowSm,
-  },
-  avatarText: {
-    color: colors.white,
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
   },
   avatarBadge: {
     alignItems: 'center',
@@ -670,7 +650,7 @@ const createStyles = (colors: ThemeColors) =>
     ...shadowSm,
   },
   logoutSection: {
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
   logoutButton: {
     alignItems: 'center',
@@ -699,6 +679,6 @@ const createStyles = (colors: ThemeColors) =>
     textAlign: 'center',
   },
   bottomSpacer: {
-    height: spacing.lg,
+    height: spacing.sm,
   },
 });

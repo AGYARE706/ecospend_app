@@ -48,6 +48,10 @@ public class User {
     @Column(name = "push_token")
     private String pushToken;
 
+    /** Data URI (base64), set via PUT /users/me/photo. Null until uploaded. */
+    @Column(name = "profile_photo", columnDefinition = "TEXT")
+    private String profilePhoto;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean isActive = true;

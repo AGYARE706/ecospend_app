@@ -1,6 +1,7 @@
 package com.ecospend.expense.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -32,6 +33,16 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .orElse("Validation failed");
         return error("VALIDATION_ERROR", message, 400);
+    }
+
+    /**
+     * Transactions have no POST/PUT anymore (auto-recorded, immutable) —
+     * report the removed methods honestly instead of a generic 500.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public Map<String, Object> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return error("METHOD_NOT_ALLOWED", ex.getMessage(), 405);
     }
 
     @ExceptionHandler(Exception.class)

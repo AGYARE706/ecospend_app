@@ -93,7 +93,7 @@ export default function ContributeSheet({
       {willComplete ? (
         <View style={styles.completeBanner}>
           <Text style={styles.completeBannerText}>
-            🎉 This will complete your goal!
+            This will complete your goal!
           </Text>
         </View>
       ) : null}

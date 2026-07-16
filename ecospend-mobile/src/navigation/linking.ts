@@ -8,7 +8,6 @@ export const linking: LinkingOptions<AppStackParamList> = {
     screens: {
       Notifications: 'notifications',
       WeeklyInsights: 'insights',
-      AddTransaction: 'add-transaction',
       BudgetEnvelopes: 'budget',
       TopUpWallet: 'wallet/top-up',
       SendMoney: 'wallet/send',
@@ -29,7 +28,6 @@ export const linking: LinkingOptions<AppStackParamList> = {
             screens: {
               TransactionsList: 'transactions',
               TransactionDetails: 'transactions/:transactionId',
-              EditTransaction: 'transactions/:transactionId/edit',
             },
           },
           GoalsTab: {

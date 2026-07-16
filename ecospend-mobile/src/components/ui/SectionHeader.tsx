@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   fontSize,
   fontWeight,
-  radius,
   spacing,
   typography,
   useTheme,
@@ -36,9 +35,7 @@ export default function SectionHeader({
     <View style={styles.container}>
       <View style={styles.titleRow}>
         {icon ? (
-          <View style={styles.iconBadge}>
-            <Icon name={icon} size={16} color={colors.primary} />
-          </View>
+          <Icon name={icon} size={17} color={colors.textMuted} strokeWidth={1.9} />
         ) : null}
         <Text style={styles.title}>{title}</Text>
       </View>
@@ -62,22 +59,13 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    marginTop: spacing.sm,
+    marginBottom: spacing.smd,
   },
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
     flex: 1,
-    gap: spacing.smd,
-  },
-  iconBadge: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryBackground,
-    borderRadius: radius.md,
-    height: 30,
-    justifyContent: 'center',
-    width: 30,
+    gap: spacing.sm,
   },
   title: {
     ...typography.subheading,

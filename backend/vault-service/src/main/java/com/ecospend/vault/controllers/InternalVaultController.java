@@ -5,6 +5,7 @@ import com.ecospend.vault.dto.GroupVaultView;
 import com.ecospend.vault.dto.InternalDepositRequest;
 import com.ecospend.vault.dto.InternalGroupDepositRequest;
 import com.ecospend.vault.models.Vault;
+import com.ecospend.vault.services.ContributionReminderService;
 import com.ecospend.vault.services.GroupVaultService;
 import com.ecospend.vault.services.VaultService;
 import jakarta.validation.Valid;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 /**
  * Internal (service-to-service) vault operations. The API Gateway denies
@@ -28,6 +31,7 @@ public class InternalVaultController {
 
     private final VaultService vaultService;
     private final GroupVaultService groupVaultService;
+    private final ContributionReminderService contributionReminderService;
 
     @PostMapping("/deposits")
     public ResponseEntity<Vault> creditVerifiedDeposit(
@@ -52,5 +56,14 @@ public class InternalVaultController {
                 request.groupId(),
                 new AmountRequest(request.amount(), "Wallet contribution " + request.reference()));
         return ResponseEntity.ok(view);
+    }
+
+    /**
+     * Manually triggers the daily contribution-reminder sweep — the cron
+     * runs at 08:00, so demos and tests need a way to fire it on demand.
+     */
+    @PostMapping("/run-reminders")
+    public ResponseEntity<Map<String, Integer>> runReminders() {
+        return ResponseEntity.ok(Map.of("sent", contributionReminderService.run()));
     }
 }

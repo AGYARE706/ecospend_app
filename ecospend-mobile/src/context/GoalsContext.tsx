@@ -12,6 +12,7 @@ import {
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as goalsApi from '../api/goalsApi';
 import { useAuth } from './AuthContext';
+import { useEnvelopes } from './EnvelopesContext';
 import { useFinance } from './FinanceContext';
 import { useWallet } from './WalletContext';
 import type {
@@ -51,6 +52,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const { refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<GoalsTabMode>('active');
@@ -150,6 +152,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         );
         void refreshWallet();
         void refreshTransactions();
+        void refreshEnvelopes();
         showToast(`GHS ${amount.toFixed(2)} moved from wallet to ${updated.name}!`);
         return true;
       } catch (error) {
@@ -159,7 +162,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         setIsContributing(false);
       }
     },
-    [refreshTransactions, refreshWallet, showToast],
+    [refreshEnvelopes, refreshTransactions, refreshWallet, showToast],
   );
 
   const withdrawFromGoal = useCallback(

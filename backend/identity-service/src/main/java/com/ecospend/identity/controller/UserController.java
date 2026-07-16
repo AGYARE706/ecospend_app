@@ -2,6 +2,7 @@ package com.ecospend.identity.controller;
 
 import com.ecospend.identity.dto.AuthResponse;
 import com.ecospend.identity.dto.PushTokenRequest;
+import com.ecospend.identity.dto.UpdateProfilePhotoRequest;
 import com.ecospend.identity.dto.UpdateUserProfileRequest;
 import com.ecospend.identity.dto.UserProfileResponse;
 import com.ecospend.identity.service.UserService;
@@ -30,6 +31,13 @@ public class UserController {
             @RequestHeader("X-User-Id") UUID userId,
             @Valid @RequestBody UpdateUserProfileRequest request) {
         return ResponseEntity.ok(userService.updateMe(userId, request));
+    }
+
+    @PutMapping("/me/photo")
+    public ResponseEntity<UserProfileResponse> updatePhoto(
+            @RequestHeader("X-User-Id") UUID userId,
+            @Valid @RequestBody UpdateProfilePhotoRequest request) {
+        return ResponseEntity.ok(userService.updatePhoto(userId, request.photoBase64()));
     }
 
     @PutMapping("/push-token")

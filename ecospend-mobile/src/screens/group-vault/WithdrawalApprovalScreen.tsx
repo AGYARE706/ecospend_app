@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useMemo, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
@@ -8,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
+import InfoTooltip from '../../components/ui/InfoTooltip';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useVaults } from '../../context/VaultContext';
 import type { VaultStackParamList } from '../../navigation/types';
@@ -45,6 +47,9 @@ function ghs(amount: number): string {
     maximumFractionDigits: 2,
   }).format(amount)}`;
 }
+
+/** Every approved group withdrawal is charged this fee, win or lose maturity. */
+const WITHDRAWAL_FEE_RATE = 0.02;
 
 function buildMemberVotes(
   members: GroupVaultMember[],
@@ -117,6 +122,8 @@ export default function WithdrawalApprovalScreen() {
   const requiredVotes = request.requiredVotes;
   const votesRemaining = Math.max(0, requiredVotes - votesFor - votesAgainst);
   const approved = votesFor >= requiredVotes;
+  const feeAmount = request.amount * WITHDRAWAL_FEE_RATE;
+  const netPayout = request.amount - feeAmount;
 
   const memberVotes = useMemo(() => {
     const adjustedRequest: WithdrawalRequest = {
@@ -143,7 +150,7 @@ export default function WithdrawalApprovalScreen() {
   };
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -170,7 +177,6 @@ export default function WithdrawalApprovalScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.requestCard}
           >
-            <View style={styles.requestGlow} />
             <Text style={styles.requestLabel}>Request Summary</Text>
             <Text style={styles.requestAmount}>{ghs(request.amount)}</Text>
 
@@ -183,10 +189,24 @@ export default function WithdrawalApprovalScreen() {
               <Text style={styles.requestReasonLabel}>Reason</Text>
               <Text style={styles.requestReason}>{request.reason}</Text>
             </View>
+
+            <View style={styles.feeRow}>
+              <Text style={styles.feeRowLabel}>If approved: 2% fee (−{ghs(feeAmount)})</Text>
+              <Text style={styles.feeRowValue}>{ghs(netPayout)} net to requester</Text>
+            </View>
           </LinearGradient>
 
           {/* Approval Status Card */}
-          <SectionHeader title="Approval Status" icon="stats-chart-outline" />
+          <SectionHeader
+            title="Approval Status"
+            icon="stats-chart-outline"
+            right={
+              <InfoTooltip
+                title="How voting works"
+                body="More than half of the group's active members must approve for a withdrawal to execute automatically — there's no separate confirmation step. If enough members reject it that a majority becomes impossible, the request is automatically rejected instead. A 2% fee is always deducted from the requester's own balance when a withdrawal executes; it never touches other members' funds."
+              />
+            }
+          />
           <View style={styles.card}>
             <View style={styles.statusGrid}>
               <StatusMetric
@@ -289,9 +309,11 @@ export default function WithdrawalApprovalScreen() {
 function SectionHeader({
   title,
   icon,
+  right,
 }: {
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
+  right?: ReactNode;
 }) {
   const sectionStyles = useThemedStyles(createSectionStyles);
   const { colors } = useTheme();
@@ -299,6 +321,7 @@ function SectionHeader({
     <View style={sectionStyles.row}>
       <Ionicons name={icon} size={15} color={colors.primary} />
       <Text style={sectionStyles.title}>{title}</Text>
+      {right ? <View style={sectionStyles.right}>{right}</View> : null}
     </View>
   );
 }
@@ -406,6 +429,9 @@ const createSectionStyles = (colors: ThemeColors) =>
     letterSpacing: 0.5,
     marginLeft: spacing.xs,
     textTransform: 'uppercase',
+  },
+  right: {
+    marginLeft: 'auto',
   },
 });
 
@@ -602,6 +628,21 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.white,
     fontSize: fontSize.sm,
     lineHeight: 20,
+  },
+  feeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+  },
+  feeRowLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: fontSize.xs,
+  },
+  feeRowValue: {
+    color: colors.white,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
   },
   card: {
     backgroundColor: colors.cardBackground,

@@ -16,7 +16,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const tabIcons: Record<keyof TabParamList, IconName> = {
   DashboardTab: 'home',
   TransactionsTab: 'list',
-  GoalsTab: 'flag',
+  GoalsTab: 'target',
   VaultTab: 'lock',
   ProfileTab: 'user',
 };
@@ -48,13 +48,15 @@ export default function TabNavigator() {
           elevation: 0,
           shadowOpacity: 0,
         },
+        // Always render the outline variant: swapping the SVG tree between
+        // outline and solid on focus intermittently paints black on
+        // Android. Focus is signalled by color, weight and the pill.
         tabBarIcon: ({ color, focused, size }) => (
           <Icon
             name={tabIcons[route.name]}
             size={size}
             color={color}
-            filled={focused}
-            strokeWidth={focused ? 2.2 : 1.7}
+            strokeWidth={focused ? 2.4 : 1.8}
           />
         ),
         tabBarLabel: tabLabels[route.name],

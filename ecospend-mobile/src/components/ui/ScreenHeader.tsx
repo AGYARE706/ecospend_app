@@ -15,6 +15,7 @@ export interface ScreenHeaderProps {
   onBackPress?: () => void;
   backVariant?: 'back' | 'close';
   onNotificationPress?: () => void;
+  notificationBadgeCount?: number;
   style?: ViewStyle;
 }
 
@@ -25,6 +26,7 @@ export default function ScreenHeader({
   onBackPress,
   backVariant = 'back',
   onNotificationPress,
+  notificationBadgeCount,
   style,
 }: ScreenHeaderProps) {
   const styles = useThemedStyles(createStyles);
@@ -55,6 +57,7 @@ export default function ScreenHeader({
               variant="soft"
               onPress={onNotificationPress}
               accessibilityLabel="Notifications"
+              badgeCount={notificationBadgeCount}
             />
           ) : null}
           {right}

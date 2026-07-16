@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import AddEnvelopeSheet from '../../components/envelopes/AddEnvelopeSheet';
 import BudgetHeroCard from '../../components/envelopes/BudgetHeroCard';
+import ExpectedIncomeCard from '../../components/envelopes/ExpectedIncomeCard';
 import EditEnvelopeSheet from '../../components/envelopes/EditEnvelopeSheet';
 import EnvelopeCard from '../../components/envelopes/EnvelopeCard';
 import EnvelopeFilterRow from '../../components/envelopes/EnvelopeFilterRow';
@@ -43,7 +44,17 @@ export default function BudgetEnvelopesScreen() {
     toastMessage,
     isSaving,
     hasCategoryThisMonth,
+    refreshEnvelopes,
   } = useBudgetEnvelopes();
+
+  // currentSpend changes server-side any time the user spends in a
+  // tracked category elsewhere in the app — refetch on every visit so
+  // this screen never shows a stale spend total.
+  useFocusEffect(
+    useCallback(() => {
+      void refreshEnvelopes();
+    }, [refreshEnvelopes]),
+  );
 
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [editEnvelopeState, setEditEnvelopeState] = useState<Envelope | null>(null);
@@ -57,8 +68,8 @@ export default function BudgetEnvelopesScreen() {
     () => (
       <View style={styles.headerContainer}>
         <ScreenHeader
-          title="Budget Envelopes"
-          subtitle="Track monthly spending limits"
+          title="Monthly Budget"
+          subtitle="Plan expected income and spending limits"
           onBackPress={() => navigation.goBack()}
           right={
             <View style={styles.monthNav}>
@@ -83,6 +94,8 @@ export default function BudgetEnvelopesScreen() {
             overallPercent={overallPercent}
           />
         )}
+
+        {loading ? null : <ExpectedIncomeCard />}
 
         <EnvelopeFilterRow
           activeFilter={activeFilter}
@@ -139,7 +152,7 @@ export default function BudgetEnvelopesScreen() {
         ListEmptyComponent={
           loading ? null : (
             <EmptyState
-              emoji="💰"
+              icon="pie-chart"
               title={emptyMessage.title}
               subtitle={emptyMessage.subtitle}
             />

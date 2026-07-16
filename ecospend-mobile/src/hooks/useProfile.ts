@@ -5,6 +5,7 @@ import { useGoals } from '../context/GoalsContext';
 import { useVaults } from '../context/VaultContext';
 import { mockUser } from '../data/mock/mockData';
 import type { UserTier } from '../types';
+import { capitalizeWords } from '../utils/strings';
 
 export interface ProfileStats {
   goalsCompleted: number;
@@ -16,6 +17,7 @@ export interface ProfileData {
   name: string;
   phone: string;
   formattedPhone: string;
+  photoUrl?: string | null;
   tier: UserTier;
   isPlus: boolean;
   stats: ProfileStats;
@@ -43,13 +45,14 @@ export function useProfile(): ProfileData {
   const { vaults, groupVaults } = useVaults();
 
   return useMemo(() => {
-    const name = user?.name ?? mockUser.name;
+    const name = capitalizeWords(user?.name ?? mockUser.name);
     const phone = user?.phone ?? mockUser.phone;
 
     return {
       name,
       phone,
       formattedPhone: formatPhone(phone),
+      photoUrl: user?.photoUrl,
       tier,
       isPlus: tier === 'PLUS',
       stats: {
@@ -64,6 +67,7 @@ export function useProfile(): ProfileData {
     tier,
     user?.name,
     user?.phone,
+    user?.photoUrl,
     vaults.length,
   ]);
 }

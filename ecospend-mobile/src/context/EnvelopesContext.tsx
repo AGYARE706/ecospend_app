@@ -43,6 +43,7 @@ interface EnvelopesContextValue {
   currentMonth: number;
   currentYear: number;
   loading: boolean;
+  refreshEnvelopes: () => Promise<void>;
   addEnvelope: (payload: AddEnvelopePayload) => Promise<boolean>;
   editEnvelope: (payload: EditEnvelopePayload) => Promise<boolean>;
   getEnvelopeById: (id: string) => Envelope | undefined;
@@ -237,6 +238,7 @@ export function EnvelopesProvider({ children }: { children: ReactNode }) {
       currentMonth,
       currentYear,
       loading,
+      refreshEnvelopes,
       addEnvelope,
       editEnvelope,
       getEnvelopeById,
@@ -262,6 +264,7 @@ export function EnvelopesProvider({ children }: { children: ReactNode }) {
       isSaving,
       loading,
       overallPercent,
+      refreshEnvelopes,
       statusCounts,
       toastMessage,
       totalLimit,

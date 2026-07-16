@@ -101,10 +101,10 @@ const createStyles = (colors: ThemeColors) =>
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,
-    marginRight: spacing.md,
+    marginRight: spacing.smd,
     overflow: 'hidden',
     padding: spacing.md,
-    width: 172,
+    width: 160,
     ...shadowSm,
   },
   accentStrip: {
@@ -117,14 +117,15 @@ const createStyles = (colors: ThemeColors) =>
   iconCircle: {
     alignItems: 'center',
     borderRadius: radius.full,
-    height: 42,
+    height: 38,
     justifyContent: 'center',
     marginBottom: spacing.sm,
-    width: 42,
+    width: 38,
   },
   name: {
-    ...typography.subheading,
+    ...typography.label,
     color: colors.textDark,
+    fontSize: 15,
     marginBottom: spacing.sm,
   },
   track: {

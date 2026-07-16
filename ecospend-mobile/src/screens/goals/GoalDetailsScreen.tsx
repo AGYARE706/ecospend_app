@@ -105,12 +105,12 @@ export default function GoalDetailsScreen() {
     amount: Math.round((percentage / 100) * savingsGoal.targetAmount),
     icon:
       percentage === 100
-        ? '🚩'
+        ? 'flag'
         : percentage === 75
-          ? '🔒'
+          ? 'lock'
           : percentage === 50
-            ? '⏱️'
-            : '✓',
+            ? 'clock'
+            : 'check',
     isCompleted: savingsGoal.currentAmount >= (percentage / 100) * savingsGoal.targetAmount,
   }));
 
@@ -144,7 +144,7 @@ export default function GoalDetailsScreen() {
 
       {/* Hero Section */}
       <View style={styles.heroSection}>
-        <Card variant="default" padding="lg" style={styles.heroCard}>
+        <Card variant="default" padding="sm" style={styles.heroCard}>
           <View style={styles.heroContent}>
             <Text style={[typography.h2, styles.heroTitle]}>{goal.title}</Text>
             <Text style={[typography.body, styles.heroSubtitle]}>{goal.description}</Text>
@@ -155,7 +155,7 @@ export default function GoalDetailsScreen() {
       {/* Progress Overview */}
       <View style={styles.progressSection}>
         {/* Main Circular Progress Card */}
-        <Card variant="default" padding="lg" style={styles.progressCard}>
+        <Card variant="default" padding="md" style={styles.progressCard}>
           <View style={styles.progressContent}>
             {/* Circular Progress */}
             <View style={styles.circleContainer}>
@@ -212,23 +212,31 @@ export default function GoalDetailsScreen() {
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>💰</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <Icon name="wallet" size={17} color={colors.primary} strokeWidth={1.9} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Avg. Contribution</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>GH¢ {goal.avgContribution}</Text>
           </Card>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>📅</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <Icon name="calendar" size={17} color={colors.primary} strokeWidth={1.9} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Days Remaining</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{goal.daysRemaining} Days</Text>
           </Card>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>📈</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <Icon name="trending-up" size={17} color={colors.primary} strokeWidth={1.9} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Est. Weekly Saving</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>GH¢ {goal.weeklyProjection}</Text>
           </Card>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>✨</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <Icon name="flag" size={17} color={colors.primary} strokeWidth={1.9} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Projected Finish</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{goal.projectedFinish}</Text>
           </Card>
@@ -238,7 +246,7 @@ export default function GoalDetailsScreen() {
       {/* Timeline Section */}
       <View style={styles.timelineSection}>
         <Text style={[typography.h3, styles.timelineTitle]}>Milestone Timeline</Text>
-        <Card variant="default" padding="lg" style={styles.timelineCard}>
+        <Card variant="default" padding="md" style={styles.timelineCard}>
           <View style={styles.timelineContainer}>
             {/* Timeline line */}
             <View style={styles.timelineLine} />
@@ -269,7 +277,12 @@ export default function GoalDetailsScreen() {
                           milestone.isCompleted && styles.milestoneCircleActive,
                         ]}
                       >
-                        <Text style={styles.milestoneIcon}>{milestone.icon}</Text>
+                        <Icon
+                          name={milestone.icon}
+                          size={14}
+                          color={milestone.isCompleted ? colors.onPrimary : colors.textMuted}
+                          strokeWidth={2.2}
+                        />
                       </View>
                     </>
                   ) : (
@@ -280,7 +293,12 @@ export default function GoalDetailsScreen() {
                           milestone.isCompleted && styles.milestoneCircleActive,
                         ]}
                       >
-                        <Text style={styles.milestoneIcon}>{milestone.icon}</Text>
+                        <Icon
+                          name={milestone.icon}
+                          size={14}
+                          color={milestone.isCompleted ? colors.onPrimary : colors.textMuted}
+                          strokeWidth={2.2}
+                        />
                       </View>
                       <View style={styles.milestoneTextContainer}>
                         <Text
@@ -473,9 +491,14 @@ const createStyles = (colors: ThemeColors) =>
     width: '48%',
     alignItems: 'center',
   },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: spacing.smd,
+  statIconWrap: {
+    alignItems: 'center',
+    backgroundColor: colors.primaryBackground,
+    borderRadius: radius.full,
+    height: 34,
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+    width: 34,
   },
   statLabel: {
     color: colors.textSecondary,

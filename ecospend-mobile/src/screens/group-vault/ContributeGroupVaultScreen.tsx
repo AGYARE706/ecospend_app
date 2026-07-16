@@ -8,6 +8,7 @@ import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { getApiErrorMessage } from '../../api/getApiErrorMessage';
+import { useEnvelopes } from '../../context/EnvelopesContext';
 import { useFinance } from '../../context/FinanceContext';
 import { useVaults } from '../../context/VaultContext';
 import { useWallet } from '../../context/WalletContext';
@@ -50,6 +51,7 @@ export default function ContributeGroupVaultScreen({
   const { getGroupVaultById, contributeToGroup } = useVaults();
   const { balance, refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
 
   const group = getGroupVaultById(groupVaultId);
   const [amount, setAmount] = useState('');
@@ -78,6 +80,7 @@ export default function ContributeGroupVaultScreen({
       setPhase('success');
       void refreshWallet();
       void refreshTransactions();
+      void refreshEnvelopes();
     } catch (err) {
       setPhase('failed');
       setError(getApiErrorMessage(err, 'Could not contribute to the group vault'));
@@ -88,6 +91,7 @@ export default function ContributeGroupVaultScreen({
     hasEnoughBalance,
     isAmountValid,
     parsedAmount,
+    refreshEnvelopes,
     refreshTransactions,
     refreshWallet,
   ]);

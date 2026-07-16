@@ -1,4 +1,9 @@
-import type { GroupVault, GroupVaultMember, WithdrawalRequest } from '../../types/groupVault';
+import type {
+  GroupVault,
+  GroupVaultActivityType,
+  GroupVaultMember,
+  WithdrawalRequest,
+} from '../../types/groupVault';
 import type { Vault, VaultContribution, VaultStatus } from '../../types/vault';
 
 const ACCENT_COLORS = [
@@ -102,6 +107,7 @@ interface ApiGroupMember {
 interface ApiGroup {
   id: string;
   name: string;
+  creatorId?: string;
   targetAmount?: number | string | null;
   lockedUntil?: string;
   maturityDate?: string;
@@ -109,6 +115,57 @@ interface ApiGroup {
   createdAt?: string;
   inviteCode?: string;
   maxMembers?: number;
+  contributionFrequency?: string;
+}
+
+interface ApiPlanInstalment {
+  index: number;
+  dueDate: string;
+  cumulativePerMember: number | string;
+}
+
+interface ApiContributionPlan {
+  frequency?: string;
+  memberShare?: number | string;
+  instalmentAmount?: number | string;
+  instalmentCount?: number;
+  instalments?: ApiPlanInstalment[];
+  nextDueDate?: string | null;
+}
+
+interface ApiMemberInstalment {
+  index: number;
+  dueDate: string;
+  amountDue: number | string;
+  paid: boolean;
+  paidDate?: string | null;
+}
+
+interface ApiMemberPlan {
+  userId: string;
+  contributed?: number | string;
+  expectedToDate?: number | string;
+  memberShare?: number | string;
+  status?: string;
+  instalments?: ApiMemberInstalment[];
+}
+
+interface ApiInvite {
+  id: string;
+  phoneNumber: string;
+  invitedUserId?: string | null;
+  status?: string;
+  createdAt?: string;
+  joinedAt?: string | null;
+}
+
+interface ApiActivity {
+  id: string;
+  actorUserId?: string | null;
+  type: string;
+  message: string;
+  amount?: number | string | null;
+  createdAt?: string;
 }
 
 interface ApiGroupVaultView {
@@ -116,24 +173,57 @@ interface ApiGroupVaultView {
   members?: ApiGroupMember[];
   amountSaved?: number | string;
   myContribution?: number | string;
+  viewerId?: string | null;
   inviteCode?: string;
+  contributionPlan?: ApiContributionPlan | null;
+  memberPlans?: ApiMemberPlan[];
+  invites?: ApiInvite[];
+  activity?: ApiActivity[];
+}
+
+function mapContributionPlan(
+  raw: ApiContributionPlan | null | undefined,
+): GroupVault['contributionPlan'] {
+  if (!raw) {
+    return undefined;
+  }
+  return {
+    frequency: raw.frequency === 'WEEKLY' ? 'WEEKLY' : 'MONTHLY',
+    memberShare: Number(raw.memberShare ?? 0),
+    instalmentAmount: Number(raw.instalmentAmount ?? 0),
+    instalmentCount: raw.instalmentCount ?? raw.instalments?.length ?? 0,
+    instalments: (raw.instalments ?? []).map((item) => ({
+      index: item.index,
+      dueDate: item.dueDate,
+      cumulativePerMember: Number(item.cumulativePerMember ?? 0),
+    })),
+    nextDueDate: raw.nextDueDate ?? null,
+  };
 }
 
 function initialsFromId(id: string): string {
   return id.replace(/-/g, '').slice(0, 2).toUpperCase() || 'MB';
 }
 
-export function mapGroupVault(dto: ApiGroupVaultView, currentUserId?: string): GroupVault {
+export function mapGroupVault(dto: ApiGroupVaultView): GroupVault {
   const group = dto.group;
+  const viewerId = dto.viewerId != null ? String(dto.viewerId) : undefined;
+  const creatorId = group.creatorId != null ? String(group.creatorId) : undefined;
+
   const members: GroupVaultMember[] = (dto.members ?? []).map((member, index) => {
     const id = String(member.userId ?? member.id ?? `m-${index}`);
-    const isCreator = currentUserId != null && id === currentUserId;
+    const isMe = viewerId != null && id === viewerId;
+    // Falls back to the first member (usual creation order) only if the
+    // backend ever omits creatorId — normal responses always include it.
+    const isAdmin = creatorId != null ? id === creatorId : index === 0;
     return {
       id,
-      name: isCreator ? 'You' : `Member ${index + 1}`,
-      initials: isCreator ? 'YO' : initialsFromId(id),
-      role: index === 0 || isCreator ? 'admin' : 'member',
+      name: isMe ? 'You' : `Member ${index + 1}`,
+      initials: isMe ? 'YO' : initialsFromId(id),
+      role: isAdmin ? 'admin' : 'member',
+      isMe,
       lastContribution: member.joinedAt?.slice(0, 10),
+      contributed: Number(member.balance ?? 0),
     };
   });
 
@@ -162,6 +252,43 @@ export function mapGroupVault(dto: ApiGroupVaultView, currentUserId?: string): G
     members,
     myContribution: Number(dto.myContribution ?? 0),
     inviteCode: group.inviteCode ?? dto.inviteCode,
+    creatorId,
+    contributionFrequency:
+      group.contributionFrequency === 'WEEKLY' ? 'WEEKLY' : 'MONTHLY',
+    contributionPlan: mapContributionPlan(dto.contributionPlan),
+    memberPlans: (dto.memberPlans ?? []).map((plan) => ({
+      userId: String(plan.userId),
+      contributed: Number(plan.contributed ?? 0),
+      expectedToDate: Number(plan.expectedToDate ?? 0),
+      memberShare: Number(plan.memberShare ?? 0),
+      status:
+        plan.status === 'COMPLETED' || plan.status === 'BEHIND'
+          ? plan.status
+          : 'ON_TRACK',
+      instalments: (plan.instalments ?? []).map((item) => ({
+        index: item.index,
+        dueDate: item.dueDate,
+        amountDue: Number(item.amountDue ?? 0),
+        paid: Boolean(item.paid),
+        paidDate: item.paidDate ?? undefined,
+      })),
+    })),
+    invites: (dto.invites ?? []).map((invite) => ({
+      id: String(invite.id),
+      phoneNumber: invite.phoneNumber,
+      invitedUserId: invite.invitedUserId != null ? String(invite.invitedUserId) : undefined,
+      status: invite.status === 'JOINED' ? 'JOINED' : 'PENDING',
+      createdAt: invite.createdAt ?? '',
+      joinedAt: invite.joinedAt ?? undefined,
+    })),
+    activity: (dto.activity ?? []).map((entry) => ({
+      id: String(entry.id),
+      actorUserId: entry.actorUserId != null ? String(entry.actorUserId) : undefined,
+      type: entry.type as GroupVaultActivityType,
+      message: entry.message,
+      amount: entry.amount != null ? Number(entry.amount) : undefined,
+      createdAt: entry.createdAt ?? '',
+    })),
   };
 }
 

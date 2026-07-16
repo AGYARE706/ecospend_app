@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { Edge } from 'react-native-safe-area-context';
 
 import { spacing, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
@@ -23,6 +24,8 @@ export interface ScreenWrapperProps {
   scrollable?: boolean;
   keyboardAvoiding?: boolean;
   padded?: boolean;
+  /** Safe-area edges to reserve. Omit 'bottom' for screens that sit above the floating tab bar — it already reserves that inset. */
+  edges?: Edge[];
   children: ReactNode;
 }
 
@@ -31,6 +34,7 @@ export default function ScreenWrapper({
   scrollable = false,
   keyboardAvoiding = false,
   padded = true,
+  edges = ['top', 'right', 'bottom', 'left'],
   children,
 }: ScreenWrapperProps) {
   const styles = useThemedStyles(createStyles);
@@ -72,7 +76,7 @@ export default function ScreenWrapper({
     background === 'white' ? styles.containerWhite : styles.containerPage;
 
   return (
-    <SafeAreaView style={[styles.container, containerStyle]}>
+    <SafeAreaView style={[styles.container, containerStyle]} edges={edges}>
       {wrappedContent}
     </SafeAreaView>
   );
@@ -99,7 +103,9 @@ const createStyles = (colors: ThemeColors) =>
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
-  unpaddedContent: {
-    paddingVertical: spacing.lg,
-  },
+  // `padded={false}` means the screen manages its own padding entirely —
+  // this must stay empty. It previously still carried paddingVertical,
+  // which silently added a fixed 24px of solid-background dead space to
+  // the bottom of every screen using it, sitting right above the tab bar.
+  unpaddedContent: {},
 });

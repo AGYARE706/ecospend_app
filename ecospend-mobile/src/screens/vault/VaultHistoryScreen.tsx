@@ -106,7 +106,7 @@ export default function VaultHistoryScreen({
   }
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         {/* ─── Header ──────────────────────────────────────────── */}
         <View style={styles.header}>

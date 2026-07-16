@@ -1,16 +1,20 @@
 package com.ecospend.expense.controllers;
 
+import com.ecospend.expense.client.NotificationClient;
 import com.ecospend.expense.client.PaymentClient;
 import com.ecospend.expense.dto.ContributeGoalRequest;
+import com.ecospend.expense.dto.IncomeTargetRequest;
 import com.ecospend.expense.dto.TransactionSummaryResponse;
 import com.ecospend.expense.dto.UpdateEnvelopeRequest;
 import com.ecospend.expense.dto.WithdrawGoalRequest;
 import com.ecospend.expense.exception.BadRequestException;
 import com.ecospend.expense.exception.ResourceNotFoundException;
 import com.ecospend.expense.models.BudgetEnvelope;
+import com.ecospend.expense.models.IncomeTarget;
 import com.ecospend.expense.models.SavingsGoal;
 import com.ecospend.expense.models.Transaction;
 import com.ecospend.expense.repository.BudgetEnvelopeRepository;
+import com.ecospend.expense.repository.IncomeTargetRepository;
 import com.ecospend.expense.repository.SavingsGoalRepository;
 import com.ecospend.expense.repository.TransactionRepository;
 import com.ecospend.expense.services.TransactionRecorder;
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -31,31 +36,60 @@ public class FinanceController {
     private final TransactionRepository transactionRepository;
     private final SavingsGoalRepository savingsGoalRepository;
     private final BudgetEnvelopeRepository budgetEnvelopeRepository;
+    private final IncomeTargetRepository incomeTargetRepository;
     private final TransactionRecorder transactionRecorder;
     private final PaymentClient paymentClient;
+    private final NotificationClient notificationClient;
 
     public FinanceController(TransactionRepository transactionRepository,
             SavingsGoalRepository savingsGoalRepository,
             BudgetEnvelopeRepository budgetEnvelopeRepository,
+            IncomeTargetRepository incomeTargetRepository,
             TransactionRecorder transactionRecorder,
-            PaymentClient paymentClient) {
+            PaymentClient paymentClient,
+            NotificationClient notificationClient) {
         this.transactionRepository = transactionRepository;
         this.savingsGoalRepository = savingsGoalRepository;
         this.budgetEnvelopeRepository = budgetEnvelopeRepository;
+        this.incomeTargetRepository = incomeTargetRepository;
         this.transactionRecorder = transactionRecorder;
         this.paymentClient = paymentClient;
+        this.notificationClient = notificationClient;
     }
 
-    @PostMapping("/transactions")
-    public ResponseEntity<Transaction> createTransaction(
+    // ---- Expected monthly income (the income-side counterpart of
+    // budget envelopes: actual INCOME transactions are tracked against
+    // this every month on the dashboard and in weekly insights) ----
+
+    @GetMapping("/income-target")
+    public ResponseEntity<IncomeTargetRequest> getIncomeTarget(
+            @RequestHeader("X-User-Id") UUID userId) {
+        BigDecimal amount = incomeTargetRepository.findById(userId)
+                .map(IncomeTarget::getMonthlyAmount)
+                .orElse(BigDecimal.ZERO);
+        return ResponseEntity.ok(new IncomeTargetRequest(amount));
+    }
+
+    @PutMapping("/income-target")
+    public ResponseEntity<IncomeTargetRequest> setIncomeTarget(
             @RequestHeader("X-User-Id") UUID userId,
-            @RequestBody Transaction transaction) {
-        transaction.setId(null);
-        transaction.setUserId(userId);
-        transaction.setMomoFee(BigDecimal.ZERO);
-
-        return ResponseEntity.ok(transactionRepository.save(transaction));
+            @Valid @RequestBody IncomeTargetRequest request) {
+        IncomeTarget target = incomeTargetRepository.findById(userId)
+                .orElseGet(() -> {
+                    IncomeTarget fresh = new IncomeTarget();
+                    fresh.setUserId(userId);
+                    return fresh;
+                });
+        target.setMonthlyAmount(request.monthlyAmount());
+        incomeTargetRepository.save(target);
+        return ResponseEntity.ok(new IncomeTargetRequest(target.getMonthlyAmount()));
     }
+
+    // NOTE: there is intentionally no public create or update endpoint for
+    // transactions. Records are written exclusively by the services when
+    // real money moves through Paystack/the wallet (see TransactionRecorder
+    // and /finance/internal/transactions), and are immutable afterwards to
+    // keep spending analysis trustworthy.
 
     @GetMapping("/transactions")
     public ResponseEntity<List<Transaction>> getTransactions(@RequestHeader("X-User-Id") UUID userId) {
@@ -108,36 +142,6 @@ public class FinanceController {
         return ResponseEntity.ok(tx);
     }
 
-    @PutMapping("/transactions/{id}")
-    public ResponseEntity<Transaction> updateTransaction(
-            @PathVariable UUID id,
-            @RequestHeader("X-User-Id") UUID userId,
-            @RequestBody Transaction details) {
-        Transaction tx = transactionRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
-
-        if (details.getAmount() != null) {
-            tx.setAmount(details.getAmount());
-        }
-        if (details.getType() != null) {
-            tx.setType(details.getType());
-        }
-        if (details.getCategory() != null) {
-            tx.setCategory(details.getCategory());
-        }
-        if (details.getNotes() != null) {
-            tx.setNotes(details.getNotes());
-        }
-        if (details.getType() != null && details.getType().equalsIgnoreCase("INCOME")) {
-            tx.setProvider(null);
-        } else if (details.getProvider() != null) {
-            tx.setProvider(details.getProvider());
-        }
-        tx.setMomoFee(BigDecimal.ZERO);
-
-        return ResponseEntity.ok(transactionRepository.save(tx));
-    }
-
     @DeleteMapping("/transactions/{id}")
     public ResponseEntity<Void> deleteTransaction(
             @PathVariable UUID id,
@@ -185,8 +189,12 @@ public class FinanceController {
         if (details.getDeadline() != null) {
             goal.setDeadline(details.getDeadline());
         }
-        markCompletedIfNeeded(goal);
-        return ResponseEntity.ok(savingsGoalRepository.save(goal));
+        boolean justCompleted = markCompletedIfNeeded(goal);
+        SavingsGoal saved = savingsGoalRepository.save(goal);
+        if (justCompleted) {
+            notifyGoalCompleted(userId, saved);
+        }
+        return ResponseEntity.ok(saved);
     }
 
     /**
@@ -213,7 +221,7 @@ public class FinanceController {
         }
 
         goal.setCurrentAmount(goal.getCurrentAmount().add(request.amount()));
-        markCompletedIfNeeded(goal);
+        boolean justCompleted = markCompletedIfNeeded(goal);
         SavingsGoal saved = savingsGoalRepository.save(goal);
 
         transactionRecorder.record(userId, request.amount(), "EXPENSE", "Savings",
@@ -221,6 +229,9 @@ public class FinanceController {
         paymentClient.debitWallet(userId, request.amount(),
                 "ecospend-goal-" + UUID.randomUUID());
 
+        if (justCompleted) {
+            notifyGoalCompleted(userId, saved);
+        }
         return ResponseEntity.ok(saved);
     }
 
@@ -291,7 +302,9 @@ public class FinanceController {
         return ResponseEntity.ok(budgetEnvelopeRepository.save(envelope));
     }
 
-    private static void markCompletedIfNeeded(SavingsGoal goal) {
+    /** Returns true only on the null -&gt; completed transition, so callers notify exactly once. */
+    private static boolean markCompletedIfNeeded(SavingsGoal goal) {
+        boolean wasCompleted = goal.getCompletedAt() != null;
         if (goal.getCurrentAmount() != null
                 && goal.getTargetAmount() != null
                 && goal.getCurrentAmount().compareTo(goal.getTargetAmount()) >= 0) {
@@ -301,5 +314,13 @@ public class FinanceController {
         } else {
             goal.setCompletedAt(null);
         }
+        return !wasCompleted && goal.getCompletedAt() != null;
+    }
+
+    private void notifyGoalCompleted(UUID userId, SavingsGoal goal) {
+        notificationClient.send(userId, "Goal completed!",
+                String.format("You've hit your target for \"%s\" — GHS %.2f saved.",
+                        goal.getName(), goal.getTargetAmount()),
+                "GOAL_COMPLETED", Map.of("goalId", goal.getId().toString()));
     }
 }

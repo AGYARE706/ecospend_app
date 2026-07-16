@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { CATEGORY_CONFIG } from '../../constants/categories';
 import GhsText from '../ui/GhsText';
 import {
   fontSize,
@@ -17,13 +16,12 @@ export interface CategoryBreakdownBarProps {
   categories: CategoryBreakdownPoint[];
 }
 
-const BAR_COLORS = [
-  'primary',
-  'warning',
-  'blue',
-  'accent',
-  'textSecondary',
-] as const;
+/**
+ * Categorical series tokens in fixed rank order (validated palette —
+ * see theme/colors.ts). Identity is never color alone: every segment
+ * has a labeled legend row with its amount.
+ */
+const SERIES = ['chart1', 'chart2', 'chart3', 'chart4', 'chart5'] as const;
 
 export default function CategoryBreakdownBar({ categories }: CategoryBreakdownBarProps) {
   const { colors } = useTheme();
@@ -37,49 +35,36 @@ export default function CategoryBreakdownBar({ categories }: CategoryBreakdownBa
     );
   }
 
+  const shown = categories.slice(0, SERIES.length);
+
   return (
     <View style={styles.container}>
       <View style={styles.barTrack}>
-        {categories.map((item, index) => {
-          const colorKey = BAR_COLORS[index % BAR_COLORS.length];
-          const segmentColor = colors[colorKey];
-
-          return (
-            <View
-              key={item.category}
-              style={[
-                styles.barSegment,
-                {
-                  flex: item.percent,
-                  backgroundColor: segmentColor,
-                },
-                index === 0 && styles.barSegmentFirst,
-                index === categories.length - 1 && styles.barSegmentLast,
-              ]}
-            />
-          );
-        })}
+        {shown.map((item, index) => (
+          <View
+            key={item.category}
+            style={[
+              styles.barSegment,
+              {
+                flex: Math.max(item.percent, 2),
+                backgroundColor: colors[SERIES[index]],
+              },
+            ]}
+          />
+        ))}
       </View>
 
       <View style={styles.legend}>
-        {categories.map((item, index) => {
-          const colorKey = BAR_COLORS[index % BAR_COLORS.length];
-          const config = CATEGORY_CONFIG[item.category];
-
-          return (
-            <View key={item.category} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors[colorKey] }]} />
-              <Text style={styles.legendEmoji}>{config.emoji}</Text>
-              <View style={styles.legendTextBlock}>
-                <Text style={styles.legendLabel} numberOfLines={1}>
-                  {config.label}
-                </Text>
-                <Text style={styles.legendPercent}>{item.percent}%</Text>
-              </View>
-              <GhsText amount={item.amount} size="sm" style={styles.legendAmount} />
-            </View>
-          );
-        })}
+        {shown.map((item, index) => (
+          <View key={item.category} style={styles.legendItem}>
+            <View style={[styles.legendSwatch, { backgroundColor: colors[SERIES[index]] }]} />
+            <Text style={styles.legendLabel} numberOfLines={1}>
+              {item.category}
+            </Text>
+            <Text style={styles.legendPercent}>{item.percent}%</Text>
+            <GhsText amount={item.amount} size="sm" style={styles.legendAmount} />
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -90,46 +75,31 @@ const createStyles = (colors: ThemeColors) =>
     container: {
       marginTop: spacing.sm,
     },
+    // 2px surface gaps between segments keep adjacent fills legible.
     barTrack: {
-      backgroundColor: colors.chipBg,
-      borderRadius: radius.full,
+      borderRadius: radius.xs,
+      columnGap: 2,
       flexDirection: 'row',
-      height: 10,
+      height: 12,
       overflow: 'hidden',
     },
     barSegment: {
+      borderRadius: 3,
       height: '100%',
     },
-    barSegmentFirst: {
-      borderBottomLeftRadius: radius.full,
-      borderTopLeftRadius: radius.full,
-    },
-    barSegmentLast: {
-      borderBottomRightRadius: radius.full,
-      borderTopRightRadius: radius.full,
-    },
     legend: {
-      gap: spacing.sm,
-      marginTop: spacing.md,
+      gap: spacing.sm + 2,
+      marginTop: spacing.smd,
     },
     legendItem: {
       alignItems: 'center',
       flexDirection: 'row',
-      gap: spacing.xs,
+      gap: spacing.sm,
     },
-    legendDot: {
-      borderRadius: radius.full,
-      height: 8,
-      width: 8,
-    },
-    legendEmoji: {
-      fontSize: fontSize.sm,
-      width: 20,
-    },
-    legendTextBlock: {
-      flex: 1,
-      flexDirection: 'row',
-      gap: spacing.xs,
+    legendSwatch: {
+      borderRadius: 3,
+      height: 10,
+      width: 10,
     },
     legendLabel: {
       color: colors.textDark,
@@ -141,9 +111,12 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       fontSize: fontSize.xs,
       fontWeight: fontWeight.medium,
+      marginRight: spacing.sm,
+      minWidth: 32,
+      textAlign: 'right',
     },
     legendAmount: {
-      color: colors.textMuted,
+      color: colors.textSecondary,
     },
     emptyWrap: {
       alignItems: 'center',

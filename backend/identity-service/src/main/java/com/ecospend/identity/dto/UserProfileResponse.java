@@ -13,5 +13,6 @@ public record UserProfileResponse(
         String name,
         @JsonProperty("phone") String phoneNumber,
         @JsonProperty("tier") String subscriptionTier,
+        @JsonProperty("photoUrl") String profilePhoto,
         LocalDateTime createdAt
 ) {}

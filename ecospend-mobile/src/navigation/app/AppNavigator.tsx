@@ -11,7 +11,6 @@ import CreateGoalScreen from '../../screens/goals/CreateGoalScreen';
 import WithdrawFromGoalScreen from '../../screens/goals/WithdrawFromGoalScreen';
 import WeeklyInsightsScreen from '../../screens/insights/WeeklyInsightsScreen';
 import NotificationsScreen from '../../screens/notifications/NotificationsScreen';
-import AddTransactionScreen from '../../screens/transactions/AddTransactionScreen';
 import AddMoneyScreen from '../../screens/vault/AddMoneyScreen';
 import CreateVaultScreen from '../../screens/vault/CreateVaultScreen';
 import VaultSuccessScreen from '../../screens/vault/VaultSuccessScreen';
@@ -40,7 +39,6 @@ export default function AppNavigator() {
       <Stack.Screen name="MainTabs" component={TabNavigator} />
 
       <Stack.Group screenOptions={modalScreenOptions}>
-        <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
         <Stack.Screen name="CreateGoal" component={CreateGoalScreen} />
         <Stack.Screen
           name="AddGoalContribution"

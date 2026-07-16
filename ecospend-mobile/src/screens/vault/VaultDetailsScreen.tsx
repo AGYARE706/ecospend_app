@@ -97,7 +97,7 @@ export default function VaultDetailsScreen({
   }
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         {/* ─── Header ──────────────────────────────────────────────── */}
         <View style={styles.topBar}>
@@ -132,7 +132,6 @@ export default function VaultDetailsScreen({
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
           >
-            <View style={styles.heroGlow} />
 
             <View style={styles.heroTop}>
               <View style={styles.heroBalanceBlock}>

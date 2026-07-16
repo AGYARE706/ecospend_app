@@ -12,6 +12,7 @@ import { getApiErrorCode, getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as groupVaultApi from '../api/groupVaultApi';
 import * as paymentsApi from '../api/paymentsApi';
 import * as vaultApi from '../api/vaultApi';
+import { toCanonicalGhanaPhone } from '../utils/validation';
 import { useAuth } from './AuthContext';
 import { buildGroupVaultSummary } from '../data/mock/groupVaults';
 import { buildVaultSummary } from '../data/mock/vaults';
@@ -34,6 +35,8 @@ export interface CreateGroupVaultPayload {
   targetAmount: number;
   maturityDate: string;
   memberLimit: number;
+  /** WEEKLY | MONTHLY — cadence of the automatic contribution plan. */
+  contributionFrequency: string;
   members: Array<{ phone: string; displayPhone: string }>;
 }
 
@@ -278,6 +281,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           targetAmount: payload.targetAmount,
           lockedUntil: payload.maturityDate,
           maxMembers: payload.memberLimit,
+          contributionFrequency: payload.contributionFrequency,
+          memberPhones: payload.members.map((member) => toCanonicalGhanaPhone(member.phone)),
         });
         setGroupVaults((current) => [created, ...current]);
         return created;

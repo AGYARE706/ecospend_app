@@ -106,7 +106,6 @@ export default function CreateVaultScreen({
             end={{ x: 1, y: 1 }}
             style={styles.banner}
           >
-            <View style={styles.bannerGlow} />
             <View style={styles.bannerContent}>
               <View style={styles.bannerIconRing}>
                 <Ionicons name="lock-closed" size={22} color={colors.white} />
@@ -124,7 +123,7 @@ export default function CreateVaultScreen({
           {/* ─── Form: Vault Name ──────────────────────────────────── */}
           <SectionLabel title="Vault Details" icon="create-outline" />
 
-          <Card style={styles.formCard}>
+          <Card padding="sm" style={styles.formCard}>
             <AppInput
               label="Vault Name"
               value={form.vaultName}
@@ -137,7 +136,7 @@ export default function CreateVaultScreen({
           {/* ─── Form: Amounts ─────────────────────────────────────── */}
           <SectionLabel title="Amounts" icon="cash-outline" />
 
-          <Card style={styles.formCard}>
+          <Card padding="sm" style={styles.formCard}>
             <Text style={styles.fieldLabel}>Target Amount</Text>
             <AmountDisplayInput
               value={form.targetAmount}
@@ -161,7 +160,7 @@ export default function CreateVaultScreen({
           {/* ─── Form: Target Date ─────────────────────────────────── */}
           <SectionLabel title="Target Date" icon="calendar-outline" />
 
-          <Card style={styles.formCard}>
+          <Card padding="sm" style={styles.formCard}>
             <Text style={styles.fieldLabel}>Lock Duration</Text>
             <View style={styles.presetRow}>
               {DATE_PRESETS.map((preset) => (
@@ -516,7 +515,6 @@ function VaultSummaryPreview({
       end={{ x: 1, y: 1 }}
       style={summaryStyles.card}
     >
-      <View style={summaryStyles.glowOrb} />
 
       <View style={summaryStyles.topRow}>
         <View style={summaryStyles.iconRing}>
