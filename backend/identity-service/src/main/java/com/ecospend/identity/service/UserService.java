@@ -59,6 +59,22 @@ public class UserService {
     }
 
     @Transactional
+    public UserProfileResponse setTwoFactorEnabled(UUID userId, boolean enabled) {
+        User user = findUser(userId);
+        user.setTwoFactorEnabled(enabled);
+        userRepository.save(user);
+        return toProfile(user);
+    }
+
+    @Transactional
+    public UserProfileResponse setSetupCompleted(UUID userId, boolean completed) {
+        User user = findUser(userId);
+        user.setSetupCompleted(completed);
+        userRepository.save(user);
+        return toProfile(user);
+    }
+
+    @Transactional
     public UserProfileResponse updatePhoto(UUID userId, String photoBase64) {
         if (!photoBase64.startsWith("data:image/")) {
             throw new InvalidPhotoException("Photo must be a data URI (data:image/...)");
@@ -118,6 +134,16 @@ public class UserService {
                 .toList();
     }
 
+    /** Service-to-service: resolve a batch of user ids to their current names. Unmatched ids are omitted. */
+    public List<UserLookupResult> lookupByIds(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        return userRepository.findAllById(userIds).stream()
+                .map(u -> new UserLookupResult(u.getPhoneNumber(), u.getId(), u.getName()))
+                .toList();
+    }
+
     private User findUser(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -130,6 +156,8 @@ public class UserService {
                 user.getPhoneNumber(),
                 user.getSubscriptionTier(),
                 user.getProfilePhoto(),
+                user.isTwoFactorEnabled(),
+                user.isSetupCompleted(),
                 user.getCreatedAt()
         );
     }
