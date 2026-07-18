@@ -1,4 +1,4 @@
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
@@ -8,11 +8,8 @@ import VaultEmptyState from '../../components/vault/VaultEmptyState';
 import VaultQuickActions from '../../components/vault/VaultQuickActions';
 import VaultSummaryCard from '../../components/vault/VaultSummaryCard';
 import { useVaultTheme } from '../../components/vault/vaultTheme';
-import CollapsedHeaderBar from '../../components/ui/CollapsedHeaderBar';
-import IconButton from '../../components/ui/IconButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useAuth } from '../../context/AuthContext';
-import { useCollapsingHeader } from '../../hooks/useCollapsingHeader';
 import { useVaultDashboard } from '../../hooks/useVaultDashboard';
 import { navigateApp, navigateToSubscription } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
@@ -34,10 +31,6 @@ export default function VaultDashboardScreen() {
     navigateApp('CreateVault');
   };
 
-  const openNotifications = () => {
-    navigateApp('Notifications');
-  };
-
   const openVaultDetails = (vault: Vault) => {
     navigation.navigate('VaultDetails', { vaultId: vault.id });
   };
@@ -55,57 +48,19 @@ export default function VaultDashboardScreen() {
     navigation.navigate('GroupVaultDashboard');
   };
 
-  const { onScroll, scrollEventThrottle, heroStyle, barStyle } = useCollapsingHeader();
-
   return (
-    <ScreenWrapper background="page" padded={false} edges={['top']}>
+    <ScreenWrapper background="page" padded={false} edges={[]}>
       <View style={[styles.screen, { backgroundColor: theme.background }]}>
-        <CollapsedHeaderBar
-          title="My Vaults"
-          rightActions={
-            <IconButton
-              icon="add"
-              variant="soft"
-              size="sm"
-              onPress={openCreateVault}
-              accessibilityLabel="Create vault"
-            />
-          }
-          style={barStyle}
-        />
-        <Animated.ScrollView
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          onScroll={onScroll}
-          scrollEventThrottle={scrollEventThrottle}
         >
-          <Animated.View style={[styles.header, heroStyle]}>
-            <View style={styles.headerTextBlock}>
-              <Text style={[styles.title, { color: theme.text }]}>My Vaults</Text>
-              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-                Secure savings with maturity goals
-              </Text>
-            </View>
-
-            <View style={styles.headerActions}>
-              <IconButton
-                icon="notifications-outline"
-                variant="ghost"
-                color={theme.text}
-                onPress={openNotifications}
-                accessibilityLabel="Notifications"
-                style={{ backgroundColor: theme.chipBg }}
-              />
-              <IconButton
-                icon="add"
-                variant="ghost"
-                color={theme.text}
-                onPress={openCreateVault}
-                accessibilityLabel="Create vault"
-                style={{ backgroundColor: theme.chipBg }}
-              />
-            </View>
-          </Animated.View>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.text }]}>My Vaults</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              Secure savings with maturity goals
+            </Text>
+          </View>
 
           {!isEmpty ? (
             <>
@@ -139,7 +94,7 @@ export default function VaultDashboardScreen() {
           ) : (
             <VaultEmptyState theme={theme} onCreateVault={openCreateVault} />
           )}
-        </Animated.ScrollView>
+        </ScrollView>
 
         {!isEmpty ? <FloatingActionButton onPress={openCreateVault} /> : null}
       </View>
@@ -158,14 +113,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
   },
   header: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: spacing.lg,
-  },
-  headerTextBlock: {
-    flex: 1,
-    marginRight: spacing.md,
   },
   title: {
     ...typography.h1,
@@ -173,10 +121,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.bodySm,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
   },
   sectionHeader: {
     alignItems: 'center',

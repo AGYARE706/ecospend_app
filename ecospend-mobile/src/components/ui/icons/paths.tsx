@@ -248,6 +248,13 @@ export const outlineIcons: Record<string, IconRenderer> = {
       <Circle cx="12" cy="12" r="1" />
     </Fragment>
   ),
+  'more-vertical': (c) => (
+    <Fragment>
+      <Circle cx="12" cy="5" r="1.6" fill={c} stroke="none" />
+      <Circle cx="12" cy="12" r="1.6" fill={c} stroke="none" />
+      <Circle cx="12" cy="19" r="1.6" fill={c} stroke="none" />
+    </Fragment>
+  ),
 
   // ---- Security ----
   lock: (c) => (
@@ -369,6 +376,13 @@ export const outlineIcons: Record<string, IconRenderer> = {
       <Polyline points="14 2 14 7 19 7" />
       <Line x1="8" y1="13" x2="16" y2="13" />
       <Line x1="8" y1="17" x2="13" y2="17" />
+    </Fragment>
+  ),
+  book: () => (
+    <Fragment>
+      <Path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v18H6.5A2.5 2.5 0 0 1 4 18.5v-13Z" />
+      <Path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5v-13Z" />
+      <Line x1="12" y1="3" x2="12" y2="21" />
     </Fragment>
   ),
   barcode: () => (

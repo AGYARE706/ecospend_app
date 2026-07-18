@@ -36,7 +36,7 @@ export default function FloatingTabBar({
           styles.bar,
           {
             backgroundColor: colors.cardBackground,
-            borderColor: colors.borderSubtle,
+            borderColor: colors.primary,
           },
           shadowLg,
         ]}
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   bar: {
     borderRadius: radius.xxl,
-    borderWidth: 1,
+    borderWidth: 2,
     flexDirection: 'row',
     gap: spacing.xxs,
     minHeight: 58,

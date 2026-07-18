@@ -38,7 +38,7 @@ const getActions = (
 }[] => [
   { key: 'add', label: 'Top Up', icon: 'plus', tint: colors.primary, bg: colors.primaryBackground },
   { key: 'transfer', label: 'Send', icon: 'send', tint: colors.accent, bg: colors.accentLight },
-  { key: 'goals', label: 'Goals', icon: 'flag', tint: colors.gold, bg: colors.goldLight },
+  { key: 'goals', label: 'Goals', icon: 'target', tint: colors.gold, bg: colors.goldLight },
   { key: 'more', label: 'Bills', icon: 'receipt', tint: colors.textSecondary, bg: colors.chipBg },
 ];
 

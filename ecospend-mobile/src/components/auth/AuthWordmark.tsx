@@ -1,43 +1,30 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
-import { Icon } from '../ui/icons';
-import { fontSize, fontWeight, spacing, useTheme, useThemedStyles } from '../../theme';
-import type { ThemeColors } from '../../theme';
+import { spacing } from '../../theme';
+
+const LOGO_ASPECT_RATIO = 1024 / 336;
+const LOGO_HEIGHT = 36;
 
 export default function AuthWordmark() {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
-  return React.createElement(
-    View,
-    { style: styles.container },
-    React.createElement(Text, { style: styles.wordmark }, 'EcoSpend'),
-    React.createElement(
-      View,
-      { style: styles.leaf },
-      React.createElement(Icon, {
-        name: 'leaf',
-        size: fontSize.lg,
-        color: colors.primary,
-        strokeWidth: 1.9,
-      }),
-    ),
+  return (
+    <View style={styles.container}>
+      <Image
+        source={require('../../../assets/logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+        accessibilityLabel="EcoSpend"
+      />
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
-  StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    flexDirection: 'row',
     marginBottom: spacing.xl,
   },
-  wordmark: {
-    color: colors.primary,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-  },
-  leaf: {
-    marginLeft: spacing.xs,
+  logo: {
+    height: LOGO_HEIGHT,
+    width: LOGO_HEIGHT * LOGO_ASPECT_RATIO,
   },
 });

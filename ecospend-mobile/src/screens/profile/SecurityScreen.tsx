@@ -16,7 +16,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import { type ActiveSession, useSecurity } from '../../hooks/useSecurity';
+import {
+  type ActiveSession,
+  type SessionHistoryEntry,
+  useSecurity,
+} from '../../hooks/useSecurity';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
   cardShadow,
@@ -39,11 +43,17 @@ export default function SecurityScreen() {
   const navigation = useNavigation<SecurityNavProp>();
   const {
     twoFactorEnabled,
+    biometricLockEnabled,
+    biometricAvailable,
+    toggleBiometricLock,
     sessions,
     activeSessionCount,
+    loginHistory,
+    loginHistoryLoading,
     securityStatus,
     showPasswordSheet,
     showSessionsSheet,
+    showLoginHistorySheet,
     showLogoutConfirm,
     showDeleteConfirm,
     currentPassword,
@@ -63,6 +73,8 @@ export default function SecurityScreen() {
     openSessionsSheet,
     closeSessionsSheet,
     revokeSession,
+    openLoginHistorySheet,
+    closeLoginHistorySheet,
     openLogoutConfirm,
     closeLogoutConfirm,
     handleLogout,
@@ -141,12 +153,45 @@ export default function SecurityScreen() {
             />
             <View style={styles.rowDivider} />
             <SettingsRow
+              icon="finger-print-outline"
+              iconColor={colors.success}
+              iconBackground={colors.successLight}
+              title="App Lock"
+              subtitle={
+                !biometricAvailable
+                  ? 'Set up Face ID or a fingerprint on this device first'
+                  : biometricLockEnabled
+                    ? 'Face ID / fingerprint required to open the app'
+                    : 'Require Face ID or fingerprint to open the app'
+              }
+              trailing={
+                <Switch
+                  value={biometricLockEnabled}
+                  onValueChange={toggleBiometricLock}
+                  disabled={!biometricAvailable}
+                  trackColor={{ false: colors.divider, true: `${colors.primary}66` }}
+                  thumbColor={biometricLockEnabled ? colors.primary : colors.white}
+                />
+              }
+            />
+            <View style={styles.rowDivider} />
+            <SettingsRow
               icon="laptop-outline"
               iconColor={colors.purple}
               iconBackground={colors.purpleLight}
               title="Active Sessions"
               subtitle={`${activeSessionCount} device${activeSessionCount === 1 ? '' : 's'} signed in`}
               onPress={openSessionsSheet}
+              showChevron
+            />
+            <View style={styles.rowDivider} />
+            <SettingsRow
+              icon="time-outline"
+              iconColor={colors.blue}
+              iconBackground={colors.blueLight}
+              title="Login History"
+              subtitle="See when and where you've signed in"
+              onPress={openLoginHistorySheet}
               showChevron
               isLast
             />
@@ -206,6 +251,13 @@ export default function SecurityScreen() {
         sessions={sessions}
         onClose={closeSessionsSheet}
         onRevoke={revokeSession}
+      />
+
+      <LoginHistorySheet
+        visible={showLoginHistorySheet}
+        entries={loginHistory}
+        loading={loginHistoryLoading}
+        onClose={closeLoginHistorySheet}
       />
 
       <ConfirmSheet
@@ -486,21 +538,11 @@ function SessionsSheet({
               >
                 <View style={styles.sessionTopRow}>
                   <View style={styles.sessionIcon}>
-                    <Ionicons
-                      name={
-                        session.platform === 'iOS'
-                          ? 'phone-portrait-outline'
-                          : 'tablet-portrait-outline'
-                      }
-                      size={18}
-                      color={colors.primary}
-                    />
+                    <Ionicons name="phone-portrait-outline" size={18} color={colors.primary} />
                   </View>
                   <View style={styles.sessionTextBlock}>
                     <Text style={styles.sessionDevice}>{session.device}</Text>
-                    <Text style={styles.sessionMeta}>
-                      {session.location} · {session.lastActive}
-                    </Text>
+                    <Text style={styles.sessionMeta}>{session.lastActive}</Text>
                   </View>
                   {session.isCurrent ? (
                     <View style={styles.currentBadge}>
@@ -520,6 +562,73 @@ function SessionsSheet({
                 </View>
               </View>
             ))}
+          </ScrollView>
+
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [styles.sheetCancel, pressed && styles.sheetCancelPressed]}
+          >
+            <Text style={styles.sheetCancelText}>Done</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function LoginHistorySheet({
+  visible,
+  entries,
+  loading,
+  onClose,
+}: {
+  visible: boolean;
+  entries: SessionHistoryEntry[];
+  loading: boolean;
+  onClose: () => void;
+}) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <Pressable style={styles.modalBackdrop} onPress={onClose} />
+        <View style={styles.sheetLarge}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Login History</Text>
+          <Text style={styles.sheetSubtitle}>
+            Every time you've signed in to your EcoSpend account.
+          </Text>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {loading ? (
+              <Text style={styles.sessionMeta}>Loading…</Text>
+            ) : (
+              entries.map((entry, index) => (
+                <View
+                  key={entry.id}
+                  style={[
+                    styles.sessionCard,
+                    index < entries.length - 1 && styles.sessionCardGap,
+                  ]}
+                >
+                  <View style={styles.sessionTopRow}>
+                    <View style={styles.sessionIcon}>
+                      <Ionicons name="log-in-outline" size={18} color={colors.primary} />
+                    </View>
+                    <View style={styles.sessionTextBlock}>
+                      <Text style={styles.sessionDevice}>{entry.device}</Text>
+                      <Text style={styles.sessionMeta}>{entry.loggedInAt}</Text>
+                    </View>
+                    {entry.revoked ? (
+                      <View style={styles.currentBadge}>
+                        <Text style={styles.currentBadgeText}>Revoked</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              ))
+            )}
           </ScrollView>
 
           <Pressable

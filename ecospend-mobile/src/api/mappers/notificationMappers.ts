@@ -27,6 +27,9 @@ const EXACT_TYPES: Record<string, NotificationType> = {
   PLUS_UPGRADE: 'plus_upgrade',
   WALLET_TOPUP: 'wallet_topup',
   WEEKLY_INSIGHT: 'weekly_insight',
+  SPENDING_ANOMALY: 'spending_anomaly',
+  BADGE_EARNED: 'badge_earned',
+  STREAK_MILESTONE: 'streak_milestone',
   SYSTEM: 'system',
 };
 

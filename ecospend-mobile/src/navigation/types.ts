@@ -8,6 +8,15 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { phone: string };
+  VerifyOtp: { phone: string; purpose: 'register' | 'login' };
+};
+
+// ─── Compulsory first-login account setup ─────────────────────────────────────
+export type AccountSetupStackParamList = {
+  SetupWelcome: undefined;
+  SetupIncome: undefined;
+  SetupBudgets: undefined;
+  SetupNotifications: undefined;
 };
 
 // ─── Per-feature stacks ───────────────────────────────────────────────────────
@@ -46,6 +55,9 @@ export type ProfileStackParamList = {
   HelpSupport: undefined;
   About: undefined;
   BadgesAndStreaks: undefined;
+  Learn: undefined;
+  LessonTrack: { trackId: string };
+  LessonDetail: { lessonId: string };
 };
 
 // ─── Bottom Tabs ─────────────────────────────────────────────────────────────
@@ -96,6 +108,7 @@ export type AppStackParamList = {
   // Global overlays
   Notifications: undefined;
   WeeklyInsights: undefined;
+  AskCoach: undefined;
 };
 
 /** @deprecated Use TabParamList instead */
