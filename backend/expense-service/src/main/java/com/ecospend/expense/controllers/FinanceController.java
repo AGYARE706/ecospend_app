@@ -1,5 +1,6 @@
 package com.ecospend.expense.controllers;
 
+import com.ecospend.expense.client.EngagementClient;
 import com.ecospend.expense.client.NotificationClient;
 import com.ecospend.expense.client.PaymentClient;
 import com.ecospend.expense.dto.ContributeGoalRequest;
@@ -17,6 +18,7 @@ import com.ecospend.expense.repository.BudgetEnvelopeRepository;
 import com.ecospend.expense.repository.IncomeTargetRepository;
 import com.ecospend.expense.repository.SavingsGoalRepository;
 import com.ecospend.expense.repository.TransactionRepository;
+import com.ecospend.expense.services.FinanceAggregations;
 import com.ecospend.expense.services.TransactionRecorder;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +42,7 @@ public class FinanceController {
     private final TransactionRecorder transactionRecorder;
     private final PaymentClient paymentClient;
     private final NotificationClient notificationClient;
+    private final EngagementClient engagementClient;
 
     public FinanceController(TransactionRepository transactionRepository,
             SavingsGoalRepository savingsGoalRepository,
@@ -47,7 +50,8 @@ public class FinanceController {
             IncomeTargetRepository incomeTargetRepository,
             TransactionRecorder transactionRecorder,
             PaymentClient paymentClient,
-            NotificationClient notificationClient) {
+            NotificationClient notificationClient,
+            EngagementClient engagementClient) {
         this.transactionRepository = transactionRepository;
         this.savingsGoalRepository = savingsGoalRepository;
         this.budgetEnvelopeRepository = budgetEnvelopeRepository;
@@ -55,6 +59,7 @@ public class FinanceController {
         this.transactionRecorder = transactionRecorder;
         this.paymentClient = paymentClient;
         this.notificationClient = notificationClient;
+        this.engagementClient = engagementClient;
     }
 
     // ---- Expected monthly income (the income-side counterpart of
@@ -106,31 +111,7 @@ public class FinanceController {
         }
 
         List<Transaction> transactions = transactionRepository.findByUserId(userId);
-        BigDecimal income = BigDecimal.ZERO;
-        BigDecimal expense = BigDecimal.ZERO;
-        long count = 0;
-
-        for (Transaction tx : transactions) {
-            if (tx.getCreatedAt() == null) {
-                continue;
-            }
-            if (tx.getCreatedAt().getMonthValue() != month || tx.getCreatedAt().getYear() != year) {
-                continue;
-            }
-            count++;
-            if (tx.getType() != null && tx.getType().equalsIgnoreCase("INCOME")) {
-                income = income.add(tx.getAmount());
-            } else {
-                expense = expense.add(tx.getAmount());
-            }
-        }
-
-        return ResponseEntity.ok(new TransactionSummaryResponse(
-                income,
-                expense,
-                income.subtract(expense),
-                count
-        ));
+        return ResponseEntity.ok(FinanceAggregations.summarize(transactions, month, year));
     }
 
     @GetMapping("/transactions/{id}")
@@ -322,5 +303,6 @@ public class FinanceController {
                 String.format("You've hit your target for \"%s\" — GHS %.2f saved.",
                         goal.getName(), goal.getTargetAmount()),
                 "GOAL_COMPLETED", Map.of("goalId", goal.getId().toString()));
+        engagementClient.fire(userId, "GOAL_COMPLETED", Map.of("goalId", goal.getId().toString()));
     }
 }

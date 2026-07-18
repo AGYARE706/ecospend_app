@@ -1,5 +1,6 @@
 package com.ecospend.expense.services;
 
+import com.ecospend.expense.client.EngagementClient;
 import com.ecospend.expense.client.NotificationClient;
 import com.ecospend.expense.models.BudgetEnvelope;
 import com.ecospend.expense.models.Transaction;
@@ -25,13 +26,16 @@ public class TransactionRecorder {
     private final TransactionRepository transactionRepository;
     private final BudgetEnvelopeRepository budgetEnvelopeRepository;
     private final NotificationClient notificationClient;
+    private final EngagementClient engagementClient;
 
     public TransactionRecorder(TransactionRepository transactionRepository,
             BudgetEnvelopeRepository budgetEnvelopeRepository,
-            NotificationClient notificationClient) {
+            NotificationClient notificationClient,
+            EngagementClient engagementClient) {
         this.transactionRepository = transactionRepository;
         this.budgetEnvelopeRepository = budgetEnvelopeRepository;
         this.notificationClient = notificationClient;
+        this.engagementClient = engagementClient;
     }
 
     @Transactional
@@ -44,6 +48,8 @@ public class TransactionRecorder {
         transaction.setNotes(notes);
         transaction.setMomoFee(BigDecimal.ZERO);
         transaction = transactionRepository.save(transaction);
+
+        engagementClient.fire(userId, "TRANSACTION_RECORDED", Map.of("transactionId", transaction.getId().toString()));
 
         if ("EXPENSE".equalsIgnoreCase(transaction.getType())) {
             int month = transaction.getCreatedAt().getMonthValue();
