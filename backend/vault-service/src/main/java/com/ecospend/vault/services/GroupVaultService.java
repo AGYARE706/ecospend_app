@@ -433,6 +433,8 @@ public class GroupVaultService {
 
     private GroupVaultView view(GroupVault group, UUID viewerId) {
         List<GroupVaultMember> members = memberRepository.findByGroupId(group.getId());
+        Map<UUID, String> memberNames = identityClient.lookupByIds(
+                members.stream().map(GroupVaultMember::getUserId).distinct().toList());
         BigDecimal total = members.stream()
                 .map(GroupVaultMember::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -467,7 +469,8 @@ public class GroupVaultService {
                 : List.of();
 
         return new GroupVaultView(
-                group, members, total, myContribution, viewerId, plan, memberPlans, invites, activityLog);
+                group, members, total, myContribution, viewerId, plan, memberPlans, invites, activityLog,
+                memberNames);
     }
 
     private static String normalizeFrequency(String frequency) {

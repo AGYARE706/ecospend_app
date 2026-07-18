@@ -9,9 +9,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Resolves invitee phone numbers to registered EcoSpend users. Best-effort:
@@ -36,6 +38,7 @@ public class IdentityClient {
     }
 
     public record PhoneMatch(String phoneNumber, UUID userId, String name) {}
+    public record IdMatch(String phoneNumber, UUID userId, String name) {}
 
     public List<PhoneMatch> lookupByPhone(List<String> phoneNumbers) {
         if (phoneNumbers == null || phoneNumbers.isEmpty()) {
@@ -51,6 +54,33 @@ public class IdentityClient {
         } catch (RestClientException e) {
             log.warn("Could not resolve invitee phone numbers: {}", e.getMessage());
             return List.of();
+        }
+    }
+
+    /**
+     * Resolves group vault member ids to display names only — phone numbers
+     * are deliberately not surfaced to other group members. Best-effort,
+     * like {@link #lookupByPhone}: an unreachable identity-service yields an
+     * empty map rather than failing the group vault details request.
+     */
+    public Map<UUID, String> lookupByIds(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            IdMatch[] result = restClient.post()
+                    .uri("/users/internal/lookup-by-ids")
+                    .body(Map.of("userIds", userIds))
+                    .retrieve()
+                    .body(IdMatch[].class);
+            if (result == null) {
+                return Map.of();
+            }
+            return Arrays.stream(result)
+                    .collect(Collectors.toMap(IdMatch::userId, IdMatch::name));
+        } catch (RestClientException e) {
+            log.warn("Could not resolve group vault member names: {}", e.getMessage());
+            return Map.of();
         }
     }
 }
