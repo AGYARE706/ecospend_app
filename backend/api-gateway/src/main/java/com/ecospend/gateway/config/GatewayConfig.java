@@ -29,7 +29,8 @@ public class GatewayConfig {
                         .path(RoutePaths.VAULT_INTERNAL,
                                 RoutePaths.PAYMENTS_INTERNAL,
                                 RoutePaths.FINANCE_INTERNAL,
-                                RoutePaths.USERS_INTERNAL)
+                                RoutePaths.USERS_INTERNAL,
+                                RoutePaths.ENGAGEMENT_INTERNAL)
                         .filters(f -> f.filter((exchange, chain) -> {
                             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                             exchange.getResponse().getHeaders()
@@ -99,6 +100,13 @@ public class GatewayConfig {
                                 .filter(authenticationFilter.apply(
                                         new AuthenticationFilter.Config())))
                         .uri("http://notification-service:8084"))
+                .route("engagement-service", r -> r
+                        .path(RoutePaths.ENGAGEMENT)
+                        .and().not(p -> p.path(RoutePaths.ENGAGEMENT_INTERNAL))
+                        .filters(f -> f.stripPrefix(1)
+                                .filter(authenticationFilter.apply(
+                                        new AuthenticationFilter.Config())))
+                        .uri("http://engagement-service:8086"))
                 .build();
     }
 }
