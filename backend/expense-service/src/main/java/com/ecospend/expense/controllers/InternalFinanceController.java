@@ -3,6 +3,7 @@ package com.ecospend.expense.controllers;
 import com.ecospend.expense.dto.InternalTransactionRequest;
 import com.ecospend.expense.exception.BadRequestException;
 import com.ecospend.expense.models.Transaction;
+import com.ecospend.expense.services.SpendingAnomalyDetectionService;
 import com.ecospend.expense.services.TransactionRecorder;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 /**
  * Service-to-service surface. The API Gateway returns 403 for every
@@ -21,9 +24,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalFinanceController {
 
     private final TransactionRecorder transactionRecorder;
+    private final SpendingAnomalyDetectionService spendingAnomalyDetectionService;
 
-    public InternalFinanceController(TransactionRecorder transactionRecorder) {
+    public InternalFinanceController(TransactionRecorder transactionRecorder,
+            SpendingAnomalyDetectionService spendingAnomalyDetectionService) {
         this.transactionRecorder = transactionRecorder;
+        this.spendingAnomalyDetectionService = spendingAnomalyDetectionService;
     }
 
     @PostMapping("/transactions")
@@ -35,5 +41,14 @@ public class InternalFinanceController {
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(transactionRecorder.record(
                 request.userId(), request.amount(), type, request.category(), request.notes()));
+    }
+
+    /**
+     * Manually triggers the daily spending-anomaly sweep — the cron runs
+     * at 08:00, so demos and tests need a way to fire it on demand.
+     */
+    @PostMapping("/run-anomaly-scan")
+    public ResponseEntity<Map<String, Integer>> runAnomalyScan() {
+        return ResponseEntity.ok(Map.of("sent", spendingAnomalyDetectionService.run()));
     }
 }

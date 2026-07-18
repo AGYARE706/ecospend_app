@@ -25,6 +25,12 @@ public class GlobalExceptionHandler {
         return error("BAD_REQUEST", ex.getMessage(), 400);
     }
 
+    @ExceptionHandler(ServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public Map<String, Object> handleServiceUnavailable(ServiceUnavailableException ex) {
+        return error("SERVICE_UNAVAILABLE", ex.getMessage(), 503);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, Object> handleValidation(MethodArgumentNotValidException ex) {
