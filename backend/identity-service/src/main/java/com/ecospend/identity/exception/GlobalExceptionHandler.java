@@ -55,6 +55,18 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of("INVALID_OTP", ex.getMessage(), 400);
     }
 
+    @ExceptionHandler(AccountLockedException.class)
+    @ResponseStatus(HttpStatus.LOCKED)
+    public ErrorResponse handleAccountLocked(AccountLockedException ex) {
+        return ErrorResponse.of("ACCOUNT_LOCKED", ex.getMessage(), 423);
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ErrorResponse handleTooManyRequests(TooManyRequestsException ex) {
+        return ErrorResponse.of("TOO_MANY_REQUESTS", ex.getMessage(), 429);
+    }
+
     @ExceptionHandler(PaymentRequiredException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handlePaymentRequired(PaymentRequiredException ex) {
@@ -65,6 +77,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleInvalidPhoto(InvalidPhotoException ex) {
         return ErrorResponse.of("INVALID_PHOTO", ex.getMessage(), 400);
+    }
+
+    @ExceptionHandler(SessionNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleSessionNotFound(SessionNotFoundException ex) {
+        return ErrorResponse.of("SESSION_NOT_FOUND", ex.getMessage(), 404);
     }
 
     @ExceptionHandler(Exception.class)

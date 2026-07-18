@@ -11,14 +11,22 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * A one-time code sent by SMS, shared across the three flows that need
+ * one: registration verification, password reset, and optional login 2FA.
+ * At most one live OTP exists per (phone, purpose) — a new send replaces
+ * any prior unconsumed code for that purpose.
+ */
 @Entity
-@Table(name = "password_reset_otps")
+@Table(name = "otps")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PasswordResetOtp {
+public class Otp {
+
+    public enum Purpose { REGISTRATION, PASSWORD_RESET, LOGIN_2FA }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,8 +38,17 @@ public class PasswordResetOtp {
     @Column(name = "phone_number", nullable = false, length = 15)
     private String phoneNumber;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "purpose", nullable = false, length = 20)
+    private Purpose purpose;
+
     @Column(name = "code_hash", nullable = false)
     private String codeHash;
+
+    /** Incorrect verify attempts against this code; capped by OtpService. */
+    @Column(name = "attempts", nullable = false)
+    @Builder.Default
+    private int attempts = 0;
 
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;

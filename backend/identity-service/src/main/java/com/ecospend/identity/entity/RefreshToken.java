@@ -40,4 +40,19 @@ public class RefreshToken {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    /** Friendly device label if the client sent one, else the raw HTTP User-Agent. */
+    @Column(name = "user_agent", columnDefinition = "TEXT")
+    private String userAgent;
+
+    @Column(name = "ip_address", length = 64)
+    private String ipAddress;
+
+    /** Updated on every successful /auth/refresh using this token. */
+    @Column(name = "last_used_at")
+    private LocalDateTime lastUsedAt;
+
+    /** Set on logout or password reset instead of deleting the row, so the session survives as login history. */
+    @Column(name = "revoked_at")
+    private LocalDateTime revokedAt;
 }

@@ -1,5 +1,6 @@
 package com.ecospend.identity.controller;
 
+import com.ecospend.identity.dto.IdLookupRequest;
 import com.ecospend.identity.dto.PhoneLookupRequest;
 import com.ecospend.identity.dto.UserLookupResult;
 import com.ecospend.identity.service.UserService;
@@ -27,5 +28,10 @@ public class InternalUserController {
     @PostMapping("/lookup-by-phone")
     public ResponseEntity<List<UserLookupResult>> lookupByPhone(@RequestBody PhoneLookupRequest request) {
         return ResponseEntity.ok(userService.lookupByPhone(request.phoneNumbers()));
+    }
+
+    @PostMapping("/lookup-by-ids")
+    public ResponseEntity<List<UserLookupResult>> lookupByIds(@RequestBody IdLookupRequest request) {
+        return ResponseEntity.ok(userService.lookupByIds(request.userIds()));
     }
 }

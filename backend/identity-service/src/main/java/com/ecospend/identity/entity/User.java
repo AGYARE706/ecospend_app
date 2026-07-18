@@ -56,6 +56,27 @@ public class User {
     @Builder.Default
     private boolean isActive = true;
 
+    @Column(name = "phone_verified", nullable = false)
+    @Builder.Default
+    private boolean phoneVerified = false;
+
+    @Column(name = "two_factor_enabled", nullable = false)
+    @Builder.Default
+    private boolean twoFactorEnabled = false;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    @Builder.Default
+    private int failedLoginAttempts = 0;
+
+    /** Set once failedLoginAttempts hits the threshold; cleared on next successful login. */
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
+    /** Whether the compulsory first-login setup wizard (income target + budgets) has been completed. */
+    @Column(name = "setup_completed", nullable = false)
+    @Builder.Default
+    private boolean setupCompleted = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

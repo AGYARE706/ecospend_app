@@ -14,5 +14,7 @@ public record UserProfileResponse(
         @JsonProperty("phone") String phoneNumber,
         @JsonProperty("tier") String subscriptionTier,
         @JsonProperty("photoUrl") String profilePhoto,
+        boolean twoFactorEnabled,
+        boolean setupCompleted,
         LocalDateTime createdAt
 ) {}

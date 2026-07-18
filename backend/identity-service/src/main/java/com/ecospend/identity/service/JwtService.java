@@ -45,9 +45,14 @@ public class JwtService {
 
     /**
      * Generates a long-lived refresh token containing only the user's id.
+     * Includes a random jti: without it, two refresh tokens minted for
+     * the same user within the same second (e.g. verify-OTP immediately
+     * followed by a login) would be byte-for-byte identical and collide
+     * on refresh_tokens' unique token column.
      */
     public String generateRefreshToken(UUID userId) {
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(userId.toString())
                 .claim("type", "refresh")
                 .issuedAt(new Date())
