@@ -179,6 +179,8 @@ interface ApiGroupVaultView {
   memberPlans?: ApiMemberPlan[];
   invites?: ApiInvite[];
   activity?: ApiActivity[];
+  /** Display name per member userId, resolved by the backend. Absent entries mean the name couldn't be resolved. */
+  memberNames?: Record<string, string>;
 }
 
 function mapContributionPlan(
@@ -205,6 +207,15 @@ function initialsFromId(id: string): string {
   return id.replace(/-/g, '').slice(0, 2).toUpperCase() || 'MB';
 }
 
+/** Mirrors AvatarInitials.tsx's getInitials() so member avatars look consistent app-wide. */
+function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+}
+
 export function mapGroupVault(dto: ApiGroupVaultView): GroupVault {
   const group = dto.group;
   const viewerId = dto.viewerId != null ? String(dto.viewerId) : undefined;
@@ -216,10 +227,14 @@ export function mapGroupVault(dto: ApiGroupVaultView): GroupVault {
     // Falls back to the first member (usual creation order) only if the
     // backend ever omits creatorId — normal responses always include it.
     const isAdmin = creatorId != null ? id === creatorId : index === 0;
+    // The backend resolves real names via identity-service; "Member N" is
+    // a last-resort fallback for the rare case that lookup comes back empty.
+    const resolvedName = dto.memberNames?.[id];
+    const name = isMe ? 'You' : (resolvedName ?? `Member ${index + 1}`);
     return {
       id,
-      name: isMe ? 'You' : `Member ${index + 1}`,
-      initials: isMe ? 'YO' : initialsFromId(id),
+      name,
+      initials: isMe ? 'YO' : resolvedName ? initialsFromName(resolvedName) : initialsFromId(id),
       role: isAdmin ? 'admin' : 'member',
       isMe,
       lastContribution: member.joinedAt?.slice(0, 10),

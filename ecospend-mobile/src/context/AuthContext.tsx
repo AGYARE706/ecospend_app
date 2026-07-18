@@ -26,13 +26,14 @@ export interface AuthUser {
   name: string;
   phone: string;
   photoUrl?: string | null;
+  setupCompleted: boolean;
 }
 
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;
   tier: string;
-  user: AuthUser;
+  user: { name: string; phone: string };
 }
 
 interface AuthContextValue {
@@ -45,6 +46,7 @@ interface AuthContextValue {
   updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
   updatePhoto: (photoBase64: string) => Promise<void>;
   upgradeToPlus: () => Promise<boolean>;
+  markSetupComplete: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -89,7 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (cancelled) {
             return;
           }
-          setUser({ name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl });
+          setUser({
+            name: profile.name,
+            phone: profile.phone,
+            photoUrl: profile.photoUrl,
+            setupCompleted: profile.setupCompleted,
+          });
           setTier(
             profile.tier === 'PLUS' || profile.tier === 'PREMIUM' ? 'PLUS' : 'FREE',
           );
@@ -106,13 +113,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               tier: refreshed.tier,
               user: refreshed.user,
             });
-            setUser(refreshed.user);
             setTier(
               refreshed.tier === 'PLUS' || refreshed.tier === 'PREMIUM'
                 ? 'PLUS'
                 : 'FREE',
             );
             setIsAuthenticated(true);
+            // The refresh response only carries name+phone — fetch the
+            // full profile (photo, setupCompleted) the same way the
+            // primary getMe() branch above does.
+            try {
+              const profile = await usersApi.getMe();
+              if (!cancelled) {
+                setUser({
+                  name: profile.name,
+                  phone: profile.phone,
+                  photoUrl: profile.photoUrl,
+                  setupCompleted: profile.setupCompleted,
+                });
+              }
+            } catch {
+              setUser({ ...refreshed.user, setupCompleted: true });
+            }
           } catch {
             await applyLocalSignOut();
           }
@@ -131,7 +153,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (session: AuthSession) => {
     await persistSession(session);
-    setUser(session.user);
+    // The login/register response only carries name+phone — default
+    // setupCompleted to false until the follow-up getMe() below resolves,
+    // so a brand-new registration isn't briefly shown the main app before
+    // the setup wizard gate kicks in.
+    setUser({ ...session.user, setupCompleted: false });
     setTier(
       session.tier === 'PLUS' || session.tier === 'PREMIUM' ? 'PLUS' : 'FREE',
     );
@@ -144,7 +170,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // doesn't appear "lost" after logging back in.
     try {
       const profile = await usersApi.getMe();
-      const fullUser = { name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl };
+      const fullUser = {
+        name: profile.name,
+        phone: profile.phone,
+        photoUrl: profile.photoUrl,
+        setupCompleted: profile.setupCompleted,
+      };
       setUser(fullUser);
       await updateStoredUser(fullUser);
     } catch {
@@ -169,14 +200,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const profile = await usersApi.updateMe({ name: updates.name.trim() });
-    const nextUser = { name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl };
+    const nextUser = {
+      name: profile.name,
+      phone: profile.phone,
+      photoUrl: profile.photoUrl,
+      setupCompleted: profile.setupCompleted,
+    };
     setUser(nextUser);
     await updateStoredUser(nextUser);
   }, []);
 
   const updatePhoto = useCallback(async (photoBase64: string) => {
     const profile = await usersApi.updateProfilePhoto(photoBase64);
-    const nextUser = { name: profile.name, phone: profile.phone, photoUrl: profile.photoUrl };
+    const nextUser = {
+      name: profile.name,
+      phone: profile.phone,
+      photoUrl: profile.photoUrl,
+      setupCompleted: profile.setupCompleted,
+    };
     setUser(nextUser);
     await updateStoredUser(nextUser);
   }, []);
@@ -189,10 +230,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const upgradeToPlus = useCallback(async (): Promise<boolean> => {
     const response = await usersApi.upgradeToPlus();
     // AuthResponse's user summary carries only name/phone — preserve the
-    // photo already held in state rather than silently dropping it.
+    // photo and setup state already held rather than silently dropping them.
     const nextUser = {
       ...(response.user ?? user ?? { name: '', phone: '' }),
       photoUrl: user?.photoUrl,
+      setupCompleted: user?.setupCompleted ?? true,
     };
     if (response.refreshToken) {
       await persistSession({
@@ -210,6 +252,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   }, [user]);
 
+  const markSetupComplete = useCallback(async () => {
+    const profile = await usersApi.completeSetup();
+    setUser((current) =>
+      current ? { ...current, setupCompleted: profile.setupCompleted } : current,
+    );
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       isAuthenticated,
@@ -221,10 +270,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       updatePhoto,
       upgradeToPlus,
+      markSetupComplete,
     }),
     [
       isAuthenticated,
       isLoading,
+      markSetupComplete,
       signIn,
       signOut,
       tier,

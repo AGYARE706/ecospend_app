@@ -7,6 +7,8 @@ export interface UserProfileResponse {
   phone: string;
   tier: string;
   photoUrl?: string | null;
+  twoFactorEnabled: boolean;
+  setupCompleted: boolean;
   createdAt?: string;
 }
 
@@ -30,5 +32,19 @@ export async function updateProfilePhoto(photoBase64: string): Promise<UserProfi
 
 export async function upgradeToPlus(): Promise<AuthResponse> {
   const { data } = await apiClient.post<AuthResponse>('/api/users/upgrade-to-plus');
+  return data;
+}
+
+export async function updateTwoFactor(enabled: boolean): Promise<UserProfileResponse> {
+  const { data } = await apiClient.put<UserProfileResponse>('/api/users/me/two-factor', {
+    enabled,
+  });
+  return data;
+}
+
+export async function completeSetup(): Promise<UserProfileResponse> {
+  const { data } = await apiClient.put<UserProfileResponse>('/api/users/me/setup-completed', {
+    completed: true,
+  });
   return data;
 }

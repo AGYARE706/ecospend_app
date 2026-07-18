@@ -11,6 +11,7 @@ import { useResetPassword } from '../../hooks/useResetPassword';
 import type { AuthStackParamList } from '../../navigation/types';
 import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
+import { maskPhone } from '../../utils/strings';
 
 type ResetPasswordScreenNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -21,14 +22,6 @@ type ResetPasswordRouteProp = RouteProp<AuthStackParamList, 'ResetPassword'>;
 interface ResetPasswordScreenProps {
   navigation: ResetPasswordScreenNavigationProp;
   route: ResetPasswordRouteProp;
-}
-
-function maskPhone(phone: string): string {
-  if (phone.length < 4) {
-    return phone;
-  }
-
-  return `${phone.slice(0, 3)} *** ${phone.slice(-4)}`;
 }
 
 export default function ResetPasswordScreen({

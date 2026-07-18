@@ -4,7 +4,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import * as authApi from '../api/authApi';
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import type { AuthStackParamList } from '../navigation/types';
-import { isValidOtpCode } from '../utils/validation';
+import { getPasswordRequirementError, isValidOtpCode } from '../utils/validation';
 
 export const RESET_SUCCESS_NAV_DELAY_MS = 1200;
 
@@ -39,8 +39,9 @@ export function useResetPassword(
       nextErrors.code = 'Enter the 6-digit code sent to your phone';
     }
 
-    if (password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters';
+    const passwordError = getPasswordRequirementError(password);
+    if (passwordError) {
+      nextErrors.password = passwordError;
     }
 
     if (confirmPassword !== password) {

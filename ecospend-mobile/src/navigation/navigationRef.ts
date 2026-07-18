@@ -25,3 +25,43 @@ export function navigateToSubscription(): void {
     });
   }
 }
+
+/** Switches to the Profile tab (its own root screen). */
+export function navigateToProfileTab(): void {
+  if (navigationRef.isReady()) {
+    navigationRef.navigate('MainTabs', {
+      screen: 'ProfileTab',
+      params: { screen: 'Profile' },
+    });
+  }
+}
+
+/** Opens the Security screen (nested under Profile tab). */
+export function navigateToSecurity(): void {
+  if (navigationRef.isReady()) {
+    navigationRef.navigate('MainTabs', {
+      screen: 'ProfileTab',
+      params: { screen: 'Security' },
+    });
+  }
+}
+
+/** Opens the Help & Support screen (nested under Profile tab). */
+export function navigateToHelpSupport(): void {
+  if (navigationRef.isReady()) {
+    navigationRef.navigate('MainTabs', {
+      screen: 'ProfileTab',
+      params: { screen: 'HelpSupport' },
+    });
+  }
+}
+
+/** Opens Financial Lessons (nested under Profile tab). */
+export function navigateToLearn(): void {
+  if (navigationRef.isReady()) {
+    navigationRef.navigate('MainTabs', {
+      screen: 'ProfileTab',
+      params: { screen: 'Learn' },
+    });
+  }
+}

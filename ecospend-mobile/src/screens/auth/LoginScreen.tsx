@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     loading,
     handleSubmit,
     getFieldError,
-  } = useLogin();
+  } = useLogin(navigation);
 
   return (
     <ScreenWrapper background="white" scrollable keyboardAvoiding>

@@ -41,7 +41,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     confirmPassword,
     setConfirmPassword,
     loading,
-    successMessage,
     handleSubmit,
     getFieldError,
   } = useRegister(navigation);
@@ -59,12 +58,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       <Text style={styles.subheading}>
         Join thousands of Ghanaians saving smarter
       </Text>
-
-      {successMessage ? (
-        <View style={styles.successBanner}>
-          <Text style={styles.successText}>{successMessage}</Text>
-        </View>
-      ) : null}
 
       <View style={styles.form}>
         <AppInput

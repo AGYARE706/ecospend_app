@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { BudgetEnvelopesScreen } from '../../screens/budget';
 import AddBillScreen from '../../screens/bills/AddBillScreen';
 import BillsScreen from '../../screens/bills/BillsScreen';
+import AskCoachScreen from '../../screens/coach/AskCoachScreen';
 import ContributeGroupVaultScreen from '../../screens/group-vault/ContributeGroupVaultScreen';
 import CreateGroupVaultScreen from '../../screens/group-vault/CreateGroupVaultScreen';
 import JoinGroupVaultScreen from '../../screens/group-vault/JoinGroupVaultScreen';
@@ -62,6 +63,7 @@ export default function AppNavigator() {
         <Stack.Screen name="BudgetEnvelopes" component={BudgetEnvelopesScreen} />
         <Stack.Screen name="Bills" component={BillsScreen} />
         <Stack.Screen name="WeeklyInsights" component={WeeklyInsightsScreen} />
+        <Stack.Screen name="AskCoach" component={AskCoachScreen} />
       </Stack.Group>
     </Stack.Navigator>
   );

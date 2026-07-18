@@ -69,6 +69,12 @@ export function getNotificationTypeLabel(type: NotificationType): string {
       return 'Goal Completed';
     case 'weekly_insight':
       return 'Weekly Insight';
+    case 'spending_anomaly':
+      return 'Spending Alert';
+    case 'badge_earned':
+      return 'Badge Earned';
+    case 'streak_milestone':
+      return 'Streak Milestone';
     case 'group_vault_reminder':
       return 'Contribution Due';
     case 'group_vault_invite':
@@ -128,6 +134,27 @@ export function getNotificationVisual(
         iconColor: colors.blue,
         iconBackground: colors.blueLight,
         accentColor: colors.blue,
+      };
+    case 'spending_anomaly':
+      return {
+        icon: 'flash-outline',
+        iconColor: colors.warning,
+        iconBackground: colors.warningLight,
+        accentColor: colors.warning,
+      };
+    case 'badge_earned':
+      return {
+        icon: 'trophy-outline',
+        iconColor: colors.gold,
+        iconBackground: colors.goldLight,
+        accentColor: colors.gold,
+      };
+    case 'streak_milestone':
+      return {
+        icon: 'flame-outline',
+        iconColor: colors.warning,
+        iconBackground: colors.orangeLight,
+        accentColor: colors.warning,
       };
     case 'group_vault_vote':
       return {

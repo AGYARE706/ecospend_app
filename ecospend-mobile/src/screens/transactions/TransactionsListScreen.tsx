@@ -1,4 +1,4 @@
-import { Animated, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   CompositeNavigationProp,
   useNavigation,
@@ -10,17 +10,11 @@ import FilterTabRow from '../../components/finance/FilterTabRow';
 import SummaryChipRow from '../../components/finance/SummaryChipRow';
 import TransactionListItem from '../../components/finance/TransactionListItem';
 import TransactionSectionCard from '../../components/finance/TransactionSectionCard';
-import CollapsedHeaderBar from '../../components/ui/CollapsedHeaderBar';
 import EmptyState from '../../components/ui/EmptyState';
-import IconButton from '../../components/ui/IconButton';
-import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SearchInput from '../../components/ui/SearchInput';
 import SkeletonBox from '../../components/ui/SkeletonBox';
-import { useCollapsingHeader } from '../../hooks/useCollapsingHeader';
 import { useTransactions } from '../../hooks/useTransactions';
-import { useUnreadNotificationsCount } from '../../hooks/useUnreadNotificationsCount';
-import { navigateApp } from '../../navigation/navigationRef';
 import type {
   AppStackParamList,
   TabParamList,
@@ -49,42 +43,17 @@ export default function TransactionsListScreen() {
     loading,
     isEmpty,
   } = useTransactions();
-  const unreadNotifications = useUnreadNotificationsCount();
-  const { onScroll, scrollEventThrottle, heroStyle, barStyle } = useCollapsingHeader();
 
   return (
-    <ScreenWrapper background="page" padded={false} edges={['top']}>
-      <CollapsedHeaderBar
-        title="Transactions"
-        rightActions={
-          <IconButton
-            icon="bell"
-            variant="soft"
-            size="sm"
-            onPress={() => navigateApp('Notifications')}
-            accessibilityLabel="Notifications"
-            badgeCount={unreadNotifications}
-          />
-        }
-        style={barStyle}
-      />
-      <Animated.ScrollView
+    <ScreenWrapper background="page" padded={false} edges={[]}>
+      <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        onScroll={onScroll}
-        scrollEventThrottle={scrollEventThrottle}
       >
-        <Animated.View style={[styles.paddedTop, heroStyle]}>
-          <ScreenHeader
-            title="Transactions"
-            subtitle="Recorded automatically as money moves"
-            onNotificationPress={() => navigateApp('Notifications')}
-            notificationBadgeCount={unreadNotifications}
-          />
-
+        <View style={styles.paddedTop}>
           {loading ? (
             <View>
               <SkeletonBox height={72} style={styles.skeletonGap} />
@@ -99,7 +68,7 @@ export default function TransactionsListScreen() {
               <SearchInput value={searchQuery} onChangeText={setSearchQuery} />
             </>
           )}
-        </Animated.View>
+        </View>
 
         {!loading && isEmpty ? (
           <EmptyState
@@ -130,7 +99,7 @@ export default function TransactionsListScreen() {
             ))}
           </View>
         ) : null}
-      </Animated.ScrollView>
+      </ScrollView>
     </ScreenWrapper>
   );
 }

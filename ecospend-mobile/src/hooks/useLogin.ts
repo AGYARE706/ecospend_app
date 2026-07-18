@@ -1,9 +1,13 @@
 import { useCallback, useState } from 'react';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 import * as authApi from '../api/authApi';
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import { useAuth } from '../context/AuthContext';
+import type { AuthStackParamList } from '../navigation/types';
 import { isValidGhanaPhone, normalizePhone } from '../utils/validation';
+
+type LoginNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
 export interface LoginFieldErrors {
   phone?: string;
@@ -11,7 +15,7 @@ export interface LoginFieldErrors {
   form?: string;
 }
 
-export function useLogin() {
+export function useLogin(navigation: LoginNavigationProp) {
   const { signIn } = useAuth();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -48,18 +52,23 @@ export function useLogin() {
         phoneNumber: normalizePhone(phone),
         password,
       });
-      await signIn({
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        tier: response.tier,
-        user: response.user,
+
+      if (response.status === 'SUCCESS' && response.auth) {
+        await signIn(response.auth);
+        return;
+      }
+
+      const targetPhone = response.phone ?? normalizePhone(phone);
+      navigation.navigate('VerifyOtp', {
+        phone: targetPhone,
+        purpose: response.status === 'OTP_REQUIRED' ? 'login' : 'register',
       });
     } catch (error) {
       setErrors({ form: getApiErrorMessage(error, 'Login failed') });
     } finally {
       setLoading(false);
     }
-  }, [password, phone, signIn, validate]);
+  }, [navigation, password, phone, signIn, validate]);
 
   const getFieldError = useCallback(
     (field: keyof LoginFieldErrors): string | undefined => {

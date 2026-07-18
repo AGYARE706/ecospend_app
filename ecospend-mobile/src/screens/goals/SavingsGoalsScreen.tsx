@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
@@ -8,13 +8,11 @@ import GoalCard from '../../components/goals/GoalCard';
 import GoalsSummaryBar from '../../components/goals/GoalsSummaryBar';
 import GoalsTabToggle from '../../components/goals/GoalsTabToggle';
 import GoalToast from '../../components/goals/GoalToast';
-import CollapsedHeaderBar from '../../components/ui/CollapsedHeaderBar';
+import FloatingActionButton from '../../components/finance/FloatingActionButton';
 import EmptyState from '../../components/ui/EmptyState';
-import IconButton from '../../components/ui/IconButton';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SkeletonBox from '../../components/ui/SkeletonBox';
-import { useCollapsingHeader } from '../../hooks/useCollapsingHeader';
 import { useSavingsGoals } from '../../hooks/useSavingsGoals';
 import { navigateApp } from '../../navigation/navigationRef';
 import type { GoalsStackParamList } from '../../navigation/types';
@@ -43,38 +41,16 @@ export default function SavingsGoalsScreen() {
   } = useSavingsGoals();
 
   const listData = activeTab === 'active' ? activeGoals : completedGoals;
-  const { onScroll, scrollEventThrottle, heroStyle, barStyle } = useCollapsingHeader();
 
   const listHeader = useMemo(
     () => (
       <View>
-        <Animated.View style={heroStyle}>
-          <ScreenHeader
-            title="Savings Goals"
-            subtitle="Save towards what matters"
-            right={
-              <>
-                <IconButton
-                  icon="notifications-outline"
-                  variant="soft"
-                  onPress={() => navigateApp('Notifications')}
-                  accessibilityLabel="Notifications"
-                />
-                <IconButton
-                  icon="add"
-                  variant="solid"
-                  onPress={() => navigateApp('CreateGoal')}
-                  accessibilityLabel="Create goal"
-                />
-              </>
-            }
-          />
+        <ScreenHeader title="Savings Goals" subtitle="Save towards what matters" />
 
-          <GoalsSummaryBar
-            activeGoalCount={activeGoalCount}
-            totalSaved={totalSaved}
-          />
-        </Animated.View>
+        <GoalsSummaryBar
+          activeGoalCount={activeGoalCount}
+          totalSaved={totalSaved}
+        />
 
         <GoalsTabToggle activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -87,7 +63,7 @@ export default function SavingsGoalsScreen() {
         ) : null}
       </View>
     ),
-    [activeGoalCount, activeTab, heroStyle, loading, setActiveTab, totalSaved],
+    [activeGoalCount, activeTab, loading, setActiveTab, totalSaved],
   );
 
   const renderItem = useCallback(
@@ -137,24 +113,10 @@ export default function SavingsGoalsScreen() {
   }, [activeTab, loading]);
 
   return (
-    <ScreenWrapper background="page" padded={false} edges={['top']}>
+    <ScreenWrapper background="page" padded={false} edges={[]}>
       {toastMessage ? <GoalToast message={toastMessage} /> : null}
 
-      <CollapsedHeaderBar
-        title="Savings Goals"
-        rightActions={
-          <IconButton
-            icon="add"
-            variant="solid"
-            size="sm"
-            onPress={() => navigateApp('CreateGoal')}
-            accessibilityLabel="Create goal"
-          />
-        }
-        style={barStyle}
-      />
-
-      <Animated.FlatList
+      <FlatList
         style={styles.list}
         data={loading ? [] : listData}
         keyExtractor={(item: SavingsGoal) => item.id}
@@ -164,9 +126,9 @@ export default function SavingsGoalsScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={scrollEventThrottle}
       />
+
+      <FloatingActionButton onPress={() => navigateApp('CreateGoal')} />
     </ScreenWrapper>
   );
 }

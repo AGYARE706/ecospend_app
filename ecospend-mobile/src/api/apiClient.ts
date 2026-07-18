@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import * as Device from 'expo-device';
 
 import {
   clearSession,
@@ -10,11 +11,29 @@ import {
 
 const DEFAULT_BASE_URL = 'http://10.0.2.2:8080';
 
+/**
+ * Friendly device label sent on every request so the backend can show
+ * something better than a raw User-Agent in Active Sessions / Login
+ * History (see identity-service's AuthController#deviceLabel). Computed
+ * once — device identity doesn't change mid-session.
+ */
+function computeDeviceLabel(): string | undefined {
+  const model = Device.modelName;
+  const os = Device.osName && Device.osVersion ? `${Device.osName} ${Device.osVersion}` : undefined;
+  if (model && os) {
+    return `${model} (${os})`;
+  }
+  return model ?? os ?? undefined;
+}
+
+const deviceLabel = computeDeviceLabel();
+
 export const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_BASE_URL,
   timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
+    ...(deviceLabel ? { 'X-Device-Label': deviceLabel } : {}),
   },
 });
 

@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppLockProvider } from './src/context/AppLockContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { EnvelopesProvider } from './src/context/EnvelopesContext';
 import { FinanceProvider } from './src/context/FinanceContext';
@@ -52,19 +53,21 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <WalletProvider>
-              <FinanceProvider>
-                {/* Envelopes must wrap Goals/Vault: their contribute flows
-                    call useEnvelopes() to refresh spend after an expense. */}
-                <EnvelopesProvider>
-                  <GoalsProvider>
-                    <VaultProvider>
-                      <ThemedApp />
-                    </VaultProvider>
-                  </GoalsProvider>
-                </EnvelopesProvider>
-              </FinanceProvider>
-            </WalletProvider>
+            <AppLockProvider>
+              <WalletProvider>
+                <FinanceProvider>
+                  {/* Envelopes must wrap Goals/Vault: their contribute flows
+                      call useEnvelopes() to refresh spend after an expense. */}
+                  <EnvelopesProvider>
+                    <GoalsProvider>
+                      <VaultProvider>
+                        <ThemedApp />
+                      </VaultProvider>
+                    </GoalsProvider>
+                  </EnvelopesProvider>
+                </FinanceProvider>
+              </WalletProvider>
+            </AppLockProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
