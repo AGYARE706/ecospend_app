@@ -1,5 +1,6 @@
 package com.ecospend.vault.services;
 
+import com.ecospend.vault.client.EngagementClient;
 import com.ecospend.vault.client.NotificationClient;
 import com.ecospend.vault.client.PaymentClient;
 import com.ecospend.vault.config.VaultTierPolicy;
@@ -30,6 +31,7 @@ public class VaultService {
     private final VaultTierPolicy vaultTierPolicy;
     private final PaymentClient paymentClient;
     private final NotificationClient notificationClient;
+    private final EngagementClient engagementClient;
 
     @Transactional
     public Vault create(UUID userId, String tier, CreateVaultRequest request) {
@@ -41,7 +43,10 @@ public class VaultService {
         vault.setName(request.name());
         vault.setTargetAmount(request.targetAmount());
         vault.setLockedUntil(request.lockedUntil());
-        return vaultRepository.save(vault);
+        Vault saved = vaultRepository.save(vault);
+
+        engagementClient.fire(userId, "VAULT_CREATED", Map.of("vaultId", saved.getId().toString()));
+        return saved;
     }
 
     public List<Vault> findAll(UUID userId) {
@@ -99,6 +104,7 @@ public class VaultService {
                 String.format("\"%s\" has matured — GHS %.2f was withdrawn to your wallet.",
                         vault.getName(), payout),
                 "VAULT_MATURED", Map.of("vaultId", vault.getId().toString()));
+        engagementClient.fire(userId, "VAULT_MATURED", Map.of("vaultId", vault.getId().toString()));
 
         return saved;
     }

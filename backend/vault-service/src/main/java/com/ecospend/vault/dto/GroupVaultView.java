@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public record GroupVaultView(
         GroupVault group,
@@ -23,5 +25,7 @@ public record GroupVaultView(
         /** Who was invited by phone and whether they've joined. Only populated for the creator. */
         List<GroupVaultInvite> invites,
         /** Full event history (joins, contributions, withdrawal steps, exits). Members-only. */
-        List<GroupVaultActivity> activity
+        List<GroupVaultActivity> activity,
+        /** Display name per member userId, resolved from identity-service. Best-effort — a userId absent here (identity-service unreachable) has no known name. */
+        Map<UUID, String> memberNames
 ) {}

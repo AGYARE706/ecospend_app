@@ -39,3 +39,6 @@ management:
 
 payment-service:
   base-url: ${PAYMENT_SERVICE_URL:http://payment-service:8085}
+
+engagement-service:
+  base-url: ${ENGAGEMENT_SERVICE_URL:http://engagement-service:8086}
