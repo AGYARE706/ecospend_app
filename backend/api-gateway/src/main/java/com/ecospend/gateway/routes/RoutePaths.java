@@ -13,6 +13,7 @@ public final class RoutePaths {
     public static final String PAYMENTS = "/api/payments/**";
     public static final String NOTIFICATIONS = "/api/notifications/**";
     public static final String NOTIFICATIONS_SEND = "/api/notifications/send";
+    public static final String ENGAGEMENT = "/api/engagement/**";
 
     /**
      * Paystack calls this without a JWT; authenticity is enforced
@@ -27,6 +28,7 @@ public final class RoutePaths {
     public static final String PAYMENTS_INTERNAL = "/api/payments/internal/**";
     public static final String FINANCE_INTERNAL = "/api/finance/internal/**";
     public static final String USERS_INTERNAL = "/api/users/internal/**";
+    public static final String ENGAGEMENT_INTERNAL = "/api/engagement/internal/**";
 
     private RoutePaths() {}
 }
