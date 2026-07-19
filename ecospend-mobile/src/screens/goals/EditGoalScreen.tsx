@@ -15,6 +15,7 @@ import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import GoalIcon from '../../components/ui/GoalIcon';
 import { Icon } from '../../components/ui/icons';
 import { GOAL_CATEGORIES } from '../../constants/categories';
 import { useGoals } from '../../context/GoalsContext';
@@ -143,7 +144,7 @@ export default function EditGoalScreen() {
       return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <EmptyState
-            icon="target"
+            imageSource={require('../../../assets/goal.png')}
             title="Goal not found"
             subtitle="This goal may have been deleted."
             actionLabel="Go back"
@@ -200,7 +201,7 @@ export default function EditGoalScreen() {
                         <View style={styles.heroRingOuter}>
                             <View style={styles.heroRingInner}>
                                 <View style={styles.heroCenter}>
-                                    <Icon name="flag" size={28} color={colors.primary} />
+                                    <GoalIcon size={28} color={colors.primary} />
                                 </View>
                             </View>
                         </View>

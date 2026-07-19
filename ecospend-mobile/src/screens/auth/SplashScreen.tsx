@@ -16,7 +16,7 @@ interface SplashScreenProps {
   navigation: SplashScreenNavigationProp;
 }
 
-const LOGO_ASPECT_RATIO = 1024 / 336;
+const LOGO_ASPECT_RATIO = 531 / 484;
 const LOGO_WIDTH = 220;
 
 export default function SplashScreen({ navigation }: SplashScreenProps) {

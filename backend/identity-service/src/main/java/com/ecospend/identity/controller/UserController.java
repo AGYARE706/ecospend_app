@@ -4,6 +4,7 @@ import com.ecospend.identity.dto.AuthResponse;
 import com.ecospend.identity.dto.PushTokenRequest;
 import com.ecospend.identity.dto.SessionView;
 import com.ecospend.identity.dto.UpdateProfilePhotoRequest;
+import com.ecospend.identity.dto.UpdateMomoProviderRequest;
 import com.ecospend.identity.dto.UpdateSetupCompletedRequest;
 import com.ecospend.identity.dto.UpdateTwoFactorRequest;
 import com.ecospend.identity.dto.UpdateUserProfileRequest;
@@ -67,6 +68,13 @@ public class UserController {
             @RequestHeader("X-User-Id") UUID userId,
             @Valid @RequestBody UpdateSetupCompletedRequest request) {
         return ResponseEntity.ok(userService.setSetupCompleted(userId, request.completed()));
+    }
+
+    @PutMapping("/me/momo-provider")
+    public ResponseEntity<UserProfileResponse> updateMomoProvider(
+            @RequestHeader("X-User-Id") UUID userId,
+            @Valid @RequestBody UpdateMomoProviderRequest request) {
+        return ResponseEntity.ok(userService.setMomoProvider(userId, request.momoProvider()));
     }
 
     @GetMapping("/me/sessions")

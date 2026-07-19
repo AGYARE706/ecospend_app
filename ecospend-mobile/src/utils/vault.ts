@@ -36,3 +36,22 @@ export function formatDaysRemaining(days: number): string {
 
   return `${days} days left`;
 }
+
+/**
+ * Mirrors the backend's group-vault fee tiers exactly (Fees.java, used by
+ * GroupVaultService.execute()/exit()): early beats the lock date entirely
+ * (5%); on-time-but-the-group-never-hit-its-target is a shortfall (4%);
+ * on-time-and-target-met is the standard rate (2%).
+ */
+export function groupWithdrawalFeeRate(group: {
+  maturityDate: string;
+  amountSaved: number;
+  targetAmount: number;
+}): number {
+  const isEarly = new Date() < new Date(group.maturityDate);
+  if (isEarly) {
+    return 0.05;
+  }
+  const isShortfall = group.targetAmount > 0 && group.amountSaved < group.targetAmount;
+  return isShortfall ? 0.04 : 0.02;
+}

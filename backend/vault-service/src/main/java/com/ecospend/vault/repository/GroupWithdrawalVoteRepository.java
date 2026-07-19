@@ -11,4 +11,6 @@ public interface GroupWithdrawalVoteRepository extends JpaRepository<GroupWithdr
     List<GroupWithdrawalVote> findByRequestId(UUID requestId);
     Optional<GroupWithdrawalVote> findByRequestIdAndVoterId(UUID requestId, UUID voterId);
     long countByRequestIdAndApprove(UUID requestId, boolean approve);
+    /** Scoped to a specific set of voters — used to exclude votes cast by members who have since exited. */
+    long countByRequestIdAndApproveAndVoterIdIn(UUID requestId, boolean approve, List<UUID> voterIds);
 }

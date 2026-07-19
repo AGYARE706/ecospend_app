@@ -313,7 +313,7 @@ interface ApiWithdrawalView {
     groupId: string;
     requesterId: string;
     amount: number | string;
-    reason?: string | null;
+    note?: string | null;
     status?: string;
     createdAt?: string;
   };
@@ -330,8 +330,8 @@ export function mapWithdrawalRequest(
 ): WithdrawalRequest {
   const statusRaw = (dto.request.status ?? 'PENDING').toUpperCase();
   const status =
-    statusRaw === 'APPROVED'
-      ? 'approved'
+    statusRaw === 'EXECUTED'
+      ? 'executed'
       : statusRaw === 'REJECTED'
         ? 'rejected'
         : 'pending';
@@ -347,7 +347,7 @@ export function mapWithdrawalRequest(
       role: 'member',
     },
     amount: Number(dto.request.amount),
-    reason: dto.request.reason ?? '',
+    reason: dto.request.note ?? '',
     requestedDate: dto.request.createdAt
       ? dto.request.createdAt.slice(0, 10)
       : new Date().toISOString().slice(0, 10),

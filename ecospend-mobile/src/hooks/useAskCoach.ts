@@ -11,7 +11,7 @@ function localId(): string {
   return `local-${Date.now()}-${localIdCounter}`;
 }
 
-/** Drives the Ask EcoSpend chat screen — one conversation per mount, no streaming (see coachApi.ts). */
+/** Drives the Abena chat screen — one conversation per mount, no streaming (see coachApi.ts). */
 export function useAskCoach() {
   const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
@@ -39,7 +39,7 @@ export function useAskCoach() {
         setPhase('idle');
       } catch (err) {
         setPhase('failed');
-        setError(getApiErrorMessage(err, 'Ask EcoSpend could not answer that right now.'));
+        setError(getApiErrorMessage(err, 'Abena could not answer that right now.'));
       }
     },
     [conversationId, phase],

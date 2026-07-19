@@ -63,6 +63,7 @@ interface VaultContextValue {
   ) => Promise<void>;
   createGroupVault: (payload: CreateGroupVaultPayload) => Promise<GroupVault>;
   joinGroupVault: (inviteCode: string) => Promise<GroupVault | null>;
+  requestWithdrawal: (groupId: string, amount: number, note?: string) => Promise<WithdrawalRequest>;
   voteWithdrawal: (requestId: string, approve: boolean) => Promise<void>;
   lookupInviteCode: (code: string) => Promise<GroupVault | null>;
 }
@@ -330,6 +331,27 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [clearError],
   );
 
+  const requestWithdrawal = useCallback(
+    async (groupId: string, amount: number, note?: string): Promise<WithdrawalRequest> => {
+      clearError();
+      try {
+        const group = groupVaults.find((g) => g.id === groupId);
+        const created = await groupVaultApi.requestWithdrawal(groupId, amount, note);
+        const withName: WithdrawalRequest = {
+          ...created,
+          groupVaultName: group?.name ?? created.groupVaultName,
+        };
+        setWithdrawalRequests((current) => [withName, ...current]);
+        return withName;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not request a withdrawal'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
+    },
+    [clearError, groupVaults],
+  );
+
   const voteWithdrawal = useCallback(
     async (requestId: string, approve: boolean) => {
       clearError();
@@ -379,6 +401,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       withdrawVault,
       createGroupVault,
       joinGroupVault,
+      requestWithdrawal,
       voteWithdrawal,
       lookupInviteCode,
     }),
@@ -398,6 +421,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       loading,
       lookupInviteCode,
       refreshVaults,
+      requestWithdrawal,
       vaults,
       voteWithdrawal,
       withdrawVault,

@@ -12,11 +12,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import GoalCompletedCelebration from '../../components/goals/GoalCompletedCelebration';
 import { Icon } from '../../components/ui/icons';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import { useGoals } from '../../context/GoalsContext';
@@ -32,19 +34,21 @@ import {
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
-import { formatMonthYear, getRemainingAmount } from '../../utils/goals';
+import { formatMonthYear, getRemainingAmount, isGoalCompleted } from '../../utils/goals';
 
 type AddGoalContributionRouteProp = RouteProp<AppStackParamList, 'AddGoalContribution'>;
+type AddGoalContributionNavProp = StackNavigationProp<AppStackParamList, 'AddGoalContribution'>;
 
 export default function AddGoalContributionScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
     const { params } = useRoute<AddGoalContributionRouteProp>();
-    const navigation = useNavigation();
+    const navigation = useNavigation<AddGoalContributionNavProp>();
     const { getGoalById, contributeToGoal, isContributing } = useGoals();
     const { balance } = useWallet();
     const walletBalance = balance ?? 0;
     const [amount, setAmount] = useState('');
+    const [showCelebration, setShowCelebration] = useState(false);
 
     const goal = getGoalById(params.goalId);
 
@@ -54,9 +58,23 @@ export default function AddGoalContributionScreen() {
       return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <EmptyState
-            icon="target"
+            imageSource={require('../../../assets/goal.png')}
             title="Goal not found"
             subtitle="This goal may have been deleted."
+            actionLabel="Go back"
+            onAction={() => navigation.goBack()}
+          />
+        </SafeAreaView>
+      );
+    }
+
+    if (isGoalCompleted(goal) || getRemainingAmount(goal) <= 0) {
+      return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <EmptyState
+            imageSource={require('../../../assets/goal.png')}
+            title="Goal complete"
+            subtitle="This goal is locked from further contributions. Withdraw anytime, or start a new goal to keep saving."
             actionLabel="Go back"
             onAction={() => navigation.goBack()}
           />
@@ -80,19 +98,20 @@ export default function AddGoalContributionScreen() {
         setAmount((prev) => String(Math.min((Number(prev) || 0) + value, remaining)));
     };
 
-    const effectiveAmount = Math.min(addedAmount, remaining);
-    const hasEnoughBalance = effectiveAmount <= walletBalance;
-    const exceedsRemaining = addedAmount > remaining && remaining > 0;
+    const hasEnoughBalance = addedAmount <= walletBalance;
+    const exceedsRemaining = addedAmount > remaining;
 
     const handleSave = async () => {
-        if (effectiveAmount <= 0 || !hasEnoughBalance) {
+        if (addedAmount <= 0 || exceedsRemaining || !hasEnoughBalance) {
           return;
         }
 
         // Real money: the backend debits the wallet and auto-records
         // the expense, so only close the sheet when it succeeds.
-        const ok = await contributeToGoal(goal.id, effectiveAmount);
-        if (ok) {
+        const { success, justCompleted } = await contributeToGoal(goal.id, addedAmount);
+        if (success && justCompleted) {
+          setShowCelebration(true);
+        } else if (success) {
           navigation.goBack();
         }
     };
@@ -174,9 +193,11 @@ export default function AddGoalContributionScreen() {
                     leadingIcon="cash"
                     hint={`Paid from your wallet — GHS ${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} available`}
                     error={
-                      effectiveAmount > 0 && !hasEnoughBalance
-                        ? 'Amount exceeds your wallet balance — top up first'
-                        : undefined
+                      exceedsRemaining
+                        ? `That's more than this goal needs — enter GHS ${remaining.toFixed(2)} or less`
+                        : addedAmount > 0 && !hasEnoughBalance
+                          ? 'Amount exceeds your wallet balance — top up first'
+                          : undefined
                     }
                 />
 
@@ -184,8 +205,8 @@ export default function AddGoalContributionScreen() {
                   <View style={styles.capBanner}>
                     <Icon name="alert-circle" size={16} color={colors.warning} />
                     <Text style={styles.capBannerText}>
-                      That's more than this goal needs — we'll only take GHS{' '}
-                      {remaining.toFixed(2)} from your wallet and mark the goal complete.
+                      This goal is fixed at GHS {targetAmount.toLocaleString()} — enter an amount
+                      up to GHS {remaining.toFixed(2)} so it doesn't go over.
                     </Text>
                   </View>
                 ) : null}
@@ -231,7 +252,7 @@ export default function AddGoalContributionScreen() {
                       void handleSave();
                     }}
                     loading={isContributing}
-                    disabled={effectiveAmount <= 0 || !hasEnoughBalance}
+                    disabled={addedAmount <= 0 || exceedsRemaining || !hasEnoughBalance}
                     icon="arrow-right"
                     variant="primary"
                     size="lg"
@@ -242,6 +263,19 @@ export default function AddGoalContributionScreen() {
             <Text style={styles.hiddenGoalId}>Goal ID: {params.goalId}</Text>
         </ScrollView>
           </KeyboardAvoidingView>
+
+          <GoalCompletedCelebration
+            visible={showCelebration}
+            goalName={goalTitle}
+            onWithdrawNow={() => {
+              setShowCelebration(false);
+              navigation.replace('WithdrawFromGoal', { goalId: goal.id });
+            }}
+            onDismiss={() => {
+              setShowCelebration(false);
+              navigation.goBack();
+            }}
+          />
         </SafeAreaView>
     );
 }

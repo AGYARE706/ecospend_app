@@ -69,7 +69,13 @@ export default function SavingsGoalsScreen() {
   const renderItem = useCallback(
     ({ item, index }: { item: SavingsGoal; index: number }) => {
       if (activeTab === 'completed') {
-        return <CompletedGoalCard goal={item} index={index} />;
+        return (
+          <CompletedGoalCard
+            goal={item}
+            index={index}
+            onPress={(goal) => navigation.navigate('GoalDetails', { goalId: goal.id })}
+          />
+        );
       }
 
       return (
@@ -96,7 +102,7 @@ export default function SavingsGoalsScreen() {
     if (activeTab === 'active') {
       return (
         <EmptyState
-          icon="target"
+          imageSource={require('../../../assets/goal.png')}
           title="No active goals"
           subtitle="Tap the + button to create your first savings goal"
         />

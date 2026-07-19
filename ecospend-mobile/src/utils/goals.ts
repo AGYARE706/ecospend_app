@@ -7,8 +7,14 @@ export type DeadlineBadgeType =
   | 'overdue'
   | 'completed';
 
+/**
+ * Completion is permanent once reached (mirrors the backend: completedAt is
+ * only ever set, never cleared) — so this checks the persistent flag rather
+ * than recomputing from the live balance, which would go back to "false"
+ * the moment a completed goal is withdrawn from.
+ */
 export function isGoalCompleted(goal: SavingsGoal): boolean {
-  return goal.currentAmount >= goal.targetAmount;
+  return goal.completedAt != null;
 }
 
 export function getGoalProgress(goal: SavingsGoal): number {

@@ -46,8 +46,8 @@ type DashboardNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'DashboardTab'>
 >;
 
-const LOGO_ASPECT_RATIO = 1024 / 336;
-const LOGO_HEIGHT = 42;
+const LOGO_ASPECT_RATIO = 531 / 484;
+const LOGO_HEIGHT = 50;
 
 function getGreeting(date = new Date()): string {
   const hour = date.getHours();

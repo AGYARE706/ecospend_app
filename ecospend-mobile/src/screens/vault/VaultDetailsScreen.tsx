@@ -87,6 +87,8 @@ export default function VaultDetailsScreen({
     `${vault.accentColor}DD`,
     vault.accentColor,
   ];
+  const isTargetReached = vault.targetAmount > 0 && stats.remainingAmount <= 0;
+  const canAddFunds = !isTargetReached;
 
   function handleWithdraw() {
     navigateApp('WithdrawVault', { vaultId: vault.id });
@@ -246,14 +248,14 @@ export default function VaultDetailsScreen({
 
             <View style={styles.feeGrid}>
               <FeeBox
-                icon="checkmark-circle"
-                iconColor={colors.success}
-                label="On-Time Withdrawal"
-                rateLabel="2% fee"
+                icon={fees.onTimeIsShortfall ? 'alert-circle' : 'checkmark-circle'}
+                iconColor={fees.onTimeIsShortfall ? colors.warning : colors.success}
+                label={fees.onTimeIsShortfall ? 'On-Time, Under Target' : 'On-Time Withdrawal'}
+                rateLabel={`${Math.round(fees.onTimeRate * 100)}% fee`}
                 fee={fees.onTimeFeeGhs}
                 net={fees.onTimeNetGhs}
-                bgColor={colors.successLight}
-                textColor={colors.success}
+                bgColor={fees.onTimeIsShortfall ? colors.warningLight : colors.successLight}
+                textColor={fees.onTimeIsShortfall ? colors.warning : colors.success}
               />
               <View style={styles.feeGridSpacer} />
               <FeeBox
@@ -340,16 +342,28 @@ export default function VaultDetailsScreen({
 
           {/* ─── 6. Action Buttons ─────────────────────────────── */}
           <SectionHeader title="Actions" icon="flash-outline" />
-          <View style={styles.actionsRow}>
-            <View style={styles.actionButton}>
-              <AppButton
-                title="Add Funds"
-                variant="outline"
-                icon="add-circle-outline"
-                onPress={handleAddFunds}
-              />
+          {isTargetReached ? (
+            <View style={styles.targetReachedBanner}>
+              <Ionicons name="trophy-outline" size={16} color={colors.success} />
+              <Text style={styles.targetReachedText}>
+                Target reached — locked from further deposits until {formattedMaturity}.
+              </Text>
             </View>
-            <View style={styles.actionSpacer} />
+          ) : null}
+          <View style={styles.actionsRow}>
+            {canAddFunds ? (
+              <>
+                <View style={styles.actionButton}>
+                  <AppButton
+                    title="Add Funds"
+                    variant="outline"
+                    icon="add-circle-outline"
+                    onPress={handleAddFunds}
+                  />
+                </View>
+                <View style={styles.actionSpacer} />
+              </>
+            ) : null}
             <View style={styles.actionButton}>
               <AppButton
                 title="Withdraw"
@@ -1076,6 +1090,22 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  targetReachedBanner: {
+    alignItems: 'center',
+    backgroundColor: colors.successLight,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+    padding: spacing.smd,
+  },
+  targetReachedText: {
+    color: colors.textDark,
+    flex: 1,
+    fontSize: fontSize.xs,
+    minWidth: 140,
   },
   actionsRow: {
     flexDirection: 'row',

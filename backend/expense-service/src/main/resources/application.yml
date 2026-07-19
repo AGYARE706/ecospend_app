@@ -40,10 +40,10 @@ vault-service:
 engagement-service:
   base-url: ${ENGAGEMENT_SERVICE_URL:http://engagement-service:8086}
 
-anthropic:
-  api-key: ${ANTHROPIC_API_KEY:}
-  chat-model: claude-opus-4-8
-  narration-model: claude-haiku-4-5
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  chat-model: gemini-2.0-flash-001
+  narration-model: gemini-2.0-flash-001
 
 logging:
   level:

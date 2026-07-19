@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -5,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
+import CompletionCelebration from '../../components/ui/CompletionCelebration';
+import EmptyState from '../../components/ui/EmptyState';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useAddMoney } from '../../hooks/useAddMoney';
 import type { AppStackParamList } from '../../navigation/types';
@@ -45,17 +48,35 @@ export default function AddMoneyScreen({ route, navigation }: AddMoneyScreenProp
     setAmount,
     isAmountValid,
     hasEnoughBalance,
+    remaining,
+    exceedsRemaining,
     parsedAmount,
     phase,
     error,
+    justCompleted,
     handleDeposit,
     reset,
   } = useAddMoney(vaultId);
+  const [celebrationClosed, setCelebrationClosed] = useState(false);
 
   if (!vault) {
     return (
       <ScreenWrapper background="page">
         <Text style={styles.title}>Vault not found</Text>
+      </ScreenWrapper>
+    );
+  }
+
+  const isTargetReached = vault.targetAmount > 0 && vault.currentBalance >= vault.targetAmount;
+  if (isTargetReached) {
+    return (
+      <ScreenWrapper background="page">
+        <EmptyState
+          title="Target already reached"
+          subtitle="This vault is locked from further deposits. Withdraw once matured, or create a new vault."
+          actionLabel="Go back"
+          onAction={() => navigation.goBack()}
+        />
       </ScreenWrapper>
     );
   }
@@ -100,7 +121,11 @@ export default function AddMoneyScreen({ route, navigation }: AddMoneyScreenProp
                 onChangeText={setAmount}
                 placeholder="0.00"
                 keyboardType="decimal-pad"
-                error={error ?? undefined}
+                error={
+                  exceedsRemaining
+                    ? `That's more than this vault needs — enter GHS ${remaining.toFixed(2)} or less`
+                    : error ?? undefined
+                }
                 hint="Moves instantly from your EcoSpend wallet into this vault"
               />
               <AppButton
@@ -108,7 +133,7 @@ export default function AddMoneyScreen({ route, navigation }: AddMoneyScreenProp
                 icon="wallet-outline"
                 onPress={() => void handleDeposit()}
                 loading={phase === 'processing'}
-                disabled={!isAmountValid || !hasEnoughBalance || phase === 'processing'}
+                disabled={!isAmountValid || exceedsRemaining || !hasEnoughBalance || phase === 'processing'}
               />
               {showTopUpPrompt ? (
                 <AppButton
@@ -147,6 +172,16 @@ export default function AddMoneyScreen({ route, navigation }: AddMoneyScreenProp
           ) : null}
         </ScrollView>
       </View>
+
+      <CompletionCelebration
+        visible={phase === 'success' && justCompleted && !celebrationClosed}
+        icon="lock-closed"
+        title="Target Reached! 🎯"
+        subtitle={`"${vault.name}" has hit its target — but it's still locked until ${new Date(vault.maturityDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}. No withdrawal shortcut here — that's the whole point of a vault.`}
+        primaryLabel="Got it"
+        primaryIcon="checkmark"
+        onPrimaryPress={() => setCelebrationClosed(true)}
+      />
     </ScreenWrapper>
   );
 }

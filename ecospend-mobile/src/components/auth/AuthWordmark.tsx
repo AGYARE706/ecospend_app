@@ -2,7 +2,7 @@ import { Image, StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../theme';
 
-const LOGO_ASPECT_RATIO = 1024 / 336;
+const LOGO_ASPECT_RATIO = 531 / 484;
 const LOGO_HEIGHT = 36;
 
 export default function AuthWordmark() {

@@ -16,5 +16,6 @@ public record UserProfileResponse(
         @JsonProperty("photoUrl") String profilePhoto,
         boolean twoFactorEnabled,
         boolean setupCompleted,
+        String momoProvider,
         LocalDateTime createdAt
 ) {}

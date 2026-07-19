@@ -407,14 +407,21 @@ export default function CreateGroupVaultScreen({
               icon="thumbs-up-outline"
               iconColor={colors.primary}
               title="Majority approval required"
-              body="Any withdrawal must be voted on and approved by the majority of members."
+              body="Any withdrawal — your own contribution only, never another member's — must be voted on and approved by a majority of active members."
             />
             <View style={styles.ruleDivider} />
             <RuleRow
               icon="alert-circle-outline"
               iconColor={colors.warning}
-              title="Early exit fee"
-              body="Members who exit before the target date incur a 5% fee on their contribution."
+              title="Reaching the target early doesn't unlock it"
+              body="Only the target date does. A vote can't be used to get money out before the date any cheaper than exiting early would — both cost a 5% fee."
+            />
+            <View style={styles.ruleDivider} />
+            <RuleRow
+              icon="calendar-outline"
+              iconColor={colors.warning}
+              title="Under-target penalty"
+              body="Withdrawing on or after the target date costs 2% if the group hit its savings target, or 4% if it didn't."
             />
             <View style={styles.ruleDivider} />
             <RuleRow

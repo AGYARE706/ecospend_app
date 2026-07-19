@@ -82,9 +82,9 @@ export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps
       </View>
 
       <View style={styles.amountRow}>
-        <GhsText amount={envelope.spent} size="sm" numberOfLines={1} style={styles.spentAmount} />
-        <Text style={styles.ofText}> of </Text>
-        <GhsText amount={envelope.limit} size="sm" numberOfLines={1} style={styles.limitAmount} />
+        <GhsText amount={envelope.spent} size="sm" compact numberOfLines={1} style={styles.spentAmount} />
+        <Text style={styles.ofText}> / </Text>
+        <GhsText amount={envelope.limit} size="sm" compact numberOfLines={1} style={styles.limitAmount} />
       </View>
 
       <Text style={[styles.percentLabel, { color: fillColor }]}>

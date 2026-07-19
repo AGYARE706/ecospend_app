@@ -264,7 +264,7 @@ export default function GroupVaultDetailsScreen() {
             right={
               <InfoTooltip
                 title="Approval Requests"
-                body="A withdrawal request needs approval from more than half of active members to execute. If enough members reject it — making a majority impossible — it's automatically rejected. Once approved, a 2% fee is deducted and the net amount is paid to the requester's wallet."
+                body="A withdrawal request needs approval from more than half of active members to execute. If enough members reject it — making a majority impossible — it's automatically rejected. Once approved, a fee is deducted (2% on time with target met, 4% on time but under target, 5% before the lock date) and the net amount is paid to the requester's wallet."
               />
             }
           />
@@ -319,10 +319,7 @@ export default function GroupVaultDetailsScreen() {
                 title="Request Withdrawal"
                 icon="cash-outline"
                 onPress={() =>
-                  navigation.navigate('WithdrawalApproval', {
-                    groupVaultId: vault.id,
-                    requestId: pendingRequests[0]?.id ?? 'new-request',
-                  })
+                  navigateApp('RequestGroupWithdrawal', { groupVaultId: vault.id })
                 }
               />
             </View>

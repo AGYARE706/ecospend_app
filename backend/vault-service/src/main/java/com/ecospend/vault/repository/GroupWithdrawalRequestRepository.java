@@ -10,4 +10,5 @@ public interface GroupWithdrawalRequestRepository extends JpaRepository<GroupWit
     List<GroupWithdrawalRequest> findByGroupIdOrderByCreatedAtDesc(UUID groupId);
     List<GroupWithdrawalRequest> findByGroupIdAndRequesterIdAndStatus(
             UUID groupId, UUID requesterId, GroupWithdrawalRequest.Status status);
+    List<GroupWithdrawalRequest> findByGroupIdAndStatus(UUID groupId, GroupWithdrawalRequest.Status status);
 }

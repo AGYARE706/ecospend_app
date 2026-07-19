@@ -1,10 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Icon } from '../ui/icons';
 import {
-  palette,
   radius,
   shadowLg,
   shadowSm,
@@ -20,11 +17,10 @@ export interface AskCoachFabProps {
 }
 
 /**
- * Hovering launcher for Ask EcoSpend — bottom-left, teal to read as "the AI
- * thing" distinct from the bottom-right brand-green "add" FABs elsewhere.
- * A gentle bob + pulsing glow (one shared driver, two interpolations) is
- * the "alive AI" cue modern assistant bubbles use; the label pill exists
- * because a lone floating icon doesn't self-explain what it opens.
+ * Hovering launcher for Abena — bottom-right, teal to read as "the AI
+ * thing" distinct from brand-green primary actions elsewhere.
+ * A gentle bob is the "alive AI" cue; the label pill exists because a
+ * lone floating icon doesn't self-explain what it opens.
  */
 export default function AskCoachFab({ onPress }: AskCoachFabProps) {
   const { colors } = useTheme();
@@ -53,43 +49,30 @@ export default function AskCoachFab({ onPress }: AskCoachFabProps) {
   }, [drive]);
 
   const translateY = drive.interpolate({ inputRange: [0, 1], outputRange: [0, -8] });
-  const glowScale = drive.interpolate({ inputRange: [0, 1], outputRange: [1, 1.28] });
-  const glowOpacity = drive.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.12] });
 
   return (
     <Animated.View style={[styles.wrap, { transform: [{ translateY }] }]}>
       <View style={styles.row}>
         <View style={styles.buttonSlot}>
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.glow,
-              {
-                backgroundColor: colors.accent,
-                opacity: glowOpacity,
-                transform: [{ scale: glowScale }],
-              },
-            ]}
-          />
           <Pressable
             style={({ pressed }) => [styles.button, pressed && styles.pressed]}
             onPress={onPress}
             accessibilityRole="button"
-            accessibilityLabel="Ask EcoSpend — your AI financial coach"
+            accessibilityLabel="Ask Abena — your AI financial coach"
           >
-            <LinearGradient
-              colors={[palette.teal[500], palette.teal[700]]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.buttonInner}
-            >
-              <Icon name="sparkles" size={24} color={colors.onPrimary} strokeWidth={2} />
-            </LinearGradient>
+            <View style={[styles.buttonInner, { borderColor: colors.accent }]}>
+              <Image
+                source={require('../../../assets/assistant.png')}
+                style={styles.mascot}
+                resizeMode="contain"
+                accessibilityIgnoresInvertColors
+              />
+            </View>
           </Pressable>
         </View>
 
         <View style={styles.labelPill}>
-          <Text style={styles.labelText}>Ask AI</Text>
+          <Text style={styles.labelText}>Ask Abena</Text>
           <Text style={styles.labelSubtext} numberOfLines={1}>
             Your AI money coach
           </Text>
@@ -102,14 +85,14 @@ export default function AskCoachFab({ onPress }: AskCoachFabProps) {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     wrap: {
-      alignItems: 'flex-start',
+      alignItems: 'flex-end',
       bottom: spacing.lg,
-      left: spacing.lg,
+      right: spacing.lg,
       position: 'absolute',
     },
     row: {
       alignItems: 'center',
-      flexDirection: 'row',
+      flexDirection: 'row-reverse',
       gap: spacing.sm,
     },
     buttonSlot: {
@@ -118,12 +101,6 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       width: 56,
     },
-    glow: {
-      borderRadius: radius.full,
-      height: 78,
-      position: 'absolute',
-      width: 78,
-    },
     button: {
       borderRadius: radius.full,
       opacity: 0.9,
@@ -131,10 +108,16 @@ const createStyles = (colors: ThemeColors) =>
     },
     buttonInner: {
       alignItems: 'center',
+      backgroundColor: colors.cardBackground,
       borderRadius: radius.full,
+      borderWidth: 2,
       height: 56,
       justifyContent: 'center',
       width: 56,
+    },
+    mascot: {
+      height: 40,
+      width: 40,
     },
     pressed: {
       opacity: 0.8,

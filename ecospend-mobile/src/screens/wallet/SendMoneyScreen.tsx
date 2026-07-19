@@ -53,6 +53,9 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
     error,
     handleSend,
     reset,
+    ownPhone,
+    isOwnNumber,
+    useMyNumber,
   } = useSendMoney();
 
   const showTopUpPrompt =
@@ -124,8 +127,19 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
                 ))}
               </View>
 
+              <View style={styles.numberLabelRow}>
+                <Text style={styles.fieldLabel}>Recipient MoMo number</Text>
+                {ownPhone ? (
+                  <Pressable
+                    onPress={useMyNumber}
+                    style={({ pressed }) => [styles.useMyNumberChip, pressed && styles.useMyNumberChipPressed]}
+                  >
+                    <Ionicons name="person-circle-outline" size={14} color={colors.primary} />
+                    <Text style={styles.useMyNumberText}>Use my number</Text>
+                  </Pressable>
+                ) : null}
+              </View>
               <AppInput
-                label="Recipient MoMo number"
                 value={momoNumber}
                 onChangeText={setMomoNumber}
                 placeholder="0241234567"
@@ -133,6 +147,12 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
                 hint="The money is transferred via Paystack and recorded automatically"
                 maxLength={13}
               />
+              {isOwnNumber ? (
+                <View style={styles.selfBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
+                  <Text style={styles.selfBadgeText}>Sending to your own EcoSpend number</Text>
+                </View>
+              ) : null}
 
               <AppButton
                 title={phase === 'sending' ? 'Sending…' : 'Send Money'}
@@ -227,6 +247,39 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: fontSize.xs,
       fontWeight: fontWeight.semibold,
       textTransform: 'uppercase',
+    },
+    numberLabelRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    useMyNumberChip: {
+      alignItems: 'center',
+      backgroundColor: colors.primaryBackground,
+      borderRadius: radius.chip,
+      flexDirection: 'row',
+      gap: spacing.xxs,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xxs,
+    },
+    useMyNumberChipPressed: {
+      opacity: 0.7,
+    },
+    useMyNumberText: {
+      color: colors.primary,
+      fontSize: fontSize.xs,
+      fontWeight: fontWeight.semibold,
+    },
+    selfBadge: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing.xxs,
+      marginTop: -spacing.xs,
+    },
+    selfBadgeText: {
+      color: colors.primary,
+      fontSize: fontSize.xs,
+      fontWeight: fontWeight.medium,
     },
     providerRow: {
       flexDirection: 'row',

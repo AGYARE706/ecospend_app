@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
+import EmptyState from '../../components/ui/EmptyState';
 import InfoTooltip from '../../components/ui/InfoTooltip';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useVaults } from '../../context/VaultContext';
@@ -28,7 +29,7 @@ import type {
   GroupVaultMember,
   WithdrawalRequest,
 } from '../../types/groupVault';
-import { formatVaultDate } from '../../utils/vault';
+import { formatVaultDate, groupWithdrawalFeeRate } from '../../utils/vault';
 
 type WithdrawalApprovalRouteProp = RouteProp<
   VaultStackParamList,
@@ -39,7 +40,7 @@ type WithdrawalApprovalNavProp = StackNavigationProp<
   'WithdrawalApproval'
 >;
 
-type MemberVoteStatus = 'approved' | 'rejected' | 'pending' | 'you';
+type MemberVoteStatus = 'approved' | 'rejected' | 'pending' | 'you' | 'voted';
 
 function ghs(amount: number): string {
   return `GH₵ ${new Intl.NumberFormat('en-GH', {
@@ -48,34 +49,36 @@ function ghs(amount: number): string {
   }).format(amount)}`;
 }
 
-/** Every approved group withdrawal is charged this fee, win or lose maturity. */
-const WITHDRAWAL_FEE_RATE = 0.02;
-
+/**
+ * Who voted which way, for display. The backend only tells us the totals
+ * plus whether *I* voted (not which way) — so "you" only gets a definite
+ * approve/reject badge for a vote just cast in this session; a vote from
+ * an earlier session shows as a neutral "already voted" state rather than
+ * guessing which way it went.
+ */
 function buildMemberVotes(
   members: GroupVaultMember[],
   request: WithdrawalRequest,
+  myVoteThisSession: 'approve' | 'reject' | null,
 ): Array<{ member: GroupVaultMember; vote: MemberVoteStatus }> {
   const votes: Array<{ member: GroupVaultMember; vote: MemberVoteStatus }> = [];
   let remainingFor = request.votesFor;
   let remainingAgainst = request.votesAgainst;
-  let youAssigned = false;
 
   for (const member of members) {
-    const isYou = member.initials === 'FM' || member.name.toLowerCase().includes('frank');
-    if (isYou && !youAssigned) {
-      votes.push({
-        member,
-        vote: request.hasVoted
-          ? remainingFor > 0
-            ? 'approved'
-            : remainingAgainst > 0
-              ? 'rejected'
-              : 'you'
-          : 'you',
-      });
-      if (request.hasVoted && remainingFor > 0) remainingFor -= 1;
-      else if (request.hasVoted && remainingAgainst > 0) remainingAgainst -= 1;
-      youAssigned = true;
+    if (member.isMe) {
+      if (myVoteThisSession === 'approve') {
+        votes.push({ member, vote: 'approved' });
+        remainingFor = Math.max(0, remainingFor - 1);
+      } else if (myVoteThisSession === 'reject') {
+        votes.push({ member, vote: 'rejected' });
+        remainingAgainst = Math.max(0, remainingAgainst - 1);
+      } else if (request.hasVoted) {
+        // Voted in an earlier session — we know *that*, not which way.
+        votes.push({ member, vote: 'voted' });
+      } else {
+        votes.push({ member, vote: 'you' });
+      }
       continue;
     }
 
@@ -101,52 +104,60 @@ export default function WithdrawalApprovalScreen() {
   const {
     getGroupVaultById,
     getWithdrawalRequestById,
-    groupVaults,
     withdrawalRequests,
     voteWithdrawal,
   } = useVaults();
 
-  const group =
-    getGroupVaultById(params.groupVaultId) ?? groupVaults[0]!;
+  const group = getGroupVaultById(params.groupVaultId);
   const request =
     getWithdrawalRequestById(params.requestId) ??
-    withdrawalRequests.find((r) => r.groupVaultId === group.id) ??
-    withdrawalRequests[0]!;
+    withdrawalRequests.find((r) => r.groupVaultId === params.groupVaultId);
 
-  const [votesFor, setVotesFor] = useState(request.votesFor);
-  const [votesAgainst, setVotesAgainst] = useState(request.votesAgainst);
-  const [myVote, setMyVote] = useState<'approve' | 'reject' | null>(
-    request.hasVoted ? 'approve' : null,
-  );
+  if (!group || !request) {
+    return (
+      <ScreenWrapper background="page">
+        <EmptyState
+          icon="hourglass-outline"
+          title="Withdrawal request not found"
+          subtitle="This request may have already been resolved or removed."
+          actionLabel="Go back"
+          onAction={() => navigation.goBack()}
+        />
+      </ScreenWrapper>
+    );
+  }
+
+  // Vote counts/status come straight from context — voteWithdrawal() already
+  // reconciles the real server response into withdrawalRequests, so `request`
+  // here is always current, including if this vote executes or rejects it.
+  const [myVote, setMyVote] = useState<'approve' | 'reject' | null>(null);
+  const [isVoting, setIsVoting] = useState(false);
+  const [voteError, setVoteError] = useState<string | null>(null);
 
   const requiredVotes = request.requiredVotes;
-  const votesRemaining = Math.max(0, requiredVotes - votesFor - votesAgainst);
-  const approved = votesFor >= requiredVotes;
-  const feeAmount = request.amount * WITHDRAWAL_FEE_RATE;
+  const votesRemaining = Math.max(0, requiredVotes - request.votesFor - request.votesAgainst);
+  const feeRate = groupWithdrawalFeeRate(group);
+  const feeAmount = request.amount * feeRate;
   const netPayout = request.amount - feeAmount;
+  const alreadyVoted = request.hasVoted || myVote !== null;
 
-  const memberVotes = useMemo(() => {
-    const adjustedRequest: WithdrawalRequest = {
-      ...request,
-      votesFor,
-      votesAgainst,
-      hasVoted: myVote !== null,
-    };
-    return buildMemberVotes(group.members, adjustedRequest);
-  }, [group.members, myVote, request, votesAgainst, votesFor]);
+  const memberVotes = useMemo(
+    () => buildMemberVotes(group.members, request, myVote),
+    [group.members, myVote, request],
+  );
 
-  const onApprove = () => {
-    if (myVote !== null) return;
-    setVotesFor((v) => v + 1);
-    setMyVote('approve');
-    voteWithdrawal(request.id, true);
-  };
-
-  const onReject = () => {
-    if (myVote !== null) return;
-    setVotesAgainst((v) => v + 1);
-    setMyVote('reject');
-    voteWithdrawal(request.id, false);
+  const castVote = async (approve: boolean) => {
+    if (alreadyVoted || isVoting) return;
+    setIsVoting(true);
+    setVoteError(null);
+    try {
+      await voteWithdrawal(request.id, approve);
+      setMyVote(approve ? 'approve' : 'reject');
+    } catch {
+      setVoteError('Could not submit your vote — try again.');
+    } finally {
+      setIsVoting(false);
+    }
   };
 
   return (
@@ -191,10 +202,38 @@ export default function WithdrawalApprovalScreen() {
             </View>
 
             <View style={styles.feeRow}>
-              <Text style={styles.feeRowLabel}>If approved: 2% fee (−{ghs(feeAmount)})</Text>
+              <Text style={styles.feeRowLabel}>
+                If approved: {Math.round(feeRate * 100)}% fee (−{ghs(feeAmount)})
+                {feeRate === 0.05 ? ' — before the lock date' : feeRate === 0.04 ? ' — group never hit its target' : ''}
+              </Text>
               <Text style={styles.feeRowValue}>{ghs(netPayout)} net to requester</Text>
             </View>
           </LinearGradient>
+
+          {request.status !== 'pending' ? (
+            <View
+              style={[
+                styles.resolvedBanner,
+                { backgroundColor: request.status === 'executed' ? colors.successLight : colors.errorLight },
+              ]}
+            >
+              <Ionicons
+                name={request.status === 'executed' ? 'checkmark-circle' : 'close-circle'}
+                size={18}
+                color={request.status === 'executed' ? colors.success : colors.error}
+              />
+              <Text
+                style={[
+                  styles.resolvedBannerText,
+                  { color: request.status === 'executed' ? colors.success : colors.error },
+                ]}
+              >
+                {request.status === 'executed'
+                  ? 'Approved and paid out.'
+                  : 'Rejected by the group.'}
+              </Text>
+            </View>
+          ) : null}
 
           {/* Approval Status Card */}
           <SectionHeader
@@ -203,7 +242,7 @@ export default function WithdrawalApprovalScreen() {
             right={
               <InfoTooltip
                 title="How voting works"
-                body="More than half of the group's active members must approve for a withdrawal to execute automatically — there's no separate confirmation step. If enough members reject it that a majority becomes impossible, the request is automatically rejected instead. A 2% fee is always deducted from the requester's own balance when a withdrawal executes; it never touches other members' funds."
+                body="More than half of the group's active members must approve for a withdrawal to execute automatically — there's no separate confirmation step. If enough members reject it that a majority becomes impossible, the request is automatically rejected instead. The fee depends on timing: 2% on time with target met, 4% on time but under target, 5% if executed before the lock date — it's always deducted from the requester's own balance and never touches other members' funds."
               />
             }
           />
@@ -213,14 +252,14 @@ export default function WithdrawalApprovalScreen() {
                 icon="thumbs-up-outline"
                 iconColor={colors.success}
                 label="Approvals"
-                value={String(votesFor)}
+                value={String(request.votesFor)}
                 tone="success"
               />
               <StatusMetric
                 icon="thumbs-down-outline"
                 iconColor={colors.error}
                 label="Rejections"
-                value={String(votesAgainst)}
+                value={String(request.votesAgainst)}
                 tone="error"
               />
               <StatusMetric
@@ -234,10 +273,14 @@ export default function WithdrawalApprovalScreen() {
 
             <View style={styles.trackWrap}>
               <View style={styles.track}>
-                <View style={[styles.fillApprove, { width: `${Math.min(100, (votesFor / requiredVotes) * 100)}%` }]} />
+                <View style={[styles.fillApprove, { width: `${Math.min(100, (request.votesFor / requiredVotes) * 100)}%` }]} />
               </View>
               <Text style={styles.trackText}>
-                {approved ? 'Approved by majority' : `${requiredVotes} approvals required`}
+                {request.status === 'executed'
+                  ? 'Approved by majority'
+                  : request.status === 'rejected'
+                    ? 'Rejected by the group'
+                    : `${requiredVotes} approvals required`}
               </Text>
             </View>
           </View>
@@ -256,48 +299,59 @@ export default function WithdrawalApprovalScreen() {
           </View>
 
           {/* Actions */}
-          <SectionHeader title="Actions" icon="flash-outline" />
-          <View style={styles.actionRow}>
-            <View style={styles.actionBtn}>
-              <AppButton
-                title={myVote === 'approve' ? 'Approved' : 'Approve'}
-                variant={myVote === 'approve' ? 'primary' : 'outline'}
-                icon="thumbs-up-outline"
-                disabled={myVote !== null}
-                onPress={onApprove}
-              />
-            </View>
-            <View style={styles.actionSpacer} />
-            <View style={styles.actionBtn}>
-              <AppButton
-                title={myVote === 'reject' ? 'Rejected' : 'Reject'}
-                variant={myVote === 'reject' ? 'primary' : 'outline'}
-                icon="thumbs-down-outline"
-                disabled={myVote !== null}
-                onPress={onReject}
-              />
-            </View>
-          </View>
+          {request.status === 'pending' ? (
+            <>
+              <SectionHeader title="Actions" icon="flash-outline" />
+              <View style={styles.actionRow}>
+                <View style={styles.actionBtn}>
+                  <AppButton
+                    title={myVote === 'approve' ? 'Approved' : 'Approve'}
+                    variant={myVote === 'approve' ? 'primary' : 'outline'}
+                    icon="thumbs-up-outline"
+                    disabled={alreadyVoted || isVoting}
+                    loading={isVoting}
+                    onPress={() => void castVote(true)}
+                  />
+                </View>
+                <View style={styles.actionSpacer} />
+                <View style={styles.actionBtn}>
+                  <AppButton
+                    title={myVote === 'reject' ? 'Rejected' : 'Reject'}
+                    variant={myVote === 'reject' ? 'primary' : 'outline'}
+                    icon="thumbs-down-outline"
+                    disabled={alreadyVoted || isVoting}
+                    loading={isVoting}
+                    onPress={() => void castVote(false)}
+                  />
+                </View>
+              </View>
+            </>
+          ) : null}
 
-          {myVote !== null ? (
+          {voteError ? (
+            <View style={styles.toast}>
+              <Ionicons name="alert-circle" size={16} color={colors.error} />
+              <Text style={styles.toastText}>{voteError}</Text>
+            </View>
+          ) : alreadyVoted ? (
             <View style={styles.toast}>
               <Ionicons
-                name={myVote === 'approve' ? 'checkmark-circle' : 'alert-circle'}
+                name={myVote === 'approve' ? 'checkmark-circle' : myVote === 'reject' ? 'alert-circle' : 'information-circle-outline'}
                 size={16}
-                color={myVote === 'approve' ? colors.success : colors.warning}
+                color={myVote === 'approve' ? colors.success : myVote === 'reject' ? colors.warning : colors.textMuted}
               />
               <Text style={styles.toastText}>
                 Your vote has been recorded. Thanks for participating in group governance.
               </Text>
             </View>
-          ) : (
+          ) : request.status === 'pending' ? (
             <View style={styles.toast}>
               <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
               <Text style={styles.toastText}>
                 Vote once. Your decision helps protect all members' funds.
               </Text>
             </View>
-          )}
+          ) : null}
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -395,7 +449,9 @@ function MemberVoteRow({
         ? { text: 'Rejected', color: colors.error, bg: colors.errorLight, icon: 'close-circle' as const }
         : vote === 'you'
           ? { text: 'Awaiting your vote', color: colors.warning, bg: colors.warningLight, icon: 'person-circle' as const }
-          : { text: 'Pending', color: colors.textMuted, bg: colors.chipBg, icon: 'time' as const };
+          : vote === 'voted'
+            ? { text: 'You voted', color: colors.primary, bg: colors.primaryBackground, icon: 'checkmark-done-circle-outline' as const }
+            : { text: 'Pending', color: colors.textMuted, bg: colors.chipBg, icon: 'time' as const };
 
   return (
     <View style={[memberStyles.row, isLast && memberStyles.rowLast]}>
@@ -642,6 +698,19 @@ const createStyles = (colors: ThemeColors) =>
   feeRowValue: {
     color: colors.white,
     fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  resolvedBanner: {
+    alignItems: 'center',
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    padding: spacing.smd,
+  },
+  resolvedBannerText: {
+    flex: 1,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
   },
   card: {
