@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import GhsText from '../ui/GhsText';
@@ -14,34 +14,38 @@ import {
 import type { ThemeColors } from '../../theme';
 
 /**
- * Hero balance card — the focal point of the dashboard. A deep emerald
- * gradient with a soft glow orb and an income / expense split footer.
+ * Hero wallet card — the focal point of the dashboard. A quiet deep-emerald
+ * surface with the real wallet balance, Top Up / Send actions, and this
+ * month's income / expense split under a hairline divider.
  */
 export interface BalanceCardProps {
   balance: number;
   income: number;
   expense: number;
+  onTopUpPress?: () => void;
+  onSendPress?: () => void;
 }
 
-export default function BalanceCard({ balance, income, expense }: BalanceCardProps) {
+export default function BalanceCard({
+  balance,
+  income,
+  expense,
+  onTopUpPress,
+  onSendPress,
+}: BalanceCardProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.shadowWrap}>
       <LinearGradient
-        colors={[colors.heroGradientStart, colors.heroGradientMid, colors.heroGradientEnd]}
+        colors={[colors.heroGradientStart, colors.heroGradientMid]}
         style={styles.card}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        end={{ x: 0.9, y: 1.4 }}
       >
-        <View style={styles.glowOrb} />
-        <View style={styles.glowOrbSm} />
-
         <View style={styles.headerRow}>
-          <Text style={styles.label}>Total Balance</Text>
-          <View style={styles.iconBadge}>
-            <Icon name="wallet" size={18} color={colors.white} />
-          </View>
+          <Text style={styles.label}>Wallet balance</Text>
+          <Icon name="wallet" size={18} color={colors.white} strokeWidth={1.8} />
         </View>
 
         <GhsText
@@ -53,26 +57,47 @@ export default function BalanceCard({ balance, income, expense }: BalanceCardPro
           adjustsFontSizeToFit
         />
 
+        {onTopUpPress || onSendPress ? (
+          <View style={styles.actionsRow}>
+            {onTopUpPress ? (
+              <Pressable
+                onPress={onTopUpPress}
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Top up wallet"
+              >
+                <Icon name="plus" size={15} color={colors.white} strokeWidth={2.2} />
+                <Text style={styles.actionBtnText}>Top Up</Text>
+              </Pressable>
+            ) : null}
+            {onSendPress ? (
+              <Pressable
+                onPress={onSendPress}
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Send money"
+              >
+                <Icon name="send" size={15} color={colors.white} strokeWidth={2.2} />
+                <Text style={styles.actionBtnText}>Send</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <View style={styles.statHeader}>
-              <View style={styles.statIconCircle}>
-                <Icon name="arrow-down" size={13} color={colors.white} strokeWidth={2.4} />
-              </View>
-              <Text style={styles.statLabel} numberOfLines={1}>Income</Text>
-            </View>
+            <Text style={styles.statLabel} numberOfLines={1}>
+              Income this month
+            </Text>
             <GhsText amount={income} variant="white" size="sm" numberOfLines={1} adjustsFontSizeToFit />
           </View>
 
           <View style={styles.statDivider} />
 
           <View style={styles.statItem}>
-            <View style={styles.statHeader}>
-              <View style={styles.statIconCircle}>
-                <Icon name="arrow-up" size={13} color={colors.white} strokeWidth={2.4} />
-              </View>
-              <Text style={styles.statLabel} numberOfLines={1}>Expenses</Text>
-            </View>
+            <Text style={styles.statLabel} numberOfLines={1}>
+              Spent this month
+            </Text>
             <GhsText amount={expense} variant="white" size="sm" numberOfLines={1} adjustsFontSizeToFit />
           </View>
         </View>
@@ -85,90 +110,72 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   shadowWrap: {
     borderRadius: radius.heroCard,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.mlg,
     ...shadowBrand,
   },
   card: {
     borderRadius: radius.heroCard,
     overflow: 'hidden',
-    padding: spacing.lg,
-  },
-  glowOrb: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    borderRadius: radius.full,
-    height: 150,
-    position: 'absolute',
-    right: -40,
-    top: -50,
-    width: 150,
-  },
-  glowOrbSm: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: radius.full,
-    bottom: -30,
-    height: 90,
-    left: -20,
-    position: 'absolute',
-    width: 90,
+    paddingHorizontal: spacing.mlg,
+    paddingVertical: spacing.mlg,
   },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.smd,
-  },
-  iconBadge: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: radius.md,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
+    marginBottom: spacing.sm,
   },
   label: {
-    ...typography.bodySm,
+    ...typography.caption,
     color: colors.white,
-    fontWeight: typography.caption.fontWeight,
-    letterSpacing: 0.2,
-    opacity: 0.9,
+    letterSpacing: 0.3,
+    opacity: 0.85,
+    textTransform: 'uppercase',
   },
   balance: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  actionBtn: {
+    alignItems: 'center',
+    backgroundColor: colors.heroOverlay,
+    borderRadius: radius.full,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    minHeight: 38,
+    paddingHorizontal: spacing.md,
+  },
+  actionBtnPressed: {
+    opacity: 0.75,
+  },
+  actionBtnText: {
+    ...typography.label,
+    color: colors.white,
   },
   statsRow: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    borderRadius: radius.md,
+    borderTopColor: colors.heroDivider,
+    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.smd,
+    paddingTop: spacing.smd,
   },
   statItem: {
     flex: 1,
+    gap: 2,
   },
   statDivider: {
-    backgroundColor: 'rgba(255,255,255,0.20)',
-    height: 36,
+    backgroundColor: colors.heroDivider,
     marginHorizontal: spacing.md,
-    width: 1,
-  },
-  statHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  statIconCircle: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: radius.full,
-    height: 22,
-    justifyContent: 'center',
-    width: 22,
+    width: StyleSheet.hairlineWidth,
   },
   statLabel: {
     ...typography.caption,
     color: colors.white,
-    opacity: 0.85,
+    opacity: 0.75,
   },
 });

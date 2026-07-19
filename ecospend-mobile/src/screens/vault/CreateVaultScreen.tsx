@@ -106,7 +106,6 @@ export default function CreateVaultScreen({
             end={{ x: 1, y: 1 }}
             style={styles.banner}
           >
-            <View style={styles.bannerGlow} />
             <View style={styles.bannerContent}>
               <View style={styles.bannerIconRing}>
                 <Ionicons name="lock-closed" size={22} color={colors.white} />
@@ -114,8 +113,11 @@ export default function CreateVaultScreen({
               <View style={styles.bannerText}>
                 <Text style={styles.bannerTitle}>How Vaults Work</Text>
                 <Text style={styles.bannerBody}>
-                  Lock your savings until a chosen date and stay committed to
-                  your goals. Early access incurs a small fee.
+                  Lock your savings until your target date — hitting your
+                  savings target early doesn't unlock it, only the date does.
+                  Withdrawing before the date costs more than waiting, and
+                  reaching the date without hitting your target still costs
+                  more than reaching it on time.
                 </Text>
               </View>
             </View>
@@ -124,7 +126,7 @@ export default function CreateVaultScreen({
           {/* ─── Form: Vault Name ──────────────────────────────────── */}
           <SectionLabel title="Vault Details" icon="create-outline" />
 
-          <Card style={styles.formCard}>
+          <Card padding="sm" style={styles.formCard}>
             <AppInput
               label="Vault Name"
               value={form.vaultName}
@@ -137,7 +139,7 @@ export default function CreateVaultScreen({
           {/* ─── Form: Amounts ─────────────────────────────────────── */}
           <SectionLabel title="Amounts" icon="cash-outline" />
 
-          <Card style={styles.formCard}>
+          <Card padding="sm" style={styles.formCard}>
             <Text style={styles.fieldLabel}>Target Amount</Text>
             <AmountDisplayInput
               value={form.targetAmount}
@@ -161,7 +163,7 @@ export default function CreateVaultScreen({
           {/* ─── Form: Target Date ─────────────────────────────────── */}
           <SectionLabel title="Target Date" icon="calendar-outline" />
 
-          <Card style={styles.formCard}>
+          <Card padding="sm" style={styles.formCard}>
             <Text style={styles.fieldLabel}>Lock Duration</Text>
             <View style={styles.presetRow}>
               {DATE_PRESETS.map((preset) => (
@@ -204,12 +206,25 @@ export default function CreateVaultScreen({
             <FeeRow
               icon="checkmark-circle"
               iconColor={colors.success}
-              label="On-Time Withdrawal"
+              label="On-Time, Target Met"
               rateLabel="2% fee"
               feeAmount={feePreview.onTimeFee}
               netAmount={feePreview.onTimeWithdrawal}
               locked={feePreview.lockedAmount}
               highlight="success"
+            />
+
+            <View style={styles.feeDivider} />
+
+            <FeeRow
+              icon="alert-circle"
+              iconColor={colors.warning}
+              label="On-Time, Under Target"
+              rateLabel="4% fee"
+              feeAmount={feePreview.shortfallFee}
+              netAmount={feePreview.shortfallWithdrawal}
+              locked={feePreview.lockedAmount}
+              highlight="warning"
             />
 
             <View style={styles.feeDivider} />
@@ -253,6 +268,11 @@ export default function CreateVaultScreen({
 
         {/* ─── Sticky Create Button ──────────────────────────────── */}
         <View style={styles.stickyFooter}>
+          {errors.form ? (
+            <Text style={{ color: colors.error, marginBottom: 8, textAlign: 'center' }}>
+              {errors.form}
+            </Text>
+          ) : null}
           <AppButton
             title="Create Vault"
             icon="lock-closed-outline"
@@ -511,7 +531,6 @@ function VaultSummaryPreview({
       end={{ x: 1, y: 1 }}
       style={summaryStyles.card}
     >
-      <View style={summaryStyles.glowOrb} />
 
       <View style={summaryStyles.topRow}>
         <View style={summaryStyles.iconRing}>

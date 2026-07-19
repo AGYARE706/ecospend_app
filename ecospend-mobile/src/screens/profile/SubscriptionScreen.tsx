@@ -48,7 +48,7 @@ export default function SubscriptionScreen() {
   } = useSubscription();
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -164,7 +164,6 @@ function CurrentPlanCard({
         end={{ x: 1, y: 1 }}
         style={styles.planCardGradient}
       >
-        <View style={styles.planGlow} />
         <View style={styles.planTopRow}>
           <View style={styles.planIconRing}>
             <Ionicons name="star" size={20} color={colors.white} />
@@ -464,7 +463,7 @@ const createStyles = (colors: ThemeColors) =>
   },
   planCardGradient: {
     borderRadius: radius.heroCard,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     overflow: 'hidden',
     padding: spacing.lg,
     ...shadowMd,
@@ -483,7 +482,7 @@ const createStyles = (colors: ThemeColors) =>
     borderColor: colors.borderSubtle,
     borderRadius: radius.heroCard,
     borderWidth: 1,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     padding: spacing.lg,
     ...cardShadow,
   },
@@ -577,7 +576,7 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   benefitCard: {
     backgroundColor: colors.cardBackground,
@@ -609,7 +608,7 @@ const createStyles = (colors: ThemeColors) =>
   },
   pricingCard: {
     borderRadius: radius.heroCard,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     overflow: 'hidden',
     ...shadowMd,
   },

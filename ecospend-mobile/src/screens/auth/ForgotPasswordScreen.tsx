@@ -8,7 +8,7 @@ import { Icon } from '../../components/ui/icons';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useForgotPassword } from '../../hooks/useForgotPassword';
 import type { AuthStackParamList } from '../../navigation/types';
-import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import { fontSize, fontWeight, spacing, useTheme, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
 
 type ForgotPasswordScreenNavigationProp = StackNavigationProp<
@@ -23,6 +23,7 @@ interface ForgotPasswordScreenProps {
 export default function ForgotPasswordScreen({
   navigation,
 }: ForgotPasswordScreenProps) {
+  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { phone, setPhone, loading, handleSubmit, getFieldError } =
     useForgotPassword(navigation);
@@ -50,6 +51,10 @@ export default function ForgotPasswordScreen({
           keyboardType="phone-pad"
           error={getFieldError('phone')}
         />
+
+        {getFieldError('form') ? (
+          <Text style={{ color: colors.error, marginBottom: 8 }}>{getFieldError('form')}</Text>
+        ) : null}
 
         <AppButton
           title="Send verification code"

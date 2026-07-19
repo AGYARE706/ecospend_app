@@ -1,0 +1,14 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecospend}
+    username: ${DB_USER:ecospend}
+    password: ${DB_PASSWORD:ecospend_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false

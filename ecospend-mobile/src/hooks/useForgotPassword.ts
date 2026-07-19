@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { StackNavigationProp } from '@react-navigation/stack';
 
-import { mockRequestPasswordReset } from '../data/mock/auth';
+import * as authApi from '../api/authApi';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import type { AuthStackParamList } from '../navigation/types';
 import { isValidGhanaPhone, normalizePhone } from '../utils/validation';
 
@@ -12,6 +13,7 @@ type ForgotPasswordNavigationProp = StackNavigationProp<
 
 export interface ForgotPasswordFieldErrors {
   phone?: string;
+  form?: string;
 }
 
 export function useForgotPassword(navigation: ForgotPasswordNavigationProp) {
@@ -42,8 +44,10 @@ export function useForgotPassword(navigation: ForgotPasswordNavigationProp) {
     const normalizedPhone = normalizePhone(phone);
     setLoading(true);
     try {
-      await mockRequestPasswordReset(normalizedPhone);
+      await authApi.forgotPassword(normalizedPhone);
       navigation.navigate('ResetPassword', { phone: normalizedPhone });
+    } catch (error) {
+      setErrors({ form: getApiErrorMessage(error, 'Could not send reset code') });
     } finally {
       setLoading(false);
     }

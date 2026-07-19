@@ -1,6 +1,9 @@
 import { createStackNavigator } from '@react-navigation/stack';
 
 import BadgesAndStreaksScreen from '../../../screens/gamification/BadgesAndStreaksScreen';
+import LearnHomeScreen from '../../../screens/learn/LearnHomeScreen';
+import LessonDetailScreen from '../../../screens/learn/LessonDetailScreen';
+import LessonTrackScreen from '../../../screens/learn/LessonTrackScreen';
 import AboutScreen from '../../../screens/profile/AboutScreen';
 import EditProfileScreen from '../../../screens/profile/EditProfileScreen';
 import HelpSupportScreen from '../../../screens/profile/HelpSupportScreen';
@@ -26,6 +29,9 @@ export default function ProfileStack() {
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="BadgesAndStreaks" component={BadgesAndStreaksScreen} />
+      <Stack.Screen name="Learn" component={LearnHomeScreen} />
+      <Stack.Screen name="LessonTrack" component={LessonTrackScreen} />
+      <Stack.Screen name="LessonDetail" component={LessonDetailScreen} />
     </Stack.Navigator>
   );
 }

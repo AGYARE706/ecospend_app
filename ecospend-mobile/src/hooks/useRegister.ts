@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { StackNavigationProp } from '@react-navigation/stack';
 
-import { mockRegister, REGISTER_SUCCESS_NAV_DELAY_MS } from '../data/mock/auth';
+import * as authApi from '../api/authApi';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import type { AuthStackParamList } from '../navigation/types';
-import { isValidGhanaPhone } from '../utils/validation';
+import { getPasswordRequirementError, isValidGhanaPhone, normalizePhone } from '../utils/validation';
 
 type RegisterNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -15,6 +16,7 @@ export interface RegisterFieldErrors {
   phone?: string;
   password?: string;
   confirmPassword?: string;
+  form?: string;
 }
 
 export function useRegister(navigation: RegisterNavigationProp) {
@@ -25,7 +27,6 @@ export function useRegister(navigation: RegisterNavigationProp) {
   const [loading, setLoading] = useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [errors, setErrors] = useState<RegisterFieldErrors>({});
-  const [successMessage, setSuccessMessage] = useState('');
 
   const validate = useCallback((): RegisterFieldErrors => {
     const nextErrors: RegisterFieldErrors = {};
@@ -38,8 +39,9 @@ export function useRegister(navigation: RegisterNavigationProp) {
       nextErrors.phone = 'Enter a valid 10-digit phone number starting with 0';
     }
 
-    if (password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters';
+    const passwordError = getPasswordRequirementError(password);
+    if (passwordError) {
+      nextErrors.password = passwordError;
     }
 
     if (confirmPassword !== password) {
@@ -51,7 +53,6 @@ export function useRegister(navigation: RegisterNavigationProp) {
 
   const handleSubmit = useCallback(async () => {
     setHasAttemptedSubmit(true);
-    setSuccessMessage('');
     const nextErrors = validate();
     setErrors(nextErrors);
 
@@ -61,11 +62,15 @@ export function useRegister(navigation: RegisterNavigationProp) {
 
     setLoading(true);
     try {
-      await mockRegister({ name, phone, password });
-      setSuccessMessage('Account created successfully!');
-      setTimeout(() => {
-        navigation.navigate('Login');
-      }, REGISTER_SUCCESS_NAV_DELAY_MS);
+      const normalizedPhone = normalizePhone(phone);
+      await authApi.register({
+        name: name.trim(),
+        phoneNumber: normalizedPhone,
+        password,
+      });
+      navigation.navigate('VerifyOtp', { phone: normalizedPhone, purpose: 'register' });
+    } catch (error) {
+      setErrors({ form: getApiErrorMessage(error, 'Registration failed') });
     } finally {
       setLoading(false);
     }
@@ -91,7 +96,6 @@ export function useRegister(navigation: RegisterNavigationProp) {
     confirmPassword,
     setConfirmPassword,
     loading,
-    successMessage,
     handleSubmit,
     getFieldError,
   };

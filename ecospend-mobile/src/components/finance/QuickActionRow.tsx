@@ -2,13 +2,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
   radius,
-  shadowXs,
   spacing,
   typography,
   useTheme,
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
+import GoalIcon from '../ui/GoalIcon';
 import { Icon } from '../ui/icons';
 import type { IconName } from '../ui/icons';
 
@@ -19,9 +19,12 @@ type QuickActionKey = 'add' | 'transfer' | 'goals' | 'more';
  * SVG medallion drawn from the semantic palette for a cohesive, scannable row.
  */
 export interface QuickActionRowProps {
+  /** Wallet top-up via Paystack — the only way money enters the app. */
   onAddPress: () => void;
   onGoalsPress: () => void;
+  /** Wallet money-out: send to any MoMo number. */
   onTransferPress?: () => void;
+  /** Recurring bills paid from the wallet. */
   onMorePress?: () => void;
 }
 
@@ -30,14 +33,14 @@ const getActions = (
 ): {
   key: QuickActionKey;
   label: string;
-  icon: IconName;
+  icon: IconName | null;
   tint: string;
   bg: string;
 }[] => [
-  { key: 'add', label: 'Add', icon: 'plus', tint: colors.primary, bg: colors.primaryBackground },
-  { key: 'transfer', label: 'Transfer', icon: 'transfer', tint: colors.accent, bg: colors.accentLight },
-  { key: 'goals', label: 'Goals', icon: 'flag', tint: colors.gold, bg: colors.goldLight },
-  { key: 'more', label: 'More', icon: 'grid', tint: colors.textSecondary, bg: colors.chipBg },
+  { key: 'add', label: 'Top Up', icon: 'plus', tint: colors.primary, bg: colors.primaryBackground },
+  { key: 'transfer', label: 'Send', icon: 'send', tint: colors.accent, bg: colors.accentLight },
+  { key: 'goals', label: 'Goals', icon: null, tint: colors.gold, bg: colors.goldLight },
+  { key: 'more', label: 'Bills', icon: 'receipt', tint: colors.textSecondary, bg: colors.chipBg },
 ];
 
 export default function QuickActionRow({
@@ -66,7 +69,11 @@ export default function QuickActionRow({
           accessibilityLabel={action.label}
         >
           <View style={[styles.iconCircle, { backgroundColor: action.bg }]}>
-            <Icon name={action.icon} size={22} color={action.tint} strokeWidth={2} />
+            {action.icon ? (
+              <Icon name={action.icon} size={22} color={action.tint} strokeWidth={2} />
+            ) : (
+              <GoalIcon size={22} color={action.tint} />
+            )}
           </View>
           <Text style={styles.label} numberOfLines={1}>
             {action.label}
@@ -81,35 +88,29 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: spacing.smd,
-    marginBottom: spacing.xl,
+    justifyContent: 'space-between',
+    marginBottom: spacing.mlg,
+    paddingHorizontal: spacing.xs,
   },
   action: {
     alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderColor: colors.borderSubtle,
-    borderRadius: radius.lg,
-    borderWidth: 1,
     flex: 1,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.md,
-    ...shadowXs,
+    paddingVertical: spacing.xs,
   },
   pressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.97 }],
+    opacity: 0.7,
   },
   iconCircle: {
     alignItems: 'center',
     borderRadius: radius.full,
-    height: 46,
+    height: 48,
     justifyContent: 'center',
-    marginBottom: spacing.sm,
-    width: 46,
+    marginBottom: spacing.xs + 2,
+    width: 48,
   },
   label: {
     ...typography.caption,
-    color: colors.textDark,
+    color: colors.textSecondary,
     fontWeight: typography.label.fontWeight,
     textAlign: 'center',
   },

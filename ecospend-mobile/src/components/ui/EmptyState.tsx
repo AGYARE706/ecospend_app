@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 import { radius, spacing, typography, useTheme, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
@@ -7,15 +8,15 @@ import { Icon } from './icons';
 import type { IconName } from './icons';
 
 /**
- * icon — preferred: an SVG icon rendered inside a tinted medallion
- * emoji — legacy fallback medallion glyph (used when no icon is provided)
+ * icon — single-color SVG icon rendered inside a tinted medallion
+ * imageSource — raster image instead of icon (e.g. a branded mark not in the vector set); takes priority over icon
  * title — primary empty state message
  * subtitle — secondary helper text below the title
  * actionLabel / onAction — optional call-to-action button
  */
 export interface EmptyStateProps {
   icon?: IconName | (string & {});
-  emoji?: string;
+  imageSource?: ImageSourcePropType;
   title: string;
   subtitle: string;
   actionLabel?: string;
@@ -23,8 +24,8 @@ export interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  icon,
-  emoji,
+  icon = 'sparkles',
+  imageSource,
   title,
   subtitle,
   actionLabel,
@@ -35,10 +36,10 @@ export default function EmptyState({
   return (
     <View style={styles.container}>
       <View style={styles.medallion}>
-        {icon ? (
-          <Icon name={icon} size={34} color={colors.primary} strokeWidth={1.6} />
+        {imageSource ? (
+          <Image source={imageSource} style={styles.medallionImage} resizeMode="contain" />
         ) : (
-          <Text style={styles.emoji}>{emoji ?? '✨'}</Text>
+          <Icon name={icon} size={32} color={colors.primary} strokeWidth={1.6} />
         )}
       </View>
       <Text style={styles.title}>{title}</Text>
@@ -69,13 +70,15 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: 'center',
     backgroundColor: colors.primaryBackground,
     borderRadius: radius.full,
-    height: 84,
+    height: 76,
     justifyContent: 'center',
-    marginBottom: spacing.lg,
-    width: 84,
+    marginBottom: spacing.md,
+    width: 76,
   },
-  emoji: {
-    fontSize: 34,
+  medallionImage: {
+    height: 32,
+    tintColor: colors.primary,
+    width: 32,
   },
   title: {
     ...typography.subheading,

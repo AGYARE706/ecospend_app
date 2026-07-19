@@ -249,7 +249,7 @@ Information we collect
 • Device and usage data needed to secure your account and improve the app
 
 How we use information
-• Provide budgeting, goals, vault, and calculator features
+• Provide budgeting, goals, vault, and wallet payment features
 • Send notifications you opt into
 • Protect against fraud and unauthorized access
 • Improve product performance and support

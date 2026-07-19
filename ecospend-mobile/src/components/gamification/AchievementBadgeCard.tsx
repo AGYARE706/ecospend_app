@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import type { AchievementProgress } from '../../types/achievement';
+import { Icon } from '../ui/icons';
+import type { Badge, BadgeCategory } from '../../types/engagement';
 import {
   cardShadow,
   fontSize,
@@ -14,8 +14,20 @@ import {
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
 
+function categoryAccent(category: BadgeCategory, colors: ThemeColors) {
+  switch (category) {
+    case 'STREAK':
+      return { color: colors.warning, background: colors.orangeLight };
+    case 'LESSON':
+      return { color: colors.accent, background: colors.accentLight };
+    case 'FINANCE':
+    default:
+      return { color: colors.primary, background: colors.primaryBackground };
+  }
+}
+
 export interface AchievementBadgeCardProps {
-  achievement: AchievementProgress;
+  achievement: Badge;
   locked?: boolean;
 }
 
@@ -26,42 +38,38 @@ export default function AchievementBadgeCard({
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const isLocked = locked || !achievement.unlocked;
-  const progressLabel = isLocked
-    ? `${achievement.current} / ${achievement.target}`
-    : achievement.unlockedLabel ?? 'Earned';
+  const accent = categoryAccent(achievement.category, colors);
+  const progressPercent = achievement.target > 0
+    ? Math.min(Math.round((achievement.current / achievement.target) * 100), 100)
+    : 0;
+  const progressLabel = isLocked ? `${achievement.current} / ${achievement.target}` : 'Earned';
 
   return (
     <View
       style={[
         styles.card,
         isLocked ? styles.cardLocked : styles.cardUnlocked,
-        !isLocked && { borderColor: `${achievement.accentColor}44` },
+        !isLocked && { borderColor: `${accent.color}44` },
       ]}
     >
-      {!isLocked ? <View style={[styles.shine, { backgroundColor: `${achievement.accentColor}12` }]} /> : null}
+      {!isLocked ? <View style={[styles.shine, { backgroundColor: `${accent.color}12` }]} /> : null}
 
       <View style={styles.topRow}>
         <View
           style={[
             styles.iconRing,
-            {
-              backgroundColor: isLocked ? colors.chipBg : achievement.iconBackground,
-            },
+            { backgroundColor: isLocked ? colors.chipBg : accent.background },
             isLocked && styles.iconRingLocked,
           ]}
         >
-          <Ionicons
-            name={achievement.icon}
-            size={22}
-            color={isLocked ? colors.textLight : achievement.iconColor}
-          />
+          <Icon name={achievement.icon} size={22} color={isLocked ? colors.textLight : accent.color} />
           {isLocked ? (
             <View style={styles.lockBadge}>
-              <Ionicons name="lock-closed" size={10} color={colors.white} />
+              <Icon name="lock" size={10} color={colors.white} />
             </View>
           ) : (
-            <View style={[styles.earnedBadge, { backgroundColor: achievement.accentColor }]}>
-              <Ionicons name="checkmark" size={10} color={colors.white} />
+            <View style={[styles.earnedBadge, { backgroundColor: accent.color }]}>
+              <Icon name="check" size={10} color={colors.white} />
             </View>
           )}
         </View>
@@ -79,12 +87,7 @@ export default function AchievementBadgeCard({
           <Text style={[styles.progressLabel, isLocked && styles.progressLabelLocked]}>
             {isLocked ? 'Progress' : 'Status'}
           </Text>
-          <Text
-            style={[
-              styles.progressValue,
-              !isLocked && { color: achievement.accentColor },
-            ]}
-          >
+          <Text style={[styles.progressValue, !isLocked && { color: accent.color }]}>
             {progressLabel}
           </Text>
         </View>
@@ -94,8 +97,8 @@ export default function AchievementBadgeCard({
             style={[
               styles.progressFill,
               {
-                width: `${achievement.progressPercent}%`,
-                backgroundColor: isLocked ? colors.textLight : achievement.accentColor,
+                width: `${progressPercent}%`,
+                backgroundColor: isLocked ? colors.textLight : accent.color,
               },
             ]}
           />
@@ -103,7 +106,7 @@ export default function AchievementBadgeCard({
 
         {isLocked ? (
           <Text style={styles.progressHint}>
-            {achievement.progressPercent}% complete — keep going!
+            {progressPercent}% complete — keep going!
           </Text>
         ) : null}
       </View>
@@ -112,22 +115,18 @@ export default function AchievementBadgeCard({
 }
 
 export function StreakHeroCard({
-  daysActive,
-  savingsConsistency,
-  consistencyLabel,
-  nextMilestone,
+  currentStreak,
+  totalActiveDays,
 }: {
-  daysActive: number;
-  savingsConsistency: number;
-  consistencyLabel: string;
-  nextMilestone: number;
+  currentStreak: number;
+  totalActiveDays: number;
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const milestoneProgress = Math.min(
-    Math.round((daysActive / nextMilestone) * 100),
-    100,
-  );
+  const nextMilestone = currentStreak < 7 ? 7 : currentStreak < 30 ? 30 : currentStreak < 100 ? 100 : Math.max(currentStreak, 100);
+  const milestoneProgress = nextMilestone > 0
+    ? Math.min(Math.round((currentStreak / nextMilestone) * 100), 100)
+    : 100;
 
   return (
     <LinearGradient
@@ -136,21 +135,20 @@ export function StreakHeroCard({
       end={{ x: 1, y: 1 }}
       style={styles.streakCard}
     >
-      <View style={styles.streakGlow} />
 
       <View style={styles.streakTopRow}>
         <View style={styles.streakIconRing}>
-          <Ionicons name="flame" size={24} color={colors.white} />
+          <Icon name="flame" size={24} color={colors.white} />
         </View>
         <View style={styles.streakTextBlock}>
           <Text style={styles.streakEyebrow}>Current Streak</Text>
           <View style={styles.streakCountRow}>
-            <Text style={styles.streakCount}>{daysActive}</Text>
+            <Text style={styles.streakCount}>{currentStreak}</Text>
             <Text style={styles.streakCountSuffix}>days active</Text>
           </View>
         </View>
         <View style={styles.streakPill}>
-          <Text style={styles.streakPillText}>{milestoneProgress}% to 30d</Text>
+          <Text style={styles.streakPillText}>{milestoneProgress}% to {nextMilestone}d</Text>
         </View>
       </View>
 
@@ -158,19 +156,23 @@ export function StreakHeroCard({
 
       <View style={styles.streakStatsRow}>
         <View style={styles.streakStat}>
-          <Text style={styles.streakStatLabel}>Days Active</Text>
-          <Text style={styles.streakStatValue}>{daysActive}</Text>
+          <Text style={styles.streakStatLabel}>Current Streak</Text>
+          <Text style={styles.streakStatValue}>{currentStreak}d</Text>
         </View>
 
         <View style={styles.streakStatDivider} />
 
         <View style={styles.streakStat}>
-          <Text style={styles.streakStatLabel}>Savings Consistency</Text>
-          <Text style={styles.streakStatValue}>{savingsConsistency}%</Text>
+          <Text style={styles.streakStatLabel}>Total Active Days</Text>
+          <Text style={styles.streakStatValue}>{totalActiveDays}</Text>
         </View>
       </View>
 
-      <Text style={styles.streakFootnote}>{consistencyLabel}</Text>
+      <Text style={styles.streakFootnote}>
+        {currentStreak === 0
+          ? 'Log a transaction or finish a lesson today to start a streak.'
+          : 'Stay active daily to keep your streak alive.'}
+      </Text>
     </LinearGradient>
   );
 }

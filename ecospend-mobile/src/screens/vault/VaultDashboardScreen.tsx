@@ -8,10 +8,10 @@ import VaultEmptyState from '../../components/vault/VaultEmptyState';
 import VaultQuickActions from '../../components/vault/VaultQuickActions';
 import VaultSummaryCard from '../../components/vault/VaultSummaryCard';
 import { useVaultTheme } from '../../components/vault/vaultTheme';
-import IconButton from '../../components/ui/IconButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { useAuth } from '../../context/AuthContext';
 import { useVaultDashboard } from '../../hooks/useVaultDashboard';
-import { navigateApp } from '../../navigation/navigationRef';
+import { navigateApp, navigateToSubscription } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import type { Vault } from '../../types/vault';
 import { spacing, typography } from '../../theme';
@@ -24,14 +24,11 @@ type VaultDashboardNavigationProp = StackNavigationProp<
 export default function VaultDashboardScreen() {
   const navigation = useNavigation<VaultDashboardNavigationProp>();
   const theme = useVaultTheme();
+  const { tier } = useAuth();
   const { vaults, activeVaults, summary, isEmpty } = useVaultDashboard();
 
   const openCreateVault = () => {
     navigateApp('CreateVault');
-  };
-
-  const openNotifications = () => {
-    navigateApp('Notifications');
   };
 
   const openVaultDetails = (vault: Vault) => {
@@ -44,42 +41,25 @@ export default function VaultDashboardScreen() {
   };
 
   const openGroupVaults = () => {
+    if (tier === 'FREE') {
+      navigateToSubscription();
+      return;
+    }
     navigation.navigate('GroupVaultDashboard');
   };
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={[]}>
       <View style={[styles.screen, { backgroundColor: theme.background }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <View style={styles.headerTextBlock}>
-              <Text style={[styles.title, { color: theme.text }]}>My Vaults</Text>
-              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-                Secure savings with maturity goals
-              </Text>
-            </View>
-
-            <View style={styles.headerActions}>
-              <IconButton
-                icon="notifications-outline"
-                variant="ghost"
-                color={theme.text}
-                onPress={openNotifications}
-                accessibilityLabel="Notifications"
-                style={{ backgroundColor: theme.chipBg }}
-              />
-              <IconButton
-                icon="add"
-                variant="ghost"
-                color={theme.text}
-                onPress={openCreateVault}
-                accessibilityLabel="Create vault"
-                style={{ backgroundColor: theme.chipBg }}
-              />
-            </View>
+            <Text style={[styles.title, { color: theme.text }]}>My Vaults</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              Secure savings with maturity goals
+            </Text>
           </View>
 
           {!isEmpty ? (
@@ -127,19 +107,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxxl + spacing.xxl,
+    // Clears the screen's own floating action button (60px + 24px offset).
+    paddingBottom: spacing.xxxl + spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
   header: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: spacing.lg,
-  },
-  headerTextBlock: {
-    flex: 1,
-    marginRight: spacing.md,
   },
   title: {
     ...typography.h1,
@@ -147,10 +121,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.bodySm,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
   },
   sectionHeader: {
     alignItems: 'center',

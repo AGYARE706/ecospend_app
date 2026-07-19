@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import GhsText from '../ui/GhsText';
+import GoalIcon from '../ui/GoalIcon';
 import { Icon } from '../ui/icons';
 import GoalDeadlineBadge from './GoalDeadlineBadge';
 import GoalProgressBar from './GoalProgressBar';
@@ -63,16 +64,16 @@ export default function GoalCard({
 
       <View style={styles.topRow}>
         <View style={[styles.goalIcon, { backgroundColor: accent.background }]}>
-          <Icon name="flag-outline" size={18} color={accent.accent} />
+          <GoalIcon size={18} color={accent.accent} />
         </View>
         <View style={styles.titleBlock}>
           <Text style={styles.name} numberOfLines={1}>
             {goal.name}
           </Text>
           <View style={styles.targetRow}>
-            <GhsText amount={goal.currentAmount} variant="income" size="sm" numberOfLines={1} style={styles.targetCurrent} />
-            <Text style={styles.targetLabel}> of </Text>
-            <GhsText amount={goal.targetAmount} size="sm" numberOfLines={1} style={styles.targetAmount} />
+            <GhsText amount={goal.currentAmount} variant="income" size="sm" compact numberOfLines={1} style={styles.targetCurrent} />
+            <Text style={styles.targetLabel}> / </Text>
+            <GhsText amount={goal.targetAmount} size="sm" compact numberOfLines={1} style={styles.targetAmount} />
           </View>
         </View>
         <GoalDeadlineBadge goal={goal} />

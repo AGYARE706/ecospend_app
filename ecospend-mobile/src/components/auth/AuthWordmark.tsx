@@ -1,33 +1,30 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
-import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
-import type { ThemeColors } from '../../theme';
+import { spacing } from '../../theme';
+
+const LOGO_ASPECT_RATIO = 531 / 484;
+const LOGO_HEIGHT = 36;
 
 export default function AuthWordmark() {
-  const styles = useThemedStyles(createStyles);
-  return React.createElement(
-    View,
-    { style: styles.container },
-    React.createElement(Text, { style: styles.wordmark }, 'EcoSpend'),
-    React.createElement(Text, { style: styles.leaf }, '🌿')
+  return (
+    <View style={styles.container}>
+      <Image
+        source={require('../../../assets/logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+        accessibilityLabel="EcoSpend"
+      />
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
-  StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    flexDirection: 'row',
     marginBottom: spacing.xl,
   },
-  wordmark: {
-    color: colors.primary,
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-  },
-  leaf: {
-    fontSize: fontSize.lg,
-    marginLeft: spacing.xs,
+  logo: {
+    height: LOGO_HEIGHT,
+    width: LOGO_HEIGHT * LOGO_ASPECT_RATIO,
   },
 });

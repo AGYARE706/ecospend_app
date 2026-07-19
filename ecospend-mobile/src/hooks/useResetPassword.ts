@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { StackNavigationProp } from '@react-navigation/stack';
 
-import {
-  mockResetPassword,
-  RESET_SUCCESS_NAV_DELAY_MS,
-} from '../data/mock/auth';
+import * as authApi from '../api/authApi';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import type { AuthStackParamList } from '../navigation/types';
-import { isValidOtpCode } from '../utils/validation';
+import { getPasswordRequirementError, isValidOtpCode } from '../utils/validation';
+
+export const RESET_SUCCESS_NAV_DELAY_MS = 1200;
 
 type ResetPasswordNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -39,8 +39,9 @@ export function useResetPassword(
       nextErrors.code = 'Enter the 6-digit code sent to your phone';
     }
 
-    if (password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters';
+    const passwordError = getPasswordRequirementError(password);
+    if (passwordError) {
+      nextErrors.password = passwordError;
     }
 
     if (confirmPassword !== password) {
@@ -62,14 +63,21 @@ export function useResetPassword(
 
     setLoading(true);
     try {
-      await mockResetPassword({ phone, code: code.trim(), password });
+      await authApi.resetPassword({
+        phoneNumber: phone,
+        code: code.trim(),
+        password,
+      });
       setSuccessMessage('Password updated! You can log in with your new password.');
       setTimeout(() => {
         navigation.replace('Login');
       }, RESET_SUCCESS_NAV_DELAY_MS);
-    } catch {
+    } catch (error) {
       setErrors({
-        code: 'Invalid or expired code. Check the SMS and try again.',
+        code: getApiErrorMessage(
+          error,
+          'Invalid or expired code. Check the SMS and try again.',
+        ),
       });
     } finally {
       setLoading(false);

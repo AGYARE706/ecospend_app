@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useVaults } from '../context/VaultContext';
-import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import type { AppStackParamList } from '../navigation/types';
 import {
   addMonths,
@@ -26,6 +26,8 @@ export interface MemberInvite {
   displayPhone: string;
 }
 
+export type ContributionCadence = 'WEEKLY' | 'MONTHLY';
+
 export interface CreateGroupVaultFormState {
   groupName: string;
   goalName: string;
@@ -33,6 +35,7 @@ export interface CreateGroupVaultFormState {
   selectedPreset: DatePreset;
   maturityDate: Date;
   memberLimit: number;
+  contributionFrequency: ContributionCadence;
   phoneInput: string;
   members: MemberInvite[];
 }
@@ -43,6 +46,7 @@ export interface CreateGroupVaultFormErrors {
   targetAmount?: string;
   phoneInput?: string;
   members?: string;
+  form?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -75,6 +79,7 @@ export function useCreateGroupVault(navigation: CreateGroupVaultNavProp) {
     selectedPreset: '6m',
     maturityDate: addMonths(new Date(), 6),
     memberLimit: 4,
+    contributionFrequency: 'MONTHLY',
     phoneInput: '',
     members: [],
   });
@@ -100,6 +105,24 @@ export function useCreateGroupVault(navigation: CreateGroupVaultNavProp) {
   );
   const canAddMember =
     form.members.length < form.memberLimit - 1; // -1 because creator counts
+
+  /**
+   * Live preview of the automatic contribution plan — mirrors the
+   * backend: equal instalments from creation until maturity, the last
+   * one landing on the maturity date itself.
+   */
+  const planPreview = useMemo(() => {
+    if (perMemberTarget <= 0 || daysRemaining <= 0) {
+      return null;
+    }
+    const periodDays = form.contributionFrequency === 'WEEKLY' ? 7 : 30;
+    const instalmentCount = Math.max(1, Math.ceil(daysRemaining / periodDays));
+    return {
+      instalmentCount,
+      instalmentAmount: perMemberTarget / instalmentCount,
+      cadenceLabel: form.contributionFrequency === 'WEEKLY' ? 'week' : 'month',
+    };
+  }, [daysRemaining, form.contributionFrequency, perMemberTarget]);
 
   // ─── Field setters ─────────────────────────────────────────────────────
   const setField = useCallback(
@@ -211,27 +234,34 @@ export function useCreateGroupVault(navigation: CreateGroupVaultNavProp) {
     if (Object.keys(nextErrors).length > 0) return;
 
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
+    try {
+      const created = await createGroupVault({
+        name: form.groupName.trim(),
+        goalName: form.goalName.trim(),
+        targetAmount: parsedTarget,
+        maturityDate: formatIsoDate(form.maturityDate),
+        memberLimit: form.memberLimit,
+        contributionFrequency: form.contributionFrequency,
+        members: form.members.map((member) => ({
+          phone: member.phone,
+          displayPhone: member.displayPhone,
+        })),
+      });
 
-    createGroupVault({
-      name: form.groupName.trim(),
-      goalName: form.goalName.trim(),
-      targetAmount: parsedTarget,
-      maturityDate: formatIsoDate(form.maturityDate),
-      memberLimit: form.memberLimit,
-      members: form.members.map((member) => ({
-        phone: member.phone,
-        displayPhone: member.displayPhone,
-      })),
-    });
-
-    setIsLoading(false);
-
-    navigation.replace('VaultSuccess', {
-      message: `"${form.groupName.trim()}" group vault created! Invites sent to ${form.members.length} member${form.members.length !== 1 ? 's' : ''}.`,
-    });
+      navigation.replace('VaultSuccess', {
+        message: `"${form.groupName.trim()}" group vault created!`,
+        groupVaultId: created.id,
+      });
+    } catch (error) {
+      setErrors({
+        form: getApiErrorMessage(error, 'Could not create group vault'),
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [
     createGroupVault,
+    form.contributionFrequency,
     form.goalName,
     form.groupName,
     form.maturityDate,
@@ -251,6 +281,7 @@ export function useCreateGroupVault(navigation: CreateGroupVaultNavProp) {
     daysRemaining,
     formattedDate,
     canAddMember,
+    planPreview,
     setField,
     selectPreset,
     adjustMemberLimit,

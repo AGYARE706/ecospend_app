@@ -2,11 +2,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
-import AppButton from '../../components/ui/AppButton';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
 import GhsText from '../../components/ui/GhsText';
-import IconButton from '../../components/ui/IconButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { Icon } from '../../components/ui/icons';
 import { CATEGORY_CONFIG, getCategoryVisual } from '../../constants/categories';
@@ -69,7 +67,7 @@ export default function TransactionDetailsScreen({
 
   if (!isFound || !transaction) {
     return (
-      <ScreenWrapper background="page" padded={false}>
+      <ScreenWrapper background="page" padded={false} edges={['top']}>
         <View style={styles.header}>
           <Pressable
             onPress={() => navigation.goBack()}
@@ -102,7 +100,7 @@ export default function TransactionDetailsScreen({
   const notesLabel = transaction.notes?.trim() ? transaction.notes : 'No notes added';
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -113,21 +111,14 @@ export default function TransactionDetailsScreen({
             <Icon name="chevron-left" size={22} color={colors.textDark} />
           </Pressable>
           <Text style={styles.headerTitle}>Transaction details</Text>
-          <IconButton
-            icon="edit"
-            variant="soft"
-            onPress={() =>
-              navigation.navigate('EditTransaction', { transactionId: transaction.id })
-            }
-            accessibilityLabel="Edit transaction"
-          />
+          <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          <Card variant="default" padding="lg" style={styles.heroCard}>
+          <Card variant="default" padding="sm" style={styles.heroCard}>
             <View style={styles.heroTop}>
               <View
                 style={[
@@ -203,19 +194,16 @@ export default function TransactionDetailsScreen({
             <DetailField label="Type" value={typeLabel} />
             <DetailField
               label="Category"
-              value={`${categoryConfig.emoji} ${categoryConfig.label}`}
+              value={categoryConfig.label}
             />
             <DetailField label="Payment method" value={paymentLabel} />
             <DetailField label="Notes" value={notesLabel} isLast />
           </Card>
 
-          <AppButton
-            title="Edit transaction"
-            variant="secondary"
-            onPress={() =>
-              navigation.navigate('EditTransaction', { transactionId: transaction.id })
-            }
-          />
+          <Text style={styles.integrityNote}>
+            Transactions are recorded automatically when money moves and
+            cannot be edited.
+          </Text>
         </ScrollView>
       </View>
     </ScreenWrapper>
@@ -290,6 +278,11 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.lg,
       paddingBottom: spacing.xxl,
       paddingHorizontal: spacing.lg,
+    },
+    integrityNote: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textAlign: 'center',
     },
     heroCard: {
       ...cardShadow,

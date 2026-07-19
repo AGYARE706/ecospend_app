@@ -1,9 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import { useAuth } from '../context/AuthContext';
+import { useEnvelopes } from '../context/EnvelopesContext';
+import { useFinance } from '../context/FinanceContext';
 import { useTheme } from '../context/ThemeContext';
-import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
+import { useWallet } from '../context/WalletContext';
 
 export const PLUS_ANNUAL_PRICE = 36;
 
@@ -26,6 +30,9 @@ export interface PlanComparisonRow {
 
 export function useSubscription() {
   const { tier, upgradeToPlus } = useAuth();
+  const { refreshWallet } = useWallet();
+  const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
   const { colors } = useTheme();
   const [isUpgrading, setIsUpgrading] = useState(false);
 
@@ -119,11 +126,37 @@ export function useSubscription() {
     }
 
     setIsUpgrading(true);
-    await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
-    const success = upgradeToPlus();
-    setIsUpgrading(false);
-    return success;
-  }, [isPlus, isUpgrading, upgradeToPlus]);
+    try {
+      const ok = await upgradeToPlus();
+      if (ok) {
+        // The upgrade charged GHS 36 from the wallet and auto-recorded
+        // the expense — refresh both so the UI reflects it immediately.
+        void refreshWallet();
+        void refreshTransactions();
+        void refreshEnvelopes();
+        Alert.alert(
+          'Welcome to Plus!',
+          `GHS ${PLUS_ANNUAL_PRICE.toFixed(2)} was paid from your wallet.`,
+        );
+      }
+      return ok;
+    } catch (error) {
+      Alert.alert(
+        'Upgrade failed',
+        getApiErrorMessage(error, 'Could not complete the payment'),
+      );
+      return false;
+    } finally {
+      setIsUpgrading(false);
+    }
+  }, [
+    isPlus,
+    isUpgrading,
+    refreshEnvelopes,
+    refreshTransactions,
+    refreshWallet,
+    upgradeToPlus,
+  ]);
 
   return {
     tier,
