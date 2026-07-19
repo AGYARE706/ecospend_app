@@ -158,6 +158,7 @@ If this is wrong, the app loads fine to the login screen, but every button that 
 docker compose up --build
 ```
 
+
 First run takes a few minutes — each service downloads its own dependencies and compiles inside its container. Postgres has a startup health check, so every other service automatically waits for the database before starting. Database tables are created automatically too, via Flyway migrations — you never run SQL by hand.
 
 **Confirm it worked:**
@@ -182,6 +183,12 @@ docker compose -f docker-compose.yml -f docker-compose.runtime.yml up --build -d
 ⚠️ **About that command specifically** — see [§11](#11-troubleshooting--common-errors) if you hit a "port 8081 already in use" error running it; that's a known, easy-to-fix conflict with Expo's dev server, not a bug in this override.
 
 ---
+For tomorrow: if you see that daemon error again, it's disk space. Quick fix: 
+docker builder prune -a
+then try again. You can also run bash
+scripts/smoke-test.sh
+any time you want a fast "is everything actually working" check before you go on.
+
 
 ## 7. Running the Mobile App
 
