@@ -34,7 +34,7 @@ export default function FloatingHeaderBar() {
         colors={[colors.cardBackground, colors.primaryBackground]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.bar, { borderColor: colors.primaryLight }, shadowLg]}
+        style={[styles.bar, shadowLg]}
       >
         <Pressable
           onPress={navigateToProfileTab}
@@ -87,7 +87,6 @@ const createStyles = (colors: ThemeColors) =>
     bar: {
       alignItems: 'center',
       borderRadius: radius.xxl,
-      borderWidth: 2,
       flexDirection: 'row',
       justifyContent: 'space-between',
       minHeight: HEADER_PILL_HEIGHT,
