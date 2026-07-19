@@ -2,13 +2,14 @@ import { useCallback, useMemo, useState } from 'react';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useVaults } from '../context/VaultContext';
-import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import type { AppStackParamList } from '../navigation/types';
 import { getDaysRemaining } from '../utils/vault';
 
 type CreateVaultNavProp = StackNavigationProp<AppStackParamList, 'CreateVault'>;
 
 export const ON_TIME_FEE_RATE = 0.02;
+export const SHORTFALL_FEE_RATE = 0.04;
 export const EARLY_FEE_RATE = 0.05;
 
 export type DatePreset = '3m' | '6m' | '1y' | '2y';
@@ -50,15 +51,19 @@ export interface CreateVaultFormErrors {
   vaultName?: string;
   targetAmount?: string;
   initialDeposit?: string;
+  form?: string;
 }
 
 export interface VaultFeePreview {
   lockedAmount: number;
   onTimeFeeRate: number;
+  shortfallFeeRate: number;
   earlyFeeRate: number;
   onTimeFee: number;
+  shortfallFee: number;
   earlyFee: number;
   onTimeWithdrawal: number;
+  shortfallWithdrawal: number;
   earlyWithdrawal: number;
 }
 
@@ -80,14 +85,18 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
 
   const feePreview = useMemo<VaultFeePreview>(() => {
     const onTimeFee = lockedAmount * ON_TIME_FEE_RATE;
+    const shortfallFee = lockedAmount * SHORTFALL_FEE_RATE;
     const earlyFee = lockedAmount * EARLY_FEE_RATE;
     return {
       lockedAmount,
       onTimeFeeRate: ON_TIME_FEE_RATE,
+      shortfallFeeRate: SHORTFALL_FEE_RATE,
       earlyFeeRate: EARLY_FEE_RATE,
       onTimeFee,
+      shortfallFee,
       earlyFee,
       onTimeWithdrawal: lockedAmount - onTimeFee,
+      shortfallWithdrawal: lockedAmount - shortfallFee,
       earlyWithdrawal: lockedAmount - earlyFee,
     };
   }, [lockedAmount]);
@@ -148,20 +157,25 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
     }
 
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
+    try {
+      const created = await createVault({
+        name: form.vaultName.trim(),
+        targetAmount: parsedTarget,
+        initialDeposit: parsedDeposit,
+        maturityDate: formatIsoDate(form.maturityDate),
+      });
 
-    createVault({
-      name: form.vaultName.trim(),
-      targetAmount: parsedTarget,
-      initialDeposit: parsedDeposit,
-      maturityDate: formatIsoDate(form.maturityDate),
-    });
-
-    setIsLoading(false);
-
-    navigation.replace('VaultSuccess', {
-      message: `"${form.vaultName.trim()}" vault created successfully!`,
-    });
+      navigation.replace('VaultSuccess', {
+        message: `"${form.vaultName.trim()}" vault created successfully!`,
+        vaultId: created.id,
+      });
+    } catch (error) {
+      setErrors({
+        form: getApiErrorMessage(error, 'Could not create vault'),
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [
     createVault,
     form.maturityDate,

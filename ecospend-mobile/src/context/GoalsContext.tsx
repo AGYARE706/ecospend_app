@@ -9,33 +9,21 @@ import {
   useState,
 } from 'react';
 
-import {
-  MOCK_GOAL_CONTRIBUTE_DELAY_MS,
-  MOCK_GOAL_SAVE_DELAY_MS,
-  MOCK_LOADING_DELAY_MS,
-  mockSavingsGoals,
-} from '../data/mock/mockData';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
+import * as goalsApi from '../api/goalsApi';
+import { useAuth } from './AuthContext';
+import { useEnvelopes } from './EnvelopesContext';
+import { useFinance } from './FinanceContext';
+import { useWallet } from './WalletContext';
 import type {
   AddGoalPayload,
-  GoalColorKey,
   GoalsTabMode,
   SavingsGoal,
   UpdateGoalPayload,
 } from '../types';
 import { isGoalCompleted } from '../utils/goals';
 
-const GOAL_COLORS: GoalColorKey[] = [
-  'primaryBackground',
-  'blueLight',
-  'warningLight',
-  'successLight',
-];
-
 const TOAST_DURATION_MS = 2000;
-
-function createGoalId(): string {
-  return `goal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
 
 interface GoalsContextValue {
   goals: SavingsGoal[];
@@ -45,7 +33,11 @@ interface GoalsContextValue {
   activeTab: GoalsTabMode;
   setActiveTab: (tab: GoalsTabMode) => void;
   addGoal: (payload: AddGoalPayload) => Promise<boolean>;
-  contributeToGoal: (goalId: string, amount: number) => Promise<boolean>;
+  contributeToGoal: (
+    goalId: string,
+    amount: number,
+  ) => Promise<{ success: boolean; justCompleted: boolean }>;
+  withdrawFromGoal: (goalId: string, amount: number) => Promise<boolean>;
   updateGoal: (goalId: string, payload: UpdateGoalPayload) => Promise<boolean>;
   deleteGoal: (goalId: string) => Promise<boolean>;
   getGoalById: (goalId: string) => SavingsGoal | undefined;
@@ -60,18 +52,17 @@ interface GoalsContextValue {
 const GoalsContext = createContext<GoalsContextValue | undefined>(undefined);
 
 export function GoalsProvider({ children }: { children: ReactNode }) {
-  const [goals, setGoals] = useState<SavingsGoal[]>(mockSavingsGoals);
+  const { isAuthenticated } = useAuth();
+  const { refreshWallet } = useWallet();
+  const { refreshTransactions } = useFinance();
+  const { refreshEnvelopes } = useEnvelopes();
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<GoalsTabMode>('active');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSavingGoal, setIsSavingGoal] = useState(false);
   const [isContributing, setIsContributing] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), MOCK_LOADING_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
 
   const showToast = useCallback((message: string) => {
     if (toastTimerRef.current) {
@@ -92,6 +83,29 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     }
     setToastMessage(null);
   }, []);
+
+  const refreshGoals = useCallback(async () => {
+    if (!isAuthenticated) {
+      setGoals([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const list = await goalsApi.listGoals();
+      setGoals(list);
+    } catch (error) {
+      console.warn('Failed to load goals', getApiErrorMessage(error));
+      showToast(getApiErrorMessage(error, 'Could not load goals'));
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, showToast]);
+
+  useEffect(() => {
+    void refreshGoals();
+  }, [refreshGoals]);
 
   const activeGoals = useMemo(
     () => goals.filter((goal) => !isGoalCompleted(goal)),
@@ -116,105 +130,87 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const addGoal = useCallback(
     async (payload: AddGoalPayload): Promise<boolean> => {
       setIsSavingGoal(true);
-
-      await new Promise((resolve) => setTimeout(resolve, MOCK_GOAL_SAVE_DELAY_MS));
-
-      const nextGoal: SavingsGoal = {
-        id: createGoalId(),
-        name: payload.name,
-        targetAmount: payload.targetAmount,
-        currentAmount: 0,
-        deadline: payload.deadline,
-        createdAt: new Date().toISOString(),
-        completedAt: null,
-        color: GOAL_COLORS[goals.length % GOAL_COLORS.length],
-      };
-
-      setGoals((current) => [nextGoal, ...current]);
-      setIsSavingGoal(false);
-      showToast('Goal created!');
-      return true;
+      try {
+        const nextGoal = await goalsApi.createGoal(payload);
+        setGoals((current) => [nextGoal, ...current]);
+        showToast('Goal created!');
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not create goal'));
+        return false;
+      } finally {
+        setIsSavingGoal(false);
+      }
     },
-    [goals.length, showToast],
+    [showToast],
   );
 
   const contributeToGoal = useCallback(
+    async (goalId: string, amount: number): Promise<{ success: boolean; justCompleted: boolean }> => {
+      setIsContributing(true);
+      try {
+        const before = goals.find((goal) => goal.id === goalId);
+        const updated = await goalsApi.contributeToGoal(goalId, amount);
+        setGoals((current) =>
+          current.map((goal) => (goal.id === goalId ? updated : goal)),
+        );
+        void refreshWallet();
+        void refreshTransactions();
+        void refreshEnvelopes();
+        const justCompleted =
+          isGoalCompleted(updated) && !(before ? isGoalCompleted(before) : false);
+        if (!justCompleted) {
+          showToast(`GHS ${amount.toFixed(2)} moved from wallet to ${updated.name}!`);
+        }
+        return { success: true, justCompleted };
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not contribute'));
+        return { success: false, justCompleted: false };
+      } finally {
+        setIsContributing(false);
+      }
+    },
+    [goals, refreshEnvelopes, refreshTransactions, refreshWallet, showToast],
+  );
+
+  const withdrawFromGoal = useCallback(
     async (goalId: string, amount: number): Promise<boolean> => {
       setIsContributing(true);
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, MOCK_GOAL_CONTRIBUTE_DELAY_MS),
-      );
-
-      let toastText = '';
-
-      setGoals((current) =>
-        current.map((goal) => {
-          if (goal.id !== goalId) {
-            return goal;
-          }
-
-          const nextAmount = Math.min(
-            goal.currentAmount + amount,
-            goal.targetAmount,
-          );
-          const completed = nextAmount >= goal.targetAmount;
-
-          toastText = `GHS ${amount.toFixed(2)} added to ${goal.name}!`;
-
-          return {
-            ...goal,
-            currentAmount: nextAmount,
-            completedAt: completed ? new Date().toISOString() : goal.completedAt,
-          };
-        }),
-      );
-
-      setIsContributing(false);
-      showToast(toastText);
-      return true;
+      try {
+        const updated = await goalsApi.withdrawFromGoal(goalId, amount);
+        setGoals((current) =>
+          current.map((goal) => (goal.id === goalId ? updated : goal)),
+        );
+        void refreshWallet();
+        void refreshTransactions();
+        showToast(`GHS ${amount.toFixed(2)} moved back to your wallet`);
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not withdraw'));
+        return false;
+      } finally {
+        setIsContributing(false);
+      }
     },
-    [showToast],
+    [refreshTransactions, refreshWallet, showToast],
   );
 
   const updateGoal = useCallback(
     async (goalId: string, payload: UpdateGoalPayload): Promise<boolean> => {
       setIsSavingGoal(true);
-      await new Promise((resolve) => setTimeout(resolve, MOCK_GOAL_SAVE_DELAY_MS));
-
-      setGoals((current) =>
-        current.map((goal) => {
-          if (goal.id !== goalId) {
-            return goal;
-          }
-
-          const nextAmount =
-            payload.currentAmount !== undefined
-              ? payload.currentAmount
-              : goal.currentAmount;
-          const nextTarget =
-            payload.targetAmount !== undefined
-              ? payload.targetAmount
-              : goal.targetAmount;
-          const completed = nextAmount >= nextTarget;
-
-          return {
-            ...goal,
-            name: payload.name ?? goal.name,
-            targetAmount: nextTarget,
-            currentAmount: nextAmount,
-            deadline:
-              payload.deadline !== undefined ? payload.deadline : goal.deadline,
-            completedAt: completed
-              ? goal.completedAt ?? new Date().toISOString()
-              : null,
-          };
-        }),
-      );
-
-      setIsSavingGoal(false);
-      showToast('Goal updated!');
-      return true;
+      try {
+        const updated = await goalsApi.updateGoal(goalId, payload);
+        setGoals((current) =>
+          current.map((goal) => (goal.id === goalId ? updated : goal)),
+        );
+        showToast('Goal updated!');
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not update goal'));
+        return false;
+      } finally {
+        setIsSavingGoal(false);
+      }
     },
     [showToast],
   );
@@ -222,12 +218,17 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const deleteGoal = useCallback(
     async (goalId: string): Promise<boolean> => {
       setIsSavingGoal(true);
-      await new Promise((resolve) => setTimeout(resolve, MOCK_GOAL_SAVE_DELAY_MS));
-
-      setGoals((current) => current.filter((goal) => goal.id !== goalId));
-      setIsSavingGoal(false);
-      showToast('Goal deleted');
-      return true;
+      try {
+        await goalsApi.deleteGoal(goalId);
+        setGoals((current) => current.filter((goal) => goal.id !== goalId));
+        showToast('Goal deleted');
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not delete goal'));
+        return false;
+      } finally {
+        setIsSavingGoal(false);
+      }
     },
     [showToast],
   );
@@ -242,6 +243,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       setActiveTab,
       addGoal,
       contributeToGoal,
+      withdrawFromGoal,
       updateGoal,
       deleteGoal,
       getGoalById,
@@ -268,6 +270,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       toastMessage,
       totalSaved,
       updateGoal,
+      withdrawFromGoal,
     ],
   );
 

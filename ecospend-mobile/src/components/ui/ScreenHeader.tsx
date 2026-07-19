@@ -15,7 +15,7 @@ export interface ScreenHeaderProps {
   onBackPress?: () => void;
   backVariant?: 'back' | 'close';
   onNotificationPress?: () => void;
-  onCalculatorPress?: () => void;
+  notificationBadgeCount?: number;
   style?: ViewStyle;
 }
 
@@ -26,12 +26,11 @@ export default function ScreenHeader({
   onBackPress,
   backVariant = 'back',
   onNotificationPress,
-  onCalculatorPress,
+  notificationBadgeCount,
   style,
 }: ScreenHeaderProps) {
   const styles = useThemedStyles(createStyles);
-  const showActions =
-    onNotificationPress !== undefined || onCalculatorPress !== undefined || right;
+  const showActions = onNotificationPress !== undefined || right;
 
   return (
     <View style={[styles.container, style]}>
@@ -52,20 +51,13 @@ export default function ScreenHeader({
 
       {showActions ? (
         <View style={styles.right}>
-          {onCalculatorPress ? (
-            <IconButton
-              icon="calculator"
-              variant="soft"
-              onPress={onCalculatorPress}
-              accessibilityLabel="Calculator"
-            />
-          ) : null}
           {onNotificationPress ? (
             <IconButton
               icon="bell"
               variant="soft"
               onPress={onNotificationPress}
               accessibilityLabel="Notifications"
+              badgeCount={notificationBadgeCount}
             />
           ) : null}
           {right}

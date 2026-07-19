@@ -12,13 +12,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import GoalCompletedCelebration from '../../components/goals/GoalCompletedCelebration';
 import { Icon } from '../../components/ui/icons';
+import InfoTooltip from '../../components/ui/InfoTooltip';
 import { useGoals } from '../../context/GoalsContext';
+import { useWallet } from '../../context/WalletContext';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -30,17 +34,21 @@ import {
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
-import { formatMonthYear, getRemainingAmount } from '../../utils/goals';
+import { formatMonthYear, getRemainingAmount, isGoalCompleted } from '../../utils/goals';
 
 type AddGoalContributionRouteProp = RouteProp<AppStackParamList, 'AddGoalContribution'>;
+type AddGoalContributionNavProp = StackNavigationProp<AppStackParamList, 'AddGoalContribution'>;
 
 export default function AddGoalContributionScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
     const { params } = useRoute<AddGoalContributionRouteProp>();
-    const navigation = useNavigation();
+    const navigation = useNavigation<AddGoalContributionNavProp>();
     const { getGoalById, contributeToGoal, isContributing } = useGoals();
+    const { balance } = useWallet();
+    const walletBalance = balance ?? 0;
     const [amount, setAmount] = useState('');
+    const [showCelebration, setShowCelebration] = useState(false);
 
     const goal = getGoalById(params.goalId);
 
@@ -50,9 +58,23 @@ export default function AddGoalContributionScreen() {
       return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <EmptyState
-            icon="target"
+            imageSource={require('../../../assets/goal.png')}
             title="Goal not found"
             subtitle="This goal may have been deleted."
+            actionLabel="Go back"
+            onAction={() => navigation.goBack()}
+          />
+        </SafeAreaView>
+      );
+    }
+
+    if (isGoalCompleted(goal) || getRemainingAmount(goal) <= 0) {
+      return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <EmptyState
+            imageSource={require('../../../assets/goal.png')}
+            title="Goal complete"
+            subtitle="This goal is locked from further contributions. Withdraw anytime, or start a new goal to keep saving."
             actionLabel="Go back"
             onAction={() => navigation.goBack()}
           />
@@ -76,13 +98,22 @@ export default function AddGoalContributionScreen() {
         setAmount((prev) => String(Math.min((Number(prev) || 0) + value, remaining)));
     };
 
+    const hasEnoughBalance = addedAmount <= walletBalance;
+    const exceedsRemaining = addedAmount > remaining;
+
     const handleSave = async () => {
-        if (addedAmount <= 0) {
+        if (addedAmount <= 0 || exceedsRemaining || !hasEnoughBalance) {
           return;
         }
 
-        await contributeToGoal(goal.id, Math.min(addedAmount, remaining));
-        navigation.goBack();
+        // Real money: the backend debits the wallet and auto-records
+        // the expense, so only close the sheet when it succeeds.
+        const { success, justCompleted } = await contributeToGoal(goal.id, addedAmount);
+        if (success && justCompleted) {
+          setShowCelebration(true);
+        } else if (success) {
+          navigation.goBack();
+        }
     };
 
     return (
@@ -107,16 +138,15 @@ export default function AddGoalContributionScreen() {
                     <Text style={[typography.h3, styles.headerTitle]}>EcoSpend</Text>
                 </View>
 
-                <TouchableOpacity style={styles.iconButton}>
-                    <Icon name="bell" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
+                <InfoTooltip
+                  title="Contributing to a goal"
+                  body="This moves real money — the amount is debited from your EcoSpend wallet immediately and recorded as an expense. Goals have no lock period and no fee, and you can withdraw any amount back to your wallet at any time from the goal's details screen."
+                />
             </View>
 
             <View style={styles.heroSection}>
                 <View style={styles.heroOrb}>
-                    <View style={styles.heroOrbInner}>
-                        <Icon name="sparkles" size={30} color={colors.primary} />
-                    </View>
+                    <Icon name="sparkles" size={24} color={colors.primary} />
                 </View>
                 <Text style={[typography.h2, styles.heroTitle]}>Keep Growing</Text>
                 <Text style={[typography.body, styles.heroSubtitle]}>
@@ -125,7 +155,7 @@ export default function AddGoalContributionScreen() {
             </View>
 
             <View style={styles.section}>
-                <Card variant="default" padding="lg" style={styles.goalCard}>
+                <Card variant="default" padding="md" style={styles.goalCard}>
                     <View style={styles.goalTopRow}>
                         <View style={styles.goalCopy}>
                             <Text style={[typography.overline, styles.goalEyebrow]} numberOfLines={1}>{goalTitle.toUpperCase()}</Text>
@@ -136,7 +166,7 @@ export default function AddGoalContributionScreen() {
                         </View>
 
                         <View style={styles.progressBadge}>
-                            <Text style={styles.progressBadgeText}>25% Complete</Text>
+                            <Text style={styles.progressBadgeText}>{Math.round(currentProgress)}% Complete</Text>
                         </View>
                     </View>
 
@@ -161,7 +191,25 @@ export default function AddGoalContributionScreen() {
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                     leadingIcon="cash"
+                    hint={`Paid from your wallet — GHS ${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} available`}
+                    error={
+                      exceedsRemaining
+                        ? `That's more than this goal needs — enter GHS ${remaining.toFixed(2)} or less`
+                        : addedAmount > 0 && !hasEnoughBalance
+                          ? 'Amount exceeds your wallet balance — top up first'
+                          : undefined
+                    }
                 />
+
+                {exceedsRemaining ? (
+                  <View style={styles.capBanner}>
+                    <Icon name="alert-circle" size={16} color={colors.warning} />
+                    <Text style={styles.capBannerText}>
+                      This goal is fixed at GHS {targetAmount.toLocaleString()} — enter an amount
+                      up to GHS {remaining.toFixed(2)} so it doesn't go over.
+                    </Text>
+                  </View>
+                ) : null}
 
                 <View style={styles.chipsRow}>
                     {quickAmounts.map((value) => (
@@ -177,7 +225,7 @@ export default function AddGoalContributionScreen() {
             </View>
 
             <View style={styles.section}>
-                <Card variant="outlined" padding="md" style={styles.previewCard}>
+                <Card variant="outlined" padding="sm" style={styles.previewCard}>
                     <View style={styles.previewHeader}>
                         <Text style={styles.previewLabel}>Projection</Text>
                         <Text style={styles.previewPercent}>{previewPercentage}</Text>
@@ -199,11 +247,12 @@ export default function AddGoalContributionScreen() {
 
             <View style={styles.section}>
                 <AppButton
-                    title="Save Contribution"
+                    title="Contribute from Wallet"
                     onPress={() => {
                       void handleSave();
                     }}
                     loading={isContributing}
+                    disabled={addedAmount <= 0 || exceedsRemaining || !hasEnoughBalance}
                     icon="arrow-right"
                     variant="primary"
                     size="lg"
@@ -214,6 +263,19 @@ export default function AddGoalContributionScreen() {
             <Text style={styles.hiddenGoalId}>Goal ID: {params.goalId}</Text>
         </ScrollView>
           </KeyboardAvoidingView>
+
+          <GoalCompletedCelebration
+            visible={showCelebration}
+            goalName={goalTitle}
+            onWithdrawNow={() => {
+              setShowCelebration(false);
+              navigation.replace('WithdrawFromGoal', { goalId: goal.id });
+            }}
+            onDismiss={() => {
+              setShowCelebration(false);
+              navigation.goBack();
+            }}
+          />
         </SafeAreaView>
     );
 }
@@ -269,20 +331,10 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: 'center',
         backgroundColor: colors.primaryBackground,
         borderRadius: 999,
-        height: 160,
+        height: 56,
         justifyContent: 'center',
-        marginBottom: spacing.md,
-        width: 160,
-    },
-    heroOrbInner: {
-        alignItems: 'center',
-        backgroundColor: colors.cardBackground,
-        borderColor: colors.primaryBackground,
-        borderRadius: 999,
-        borderWidth: 1,
-        height: 96,
-        justifyContent: 'center',
-        width: 96,
+        marginBottom: spacing.smd,
+        width: 56,
     },
     heroTitle: {
         color: colors.textPrimary,
@@ -356,6 +408,21 @@ const createStyles = (colors: ThemeColors) =>
     },
     goalMetaTextRight: {
         textAlign: 'right',
+    },
+    capBanner: {
+        alignItems: 'flex-start',
+        backgroundColor: colors.warningLight,
+        borderRadius: radius.md,
+        flexDirection: 'row',
+        gap: spacing.sm,
+        marginTop: spacing.sm,
+        padding: spacing.sm,
+    },
+    capBannerText: {
+        color: colors.textPrimary,
+        flex: 1,
+        fontSize: fontSize.xs,
+        lineHeight: 18,
     },
     chipsRow: {
         flexDirection: 'row',

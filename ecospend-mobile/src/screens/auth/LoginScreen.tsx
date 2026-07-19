@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     loading,
     handleSubmit,
     getFieldError,
-  } = useLogin();
+  } = useLogin(navigation);
 
   return (
     <ScreenWrapper background="white" scrollable keyboardAvoiding>
@@ -57,6 +57,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           showToggle
           error={getFieldError('password')}
         />
+
+        {getFieldError('form') ? (
+          <Text style={styles.formError}>{getFieldError('form')}</Text>
+        ) : null}
 
         <Pressable
           style={styles.forgotPasswordRow}
@@ -99,6 +103,10 @@ const createStyles = (colors: ThemeColors) =>
   },
   form: {
     gap: spacing.md,
+  },
+  formError: {
+    color: colors.error,
+    fontSize: fontSize.sm,
   },
   forgotPasswordRow: {
     alignSelf: 'flex-end',

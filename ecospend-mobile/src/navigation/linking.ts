@@ -8,9 +8,11 @@ export const linking: LinkingOptions<AppStackParamList> = {
     screens: {
       Notifications: 'notifications',
       WeeklyInsights: 'insights',
-      AddTransaction: 'add-transaction',
       BudgetEnvelopes: 'budget',
-      MoMoCalculator: 'calculator',
+      TopUpWallet: 'wallet/top-up',
+      SendMoney: 'wallet/send',
+      Bills: 'bills',
+      AddBill: 'bills/add',
       CreateGoal: 'goals/create',
       CreateVault: 'vault/create',
       CreateGroupVault: 'group-vault/create',
@@ -26,7 +28,6 @@ export const linking: LinkingOptions<AppStackParamList> = {
             screens: {
               TransactionsList: 'transactions',
               TransactionDetails: 'transactions/:transactionId',
-              EditTransaction: 'transactions/:transactionId/edit',
             },
           },
           GoalsTab: {
@@ -56,6 +57,9 @@ export const linking: LinkingOptions<AppStackParamList> = {
               HelpSupport: 'profile/help',
               About: 'profile/about',
               BadgesAndStreaks: 'profile/badges',
+              Learn: 'profile/learn',
+              LessonTrack: 'profile/learn/:trackId',
+              LessonDetail: 'profile/learn/lesson/:lessonId',
             },
           },
         },

@@ -4,13 +4,18 @@ import { useVaults } from '../context/VaultContext';
 import type { GroupVault, WithdrawalRequest } from '../types/groupVault';
 import { formatVaultDate, getDaysRemaining } from '../utils/vault';
 
+/**
+ * One row of the contribution timeline. The timeline is the group's
+ * REAL automatic plan (from the backend): every instalment each member
+ * owes, from creation until the maturity date, marked as done/next/
+ * upcoming as time passes.
+ */
 export interface GroupContributionTimelineItem {
   id: string;
-  memberName: string;
-  memberInitials: string;
+  title: string;
   amount: number;
   date: string;
-  kind: 'contribution' | 'milestone' | 'created';
+  kind: 'created' | 'past' | 'next' | 'upcoming';
   note?: string;
 }
 
@@ -20,96 +25,45 @@ export interface GroupVaultDetailsData {
   progressPct: number;
   daysRemaining: number;
   remainingAmount: number;
+  /** Real amount each member has contributed so far (by member id). */
   memberContributionMap: Record<string, number>;
   timeline: GroupContributionTimelineItem[];
 }
 
-function buildMemberContributionMap(vault: GroupVault): Record<string, number> {
-  const weights = vault.members.map((m, idx) => ({
-    id: m.id,
-    // members earlier in array contribute slightly more for realism
-    weight: Math.max(1, vault.members.length - idx),
-  }));
-  const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0) || 1;
+function buildPlanTimeline(vault: GroupVault): GroupContributionTimelineItem[] {
+  const items: GroupContributionTimelineItem[] = [
+    {
+      id: `${vault.id}-created`,
+      title: 'Group vault created',
+      amount: 0,
+      date: vault.createdDate,
+      kind: 'created',
+      note: `Target ${vault.targetAmount > 0 ? `GHS ${vault.targetAmount.toLocaleString()}` : 'not set'} · matures ${formatVaultDate(vault.maturityDate)}`,
+    },
+  ];
 
-  let allocated = 0;
-  const map: Record<string, number> = {};
+  const plan = vault.contributionPlan;
+  if (!plan) {
+    return items;
+  }
 
-  weights.forEach((w, idx) => {
-    if (idx === weights.length - 1) {
-      map[w.id] = Math.max(0, vault.amountSaved - allocated);
-      return;
-    }
-    const portion = Math.round((vault.amountSaved * w.weight) / totalWeight);
-    map[w.id] = portion;
-    allocated += portion;
-  });
+  const todayIso = new Date().toISOString().slice(0, 10);
 
-  return map;
-}
+  for (const instalment of plan.instalments) {
+    const isNext = plan.nextDueDate === instalment.dueDate;
+    const isPast = !isNext && instalment.dueDate < todayIso;
 
-function buildTimeline(vault: GroupVault): GroupContributionTimelineItem[] {
-  const timeline: GroupContributionTimelineItem[] = [];
-  const createdDate = new Date(vault.createdDate);
-  const maturity = new Date(vault.maturityDate);
-  const spanDays = Math.max(
-    30,
-    Math.ceil((maturity.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)),
-  );
-
-  // Created event
-  const admin = vault.members.find((m) => m.role === 'admin') ?? vault.members[0];
-  timeline.push({
-    id: `${vault.id}-created`,
-    memberName: admin?.name ?? 'Group Admin',
-    memberInitials: admin?.initials ?? 'GA',
-    amount: 0,
-    date: vault.createdDate,
-    kind: 'created',
-    note: 'Group vault created',
-  });
-
-  // Generate contribution events from members with deterministic spacing
-  const checkpoints = [0.12, 0.28, 0.46, 0.62, 0.78, 0.9];
-  const memberCount = Math.max(1, vault.members.length);
-  const baseAmount = Math.max(100, Math.round(vault.amountSaved / (checkpoints.length + 2)));
-  let runningTotal = 0;
-
-  checkpoints.forEach((ratio, idx) => {
-    const member = vault.members[idx % memberCount] ?? admin;
-    const atDays = Math.round(spanDays * ratio);
-    const dt = new Date(createdDate);
-    dt.setDate(createdDate.getDate() + atDays);
-    const amount = Math.max(80, Math.round(baseAmount * (0.8 + (idx % 3) * 0.25)));
-    runningTotal += amount;
-    timeline.push({
-      id: `${vault.id}-c-${idx}`,
-      memberName: member?.name ?? 'Member',
-      memberInitials: member?.initials ?? 'MB',
-      amount,
-      date: dt.toISOString().slice(0, 10),
-      kind: 'contribution',
-      note: idx % 2 === 0 ? 'Weekly contribution' : undefined,
+    items.push({
+      id: `${vault.id}-inst-${instalment.index}`,
+      title: `Instalment ${instalment.index} of ${plan.instalmentCount}${isNext ? ' — next due' : ''}`,
+      amount: plan.instalmentAmount,
+      date: instalment.dueDate,
+      kind: isNext ? 'next' : isPast ? 'past' : 'upcoming',
+      note: `GHS ${plan.instalmentAmount.toFixed(2)} per member · GHS ${instalment.cumulativePerMember.toFixed(2)} each in total by this date`,
     });
-  });
+  }
 
-  // Milestone event
-  const milestonePct = Math.min(100, Math.max(25, Math.round((vault.amountSaved / vault.targetAmount) * 100)));
-  const milestoneDate = new Date(createdDate);
-  milestoneDate.setDate(createdDate.getDate() + Math.round(spanDays * 0.7));
-  timeline.push({
-    id: `${vault.id}-milestone`,
-    memberName: 'Group Milestone',
-    memberInitials: 'MS',
-    amount: 0,
-    date: milestoneDate.toISOString().slice(0, 10),
-    kind: 'milestone',
-    note: `${milestonePct}% of target reached`,
-  });
-
-  // Sort newest first
-  timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  return timeline;
+  return items;
 }
 
 export function useGroupVaultDetails(groupVaultId: string): GroupVaultDetailsData {
@@ -128,8 +82,14 @@ export function useGroupVaultDetails(groupVaultId: string): GroupVaultDetailsDat
     const pendingRequests = withdrawalRequests.filter(
       (r) => r.groupVaultId === vault.id && r.status === 'pending',
     );
-    const memberContributionMap = buildMemberContributionMap(vault);
-    const timeline = buildTimeline(vault);
+
+    // Real contributions straight from the API — no synthesized numbers.
+    const memberContributionMap: Record<string, number> = {};
+    for (const member of vault.members) {
+      memberContributionMap[member.id] = member.contributed ?? 0;
+    }
+
+    const timeline = buildPlanTimeline(vault);
 
     return {
       vault,

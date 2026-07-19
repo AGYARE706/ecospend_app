@@ -67,6 +67,7 @@ export default function CreateGroupVaultScreen({
     daysRemaining,
     formattedDate,
     canAddMember,
+    planPreview,
     setField,
     selectPreset,
     adjustMemberLimit,
@@ -118,7 +119,6 @@ export default function CreateGroupVaultScreen({
             end={{ x: 1, y: 1 }}
             style={styles.banner}
           >
-            <View style={styles.bannerGlow} />
             <View style={styles.bannerIconRing}>
               <Ionicons name="people" size={22} color={colors.white} />
             </View>
@@ -181,10 +181,63 @@ export default function CreateGroupVaultScreen({
                   Each of {totalSlots} members contributes{' '}
                   <Text style={styles.perMemberAmount}>
                     {ghs(perMemberTarget)}
-                  </Text>
+                  </Text>{' '}
+                  in total
                 </Text>
               </View>
             ) : null}
+          </View>
+
+          {/* ─── Contribution Frequency ───────────────────────── */}
+          <SectionLabel title="Contribution Plan" icon="repeat-outline" />
+          <View style={styles.card}>
+            <Text style={styles.fieldLabel}>How often do members contribute?</Text>
+            <View style={styles.presetRow}>
+              {(['WEEKLY', 'MONTHLY'] as const).map((cadence) => (
+                <Pressable
+                  key={cadence}
+                  onPress={() => setField('contributionFrequency', cadence)}
+                  style={[
+                    styles.cadenceChip,
+                    form.contributionFrequency === cadence && styles.cadenceChipActive,
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{
+                    selected: form.contributionFrequency === cadence,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.cadenceChipText,
+                      form.contributionFrequency === cadence &&
+                        styles.cadenceChipTextActive,
+                    ]}
+                  >
+                    {cadence === 'WEEKLY' ? 'Weekly' : 'Monthly'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {planPreview ? (
+              <View style={styles.perMemberRow}>
+                <Ionicons name="calendar-outline" size={13} color={colors.primary} />
+                <Text style={styles.perMemberText}>
+                  Auto plan:{' '}
+                  <Text style={styles.perMemberAmount}>
+                    {ghs(planPreview.instalmentAmount)}
+                  </Text>{' '}
+                  per member per {planPreview.cadenceLabel} ×{' '}
+                  {planPreview.instalmentCount} instalments until {formattedDate}.
+                  Everyone gets reminders as each date nears.
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.fieldHint}>
+                Set a target amount and date to see each member's automatic
+                schedule.
+              </Text>
+            )}
           </View>
 
           {/* ─── Target Date ──────────────────────────────────── */}
@@ -354,14 +407,21 @@ export default function CreateGroupVaultScreen({
               icon="thumbs-up-outline"
               iconColor={colors.primary}
               title="Majority approval required"
-              body="Any withdrawal must be voted on and approved by the majority of members."
+              body="Any withdrawal — your own contribution only, never another member's — must be voted on and approved by a majority of active members."
             />
             <View style={styles.ruleDivider} />
             <RuleRow
               icon="alert-circle-outline"
               iconColor={colors.warning}
-              title="Early exit fee"
-              body="Members who exit before the target date incur a 5% fee on their contribution."
+              title="Reaching the target early doesn't unlock it"
+              body="Only the target date does. A vote can't be used to get money out before the date any cheaper than exiting early would — both cost a 5% fee."
+            />
+            <View style={styles.ruleDivider} />
+            <RuleRow
+              icon="calendar-outline"
+              iconColor={colors.warning}
+              title="Under-target penalty"
+              body="Withdrawing on or after the target date costs 2% if the group hit its savings target, or 4% if it didn't."
             />
             <View style={styles.ruleDivider} />
             <RuleRow
@@ -394,6 +454,11 @@ export default function CreateGroupVaultScreen({
 
         {/* ─── Sticky Footer ────────────────────────────────────── */}
         <View style={styles.footer}>
+          {errors.form ? (
+            <Text style={{ color: colors.error, marginBottom: 8, textAlign: 'center' }}>
+              {errors.form}
+            </Text>
+          ) : null}
           <AppButton
             title="Create Group Vault"
             icon="people-outline"
@@ -1167,6 +1232,27 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
+  },
+  cadenceChip: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    flex: 1,
+    paddingVertical: spacing.sm,
+  },
+  cadenceChipActive: {
+    backgroundColor: colors.primaryBackground,
+    borderColor: colors.primary,
+  },
+  cadenceChipText: {
+    color: colors.textGrey,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  cadenceChipTextActive: {
+    color: colors.primary,
   },
   dateDisplay: {
     alignItems: 'center',

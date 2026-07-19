@@ -1,0 +1,15 @@
+package com.ecospend.engagement.repository;
+
+import com.ecospend.engagement.models.UserAchievement;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface UserAchievementRepository extends JpaRepository<UserAchievement, UserAchievement.Key> {
+
+    List<UserAchievement> findByUserId(UUID userId);
+
+    Optional<UserAchievement> findByUserIdAndAchievementId(UUID userId, String achievementId);
+}

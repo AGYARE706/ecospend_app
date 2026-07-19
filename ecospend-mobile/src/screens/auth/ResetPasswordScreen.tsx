@@ -7,11 +7,11 @@ import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import { Icon } from '../../components/ui/icons';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import { MOCK_RESET_CODE } from '../../data/mock/auth';
 import { useResetPassword } from '../../hooks/useResetPassword';
 import type { AuthStackParamList } from '../../navigation/types';
 import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
+import { maskPhone } from '../../utils/strings';
 
 type ResetPasswordScreenNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -22,14 +22,6 @@ type ResetPasswordRouteProp = RouteProp<AuthStackParamList, 'ResetPassword'>;
 interface ResetPasswordScreenProps {
   navigation: ResetPasswordScreenNavigationProp;
   route: ResetPasswordRouteProp;
-}
-
-function maskPhone(phone: string): string {
-  if (phone.length < 4) {
-    return phone;
-  }
-
-  return `${phone.slice(0, 3)} *** ${phone.slice(-4)}`;
 }
 
 export default function ResetPasswordScreen({
@@ -80,7 +72,7 @@ export default function ResetPasswordScreen({
           keyboardType="number-pad"
           maxLength={6}
           error={getFieldError('code')}
-          hint={__DEV__ ? `Dev hint: use code ${MOCK_RESET_CODE}` : undefined}
+          hint={__DEV__ ? 'Dev: OTP is logged by the identity service' : undefined}
         />
 
         <AppInput

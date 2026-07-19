@@ -10,6 +10,7 @@ import { fontSize, fontWeight, useTheme } from '../../theme';
  * numberOfLines — clamp the rendered amount to avoid wrapping/overflow in rows
  * adjustsFontSizeToFit — shrink large amounts to fit a constrained width
  * minimumFontScale — lower bound for adjustsFontSizeToFit scaling
+ * compact — "₵33" instead of "GH₵ 33.00" (no decimals, short symbol) for cramped spaces like narrow cards
  */
 export interface GhsTextProps {
   amount: number;
@@ -19,9 +20,14 @@ export interface GhsTextProps {
   numberOfLines?: number;
   adjustsFontSizeToFit?: boolean;
   minimumFontScale?: number;
+  compact?: boolean;
 }
 
-function formatGhs(amount: number): string {
+function formatGhs(amount: number, compact?: boolean): string {
+  if (compact) {
+    return `₵${Math.round(amount).toLocaleString('en-GH')}`;
+  }
+
   const formatted = new Intl.NumberFormat('en-GH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -38,6 +44,7 @@ export default function GhsText({
   numberOfLines,
   adjustsFontSizeToFit,
   minimumFontScale = 0.7,
+  compact,
 }: GhsTextProps) {
   const { colors } = useTheme();
   const variantColors: Record<NonNullable<GhsTextProps['variant']>, string> = {
@@ -54,7 +61,7 @@ export default function GhsText({
       adjustsFontSizeToFit={adjustsFontSizeToFit}
       minimumFontScale={adjustsFontSizeToFit ? minimumFontScale : undefined}
     >
-      {formatGhs(amount)}
+      {formatGhs(amount, compact)}
     </Text>
   );
 }

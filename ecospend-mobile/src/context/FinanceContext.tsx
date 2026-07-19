@@ -3,87 +3,86 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 
-import { mockTransactions } from '../data/mock/mockData';
-import type {
-  AddTransactionPayload,
-  MonthlySummary,
-  Transaction,
-} from '../types';
+import * as financeApi from '../api/financeApi';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
+import { useAuth } from './AuthContext';
+import type { MonthlySummary, Transaction } from '../types';
 import { computeSummary } from '../utils/transactions';
 
-export type UpdateTransactionPayload = Partial<
-  Omit<AddTransactionPayload, 'date'>
-> & {
-  date?: string;
-};
-
+/**
+ * Transactions are written exclusively by the backend when real money
+ * moves through Paystack/the wallet, and are immutable afterwards —
+ * there is intentionally no add or update here.
+ */
 interface FinanceContextValue {
   transactions: Transaction[];
-  addTransaction: (payload: AddTransactionPayload) => void;
-  updateTransaction: (id: string, payload: UpdateTransactionPayload) => void;
-  deleteTransaction: (id: string) => void;
+  loading: boolean;
+  refreshTransactions: () => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   getTransactionById: (id: string) => Transaction | undefined;
   getMonthlySummary: () => MonthlySummary;
+  /** Expected fixed income per month; 0 = not set. */
+  incomeTarget: number;
+  setIncomeTarget: (monthlyAmount: number) => Promise<void>;
 }
 
 const FinanceContext = createContext<FinanceContextValue | undefined>(undefined);
 
-function createTransactionId(): string {
-  return `tx-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
 export function FinanceProvider({ children }: { children: ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const { isAuthenticated } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [summary, setSummary] = useState<MonthlySummary | null>(null);
+  const [incomeTarget, setIncomeTargetState] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const addTransaction = useCallback((payload: AddTransactionPayload) => {
-    const newTransaction: Transaction = {
-      id: createTransactionId(),
-      type: payload.type,
-      amount: payload.amount,
-      category: payload.category,
-      provider: payload.provider,
-      notes: payload.notes,
-      date: payload.date,
-    };
+  const refreshTransactions = useCallback(async () => {
+    if (!isAuthenticated) {
+      setTransactions([]);
+      setSummary(null);
+      setIncomeTargetState(0);
+      return;
+    }
 
-    setTransactions((current) => [newTransaction, ...current]);
+    setLoading(true);
+    try {
+      const now = new Date();
+      const [list, monthly, target] = await Promise.all([
+        financeApi.listTransactions(),
+        financeApi.getTransactionSummary(now.getMonth() + 1, now.getFullYear()),
+        financeApi.getIncomeTarget(),
+      ]);
+      setTransactions(list);
+      setSummary(monthly);
+      setIncomeTargetState(target);
+    } catch (error) {
+      console.warn('Failed to load finance data', getApiErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const setIncomeTarget = useCallback(async (monthlyAmount: number) => {
+    const saved = await financeApi.setIncomeTarget(monthlyAmount);
+    setIncomeTargetState(saved);
   }, []);
 
-  const updateTransaction = useCallback(
-    (id: string, payload: UpdateTransactionPayload) => {
-      setTransactions((current) =>
-        current.map((item) => {
-          if (item.id !== id) {
-            return item;
-          }
+  useEffect(() => {
+    void refreshTransactions();
+  }, [refreshTransactions]);
 
-          const next: Transaction = {
-            ...item,
-            ...payload,
-            provider:
-              payload.type === 'income'
-                ? undefined
-                : (payload.provider ?? item.provider),
-          };
-
-          if (payload.type === 'income') {
-            next.provider = undefined;
-          }
-
-          return next;
-        }),
-      );
+  const deleteTransaction = useCallback(
+    async (id: string) => {
+      await financeApi.deleteTransaction(id);
+      setTransactions((current) => current.filter((item) => item.id !== id));
+      void refreshTransactions();
     },
-    [],
+    [refreshTransactions],
   );
-
-  const deleteTransaction = useCallback((id: string) => {
-    setTransactions((current) => current.filter((item) => item.id !== id));
-  }, []);
 
   const getTransactionById = useCallback(
     (id: string) => transactions.find((item) => item.id === id),
@@ -91,44 +90,50 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   );
 
   const getMonthlySummary = useCallback((): MonthlySummary => {
+    if (summary) {
+      return summary;
+    }
+
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-
     const monthTransactions = transactions.filter((item) => {
       const date = new Date(item.date);
       return (
         date.getMonth() === currentMonth && date.getFullYear() === currentYear
       );
     });
-
-    const summary = computeSummary(monthTransactions);
+    const monthSummary = computeSummary(monthTransactions);
     const allTime = computeSummary(transactions);
 
     return {
-      totalIncome: summary.income,
-      totalExpense: summary.expense,
+      totalIncome: monthSummary.income,
+      totalExpense: monthSummary.expense,
       netBalance: allTime.net,
       transactionCount: monthTransactions.length,
     };
-  }, [transactions]);
+  }, [summary, transactions]);
 
   const value = useMemo(
     () => ({
       transactions,
-      addTransaction,
-      updateTransaction,
+      loading,
+      refreshTransactions,
       deleteTransaction,
       getTransactionById,
       getMonthlySummary,
+      incomeTarget,
+      setIncomeTarget,
     }),
     [
-      addTransaction,
       deleteTransaction,
       getMonthlySummary,
       getTransactionById,
+      incomeTarget,
+      loading,
+      refreshTransactions,
+      setIncomeTarget,
       transactions,
-      updateTransaction,
     ],
   );
 

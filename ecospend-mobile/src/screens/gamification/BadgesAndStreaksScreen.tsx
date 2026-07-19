@@ -1,5 +1,6 @@
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -35,10 +36,17 @@ export default function BadgesAndStreaksScreen() {
     lockedAchievements,
     totalAchievements,
     unlockedCount,
+    refresh,
   } = useBadgesAndStreaks();
 
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
+
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         <View style={styles.header}>
           <Pressable
@@ -60,10 +68,8 @@ export default function BadgesAndStreaksScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           <StreakHeroCard
-            daysActive={streak.daysActive}
-            savingsConsistency={streak.savingsConsistency}
-            consistencyLabel={streak.consistencyLabel}
-            nextMilestone={streak.nextMilestone}
+            currentStreak={streak.currentStreak}
+            totalActiveDays={streak.totalActiveDays}
           />
 
           <SummaryStrip unlockedCount={unlockedCount} totalAchievements={totalAchievements} />

@@ -1,28 +1,34 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { CATEGORY_CONFIG, ALL_CATEGORIES } from '../../constants/categories';
-import { fontSize, fontWeight, radius, spacing, useThemedStyles } from '../../theme';
+import { Icon } from '../ui/icons';
+import { ALL_CATEGORIES, CATEGORY_CONFIG, getCategoryVisual } from '../../constants/categories';
+import { fontSize, fontWeight, radius, spacing, useTheme, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
 import type { TransactionCategory } from '../../types';
 
 /**
  * selectedCategory — currently selected category
  * onSelect — callback when a category chip is selected
+ * categories — optional subset to display (defaults to all categories)
  */
 export interface CategoryChipGridProps {
   selectedCategory: TransactionCategory | null;
   onSelect: (category: TransactionCategory) => void;
+  categories?: TransactionCategory[];
 }
 
 export default function CategoryChipGrid({
   selectedCategory,
   onSelect,
+  categories = ALL_CATEGORIES,
 }: CategoryChipGridProps) {
+  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.grid}>
-      {ALL_CATEGORIES.map((category) => {
+      {categories.map((category) => {
         const config = CATEGORY_CONFIG[category];
+        const visual = getCategoryVisual(category);
         const isSelected = selectedCategory === category;
 
         return (
@@ -31,7 +37,12 @@ export default function CategoryChipGrid({
             style={[styles.chip, isSelected ? styles.chipSelected : styles.chipDefault]}
             onPress={() => onSelect(category)}
           >
-            <Text style={styles.emoji}>{config.emoji}</Text>
+            <Icon
+              name={visual.icon}
+              size={20}
+              color={isSelected ? colors.primary : colors.textSecondary}
+              strokeWidth={1.9}
+            />
             <Text
               style={[
                 styles.label,
@@ -59,8 +70,9 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: 'center',
     borderRadius: radius.md,
     borderWidth: 1,
+    gap: spacing.xs + 2,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.smd,
     width: '31%',
   },
   chipDefault: {
@@ -70,10 +82,6 @@ const createStyles = (colors: ThemeColors) =>
   chipSelected: {
     backgroundColor: colors.primaryBackground,
     borderColor: colors.primary,
-  },
-  emoji: {
-    fontSize: fontSize.xl,
-    marginBottom: spacing.xs,
   },
   label: {
     fontSize: fontSize.sm,

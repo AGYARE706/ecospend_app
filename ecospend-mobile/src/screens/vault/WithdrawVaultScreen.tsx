@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { MOMO_PROVIDERS } from '../../hooks/useSendMoney';
 import { useWithdrawVault } from '../../hooks/useWithdrawVault';
 import type { AppStackParamList } from '../../navigation/types';
 import {
@@ -59,9 +60,19 @@ export default function WithdrawVaultScreen({
     isLoading,
     toggleConfirm,
     handleConfirm,
+    destination,
+    setDestination,
+    provider,
+    setProvider,
+    ownPhone,
+    payoutError,
   } = useWithdrawVault(vaultId, navigation);
 
   const isEarly = withdrawalType === 'early';
+  // What the on-time rate would be if they waited — independent of whether
+  // they're actually in the early or on-time branch right now.
+  const wouldMeetTargetAtMaturity = vault.targetAmount <= 0 || vault.currentBalance >= vault.targetAmount;
+  const projectedOnTimeRate = wouldMeetTargetAtMaturity ? 0.02 : 0.04;
 
   return (
     <ScreenWrapper background="page" padded={false}>
@@ -134,7 +145,7 @@ export default function WithdrawVaultScreen({
           {isEarly ? (
             <EarlyWithdrawalBanner daysRemaining={daysRemaining} />
           ) : (
-            <MaturedBanner />
+            <MaturedBanner isShortfall={fees.isShortfall} />
           )}
 
           {/* ─── 3. Fee Breakdown ──────────────────────────────── */}
@@ -150,15 +161,21 @@ export default function WithdrawVaultScreen({
 
             <FeeRow
               label="Withdrawal Type"
-              value={isEarly ? 'Early Withdrawal' : 'On-Time Withdrawal'}
-              valueColor={isEarly ? colors.warning : colors.success}
+              value={
+                isEarly
+                  ? 'Early Withdrawal'
+                  : fees.isShortfall
+                    ? 'On-Time, Under Target'
+                    : 'On-Time Withdrawal'
+              }
+              valueColor={isEarly || fees.isShortfall ? colors.warning : colors.success}
             />
 
             <FeeRow
               label="Fee Rate"
               value={pct(fees.feeRate)}
-              icon={isEarly ? 'alert-circle' : 'checkmark-circle'}
-              iconColor={isEarly ? colors.warning : colors.success}
+              icon={isEarly || fees.isShortfall ? 'alert-circle' : 'checkmark-circle'}
+              iconColor={isEarly || fees.isShortfall ? colors.warning : colors.success}
             />
 
             <FeeRow
@@ -214,9 +231,10 @@ export default function WithdrawVaultScreen({
                   <Text style={styles.warningTip}>
                     Waiting {daysRemaining} more{' '}
                     {daysRemaining === 1 ? 'day' : 'days'} reduces your fee
-                    from 5% to 2%, saving you{' '}
+                    from 5% to {pct(projectedOnTimeRate)}
+                    {!wouldMeetTargetAtMaturity ? ' (still under target)' : ''}, saving you{' '}
                     <Text style={styles.warningBold}>
-                      {ghs(fees.feeAmount - fees.balance * 0.02)}
+                      {ghs(fees.feeAmount - fees.balance * projectedOnTimeRate)}
                     </Text>
                     .
                   </Text>
@@ -225,7 +243,70 @@ export default function WithdrawVaultScreen({
             </>
           ) : null}
 
-          {/* ─── 5. Confirmation Checkbox ──────────────────────── */}
+          {/* ─── 5. Payout Destination ─────────────────────────── */}
+          <SectionLabel title="Payout Destination" icon="wallet-outline" />
+          <View style={styles.payoutCard}>
+            <View style={styles.destinationRow}>
+              <Pressable
+                style={[styles.destinationChip, destination === 'wallet' && styles.destinationChipActive]}
+                onPress={() => setDestination('wallet')}
+              >
+                <Ionicons
+                  name="wallet-outline"
+                  size={16}
+                  color={destination === 'wallet' ? colors.primary : colors.textMuted}
+                />
+                <Text style={[styles.destinationChipText, destination === 'wallet' && styles.destinationChipTextActive]}>
+                  To My Wallet
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.destinationChip, destination === 'momo' && styles.destinationChipActive]}
+                onPress={() => setDestination('momo')}
+              >
+                <Ionicons
+                  name="send-outline"
+                  size={16}
+                  color={destination === 'momo' ? colors.primary : colors.textMuted}
+                />
+                <Text style={[styles.destinationChipText, destination === 'momo' && styles.destinationChipTextActive]}>
+                  Directly to My MoMo
+                </Text>
+              </Pressable>
+            </View>
+
+            {destination === 'wallet' ? (
+              <Text style={styles.payoutDestinationBody}>
+                The net amount of {ghs(fees.netAmount)} is credited to your
+                wallet instantly and recorded in your transactions. From the
+                wallet you can spend it, save it, or send it to any MoMo number.
+              </Text>
+            ) : (
+              <>
+                <Text style={styles.payoutDestinationBody}>
+                  {ghs(fees.netAmount)} goes to your wallet first, then straight out to{' '}
+                  {ownPhone || 'your linked number'} — one confirmation, no extra trip to Send Money.
+                </Text>
+                <View style={styles.providerRow}>
+                  {MOMO_PROVIDERS.map((p) => (
+                    <Pressable
+                      key={p.key}
+                      style={[styles.providerChip, provider === p.key && styles.providerChipActive]}
+                      onPress={() => setProvider(p.key)}
+                    >
+                      <Text style={[styles.providerChipText, provider === p.key && styles.providerChipTextActive]}>
+                        {p.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {payoutError ? <Text style={styles.payoutErrorText}>{payoutError}</Text> : null}
+          </View>
+
+          {/* ─── 6. Confirmation Checkbox ──────────────────────── */}
           <SectionLabel
             title="Confirmation"
             icon="checkmark-done-circle-outline"
@@ -256,9 +337,7 @@ export default function WithdrawVaultScreen({
                 I understand the withdrawal fee
               </Text>
               <Text style={styles.checkboxSub}>
-                {isEarly
-                  ? `A 5% fee (${ghs(fees.feeAmount)}) will be deducted from my balance`
-                  : `A 2% fee (${ghs(fees.feeAmount)}) will be deducted from my balance`}
+                {`A ${pct(fees.feeRate)} fee (${ghs(fees.feeAmount)}) will be deducted from my balance`}
               </Text>
             </View>
           </Pressable>
@@ -292,7 +371,7 @@ export default function WithdrawVaultScreen({
               void handleConfirm();
             }}
             loading={isLoading}
-            disabled={!isConfirmed}
+            disabled={!isConfirmed || (destination === 'momo' && !provider)}
           />
 
           <Pressable
@@ -312,25 +391,32 @@ export default function WithdrawVaultScreen({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function MaturedBanner() {
+function MaturedBanner({ isShortfall }: { isShortfall: boolean }) {
   const bannerStyles = useThemedStyles(createBannerStyles);
   const { colors } = useTheme();
   return (
     <LinearGradient
-      colors={[colors.primaryDark, colors.primary]}
+      colors={isShortfall ? [colors.warning, colors.warning] : [colors.primaryDark, colors.primary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={bannerStyles.base}
     >
       <View style={bannerStyles.glow} />
       <View style={bannerStyles.iconRing}>
-        <Ionicons name="checkmark-circle" size={28} color={colors.white} />
+        <Ionicons
+          name={isShortfall ? 'alert-circle' : 'checkmark-circle'}
+          size={28}
+          color={colors.white}
+        />
       </View>
       <View style={bannerStyles.textBlock}>
-        <Text style={bannerStyles.title}>Vault Matured</Text>
+        <Text style={bannerStyles.title}>
+          {isShortfall ? 'Vault Matured — Under Target' : 'Vault Matured'}
+        </Text>
         <Text style={bannerStyles.body}>
-          Your vault has reached its target date. Withdraw at the standard 2%
-          fee — the lowest available rate.
+          {isShortfall
+            ? "Your vault reached its target date, but never hit its savings target — a 4% fee applies instead of the standard 2%."
+            : 'Your vault has reached its target date. Withdraw at the standard 2% fee — the lowest available rate.'}
         </Text>
       </View>
     </LinearGradient>
@@ -805,6 +891,79 @@ const createStyles = (colors: ThemeColors) =>
     fontSize: fontSize.xs,
     lineHeight: 18,
     marginLeft: spacing.sm,
+  },
+  payoutCard: {
+    backgroundColor: colors.cardBackground,
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.card,
+    borderWidth: 1.5,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    ...shadowSm,
+  },
+  destinationRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  destinationChip: {
+    alignItems: 'center',
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.chip,
+    borderWidth: 1.5,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+  },
+  destinationChipActive: {
+    backgroundColor: colors.primaryBackground,
+    borderColor: colors.primary,
+  },
+  destinationChipText: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  destinationChipTextActive: {
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
+  payoutErrorText: {
+    color: colors.error,
+    fontSize: fontSize.xs,
+    marginTop: spacing.sm,
+  },
+  providerRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  providerChip: {
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.chip,
+    borderWidth: 1.5,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  providerChipActive: {
+    backgroundColor: colors.primaryBackground,
+    borderColor: colors.primary,
+  },
+  providerChipText: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  providerChipTextActive: {
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
+  payoutDestinationBody: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
   },
   checkboxCard: {
     alignItems: 'center',

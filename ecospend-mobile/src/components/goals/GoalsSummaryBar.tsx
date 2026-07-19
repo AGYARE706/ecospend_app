@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import GhsText from '../ui/GhsText';
-import { Icon } from '../ui/icons';
+import GoalIcon from '../ui/GoalIcon';
 import {
   radius,
   shadowMd,
@@ -34,11 +34,10 @@ export default function GoalsSummaryBar({
       end={{ x: 1, y: 1 }}
       style={styles.card}
     >
-      <View style={styles.glowOrb} />
 
       <View style={styles.headerRow}>
         <View style={styles.iconBadge}>
-          <Icon name="flag" size={16} color={colors.white} filled />
+          <GoalIcon size={16} color={colors.white} />
         </View>
         <Text style={styles.headerLabel}>Your savings progress</Text>
       </View>

@@ -9,10 +9,14 @@ import {
 } from '../utils/vault';
 
 const ON_TIME_RATE = 0.02;
+const SHORTFALL_RATE = 0.04;
 const EARLY_RATE = 0.05;
 
 export interface VaultFeeDetails {
+  /** The rate that would actually apply to an on-time withdrawal right now — 2% if target is met, 4% if not. */
   onTimeRate: number;
+  /** True when the on-time rate above is the 4% shortfall tier rather than the standard 2%. */
+  onTimeIsShortfall: boolean;
   earlyRate: number;
   onTimeFeeGhs: number;
   earlyFeeGhs: number;
@@ -64,6 +68,7 @@ export function useVaultDetails(vaultId: string): VaultDetailsData {
         daysRemaining: 0,
         fees: {
           onTimeRate: ON_TIME_RATE,
+          onTimeIsShortfall: false,
           earlyRate: EARLY_RATE,
           onTimeFeeGhs: 0,
           earlyFeeGhs: 0,
@@ -93,7 +98,9 @@ export function useVaultDetails(vaultId: string): VaultDetailsData {
         ? Math.ceil(remaining / daysRemaining)
         : 0;
 
-    const onTimeFeeGhs = vault.currentBalance * ON_TIME_RATE;
+    const onTimeIsShortfall = vault.targetAmount > 0 && vault.currentBalance < vault.targetAmount;
+    const onTimeRate = onTimeIsShortfall ? SHORTFALL_RATE : ON_TIME_RATE;
+    const onTimeFeeGhs = vault.currentBalance * onTimeRate;
     const earlyFeeGhs = vault.currentBalance * EARLY_RATE;
 
     const totalDays =
@@ -107,7 +114,8 @@ export function useVaultDetails(vaultId: string): VaultDetailsData {
       progress,
       daysRemaining,
       fees: {
-        onTimeRate: ON_TIME_RATE,
+        onTimeRate,
+        onTimeIsShortfall,
         earlyRate: EARLY_RATE,
         onTimeFeeGhs,
         earlyFeeGhs,

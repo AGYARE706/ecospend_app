@@ -8,6 +8,7 @@ import type { GoalsStackParamList } from '../../navigation/types';
 import Card from '../../components/ui/Card';
 import AppButton from '../../components/ui/AppButton';
 import EmptyState from '../../components/ui/EmptyState';
+import GoalIcon from '../../components/ui/GoalIcon';
 import { Icon } from '../../components/ui/icons';
 import { useGoals } from '../../context/GoalsContext';
 import { navigateApp } from '../../navigation/navigationRef';
@@ -25,7 +26,9 @@ import {
   formatMonthYear,
   getDaysRemaining,
   getGoalProgress,
+  getRemainingAmount,
   getWeeklyTarget,
+  isGoalCompleted,
 } from '../../utils/goals';
 
 type GoalDetailsRouteProp = RouteProp<GoalsStackParamList, 'GoalDetails'>;
@@ -61,7 +64,7 @@ export default function GoalDetailsScreen() {
           <View style={styles.headerSpacer} />
         </View>
         <EmptyState
-          icon="target"
+          imageSource={require('../../../assets/goal.png')}
           title="Goal not found"
           subtitle="This goal may have been deleted."
           actionLabel="Go back"
@@ -90,6 +93,9 @@ export default function GoalDetailsScreen() {
   };
 
   const progress = getGoalProgress(savingsGoal);
+  const remaining = getRemainingAmount(savingsGoal);
+  const completed = isGoalCompleted(savingsGoal);
+  const canContribute = !completed && remaining > 0;
 
   const milestones: Milestone[] = [100, 75, 50, 25].map((percentage) => ({
     id: String(percentage),
@@ -105,12 +111,12 @@ export default function GoalDetailsScreen() {
     amount: Math.round((percentage / 100) * savingsGoal.targetAmount),
     icon:
       percentage === 100
-        ? '🚩'
+        ? 'flag'
         : percentage === 75
-          ? '🔒'
+          ? 'lock'
           : percentage === 50
-            ? '⏱️'
-            : '✓',
+            ? 'clock'
+            : 'check',
     isCompleted: savingsGoal.currentAmount >= (percentage / 100) * savingsGoal.targetAmount,
   }));
 
@@ -144,7 +150,7 @@ export default function GoalDetailsScreen() {
 
       {/* Hero Section */}
       <View style={styles.heroSection}>
-        <Card variant="default" padding="lg" style={styles.heroCard}>
+        <Card variant="default" padding="sm" style={styles.heroCard}>
           <View style={styles.heroContent}>
             <Text style={[typography.h2, styles.heroTitle]}>{goal.title}</Text>
             <Text style={[typography.body, styles.heroSubtitle]}>{goal.description}</Text>
@@ -155,7 +161,7 @@ export default function GoalDetailsScreen() {
       {/* Progress Overview */}
       <View style={styles.progressSection}>
         {/* Main Circular Progress Card */}
-        <Card variant="default" padding="lg" style={styles.progressCard}>
+        <Card variant="default" padding="md" style={styles.progressCard}>
           <View style={styles.progressContent}>
             {/* Circular Progress */}
             <View style={styles.circleContainer}>
@@ -212,23 +218,31 @@ export default function GoalDetailsScreen() {
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>💰</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <Icon name="wallet" size={17} color={colors.primary} strokeWidth={1.9} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Avg. Contribution</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>GH¢ {goal.avgContribution}</Text>
           </Card>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>📅</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <Icon name="calendar" size={17} color={colors.primary} strokeWidth={1.9} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Days Remaining</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{goal.daysRemaining} Days</Text>
           </Card>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>📈</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <Icon name="trending-up" size={17} color={colors.primary} strokeWidth={1.9} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Est. Weekly Saving</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>GH¢ {goal.weeklyProjection}</Text>
           </Card>
-          <Card variant="default" padding="md" style={styles.statCard}>
-            <Text style={styles.statIcon}>✨</Text>
+          <Card variant="default" padding="sm" style={styles.statCard}>
+            <View style={styles.statIconWrap}>
+              <GoalIcon size={17} color={colors.primary} />
+            </View>
             <Text style={[typography.label, styles.statLabel]} numberOfLines={2}>Projected Finish</Text>
             <Text style={[typography.body, styles.statValue]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{goal.projectedFinish}</Text>
           </Card>
@@ -238,7 +252,7 @@ export default function GoalDetailsScreen() {
       {/* Timeline Section */}
       <View style={styles.timelineSection}>
         <Text style={[typography.h3, styles.timelineTitle]}>Milestone Timeline</Text>
-        <Card variant="default" padding="lg" style={styles.timelineCard}>
+        <Card variant="default" padding="md" style={styles.timelineCard}>
           <View style={styles.timelineContainer}>
             {/* Timeline line */}
             <View style={styles.timelineLine} />
@@ -269,7 +283,12 @@ export default function GoalDetailsScreen() {
                           milestone.isCompleted && styles.milestoneCircleActive,
                         ]}
                       >
-                        <Text style={styles.milestoneIcon}>{milestone.icon}</Text>
+                        <Icon
+                          name={milestone.icon}
+                          size={14}
+                          color={milestone.isCompleted ? colors.onPrimary : colors.textMuted}
+                          strokeWidth={2.2}
+                        />
                       </View>
                     </>
                   ) : (
@@ -280,7 +299,12 @@ export default function GoalDetailsScreen() {
                           milestone.isCompleted && styles.milestoneCircleActive,
                         ]}
                       >
-                        <Text style={styles.milestoneIcon}>{milestone.icon}</Text>
+                        <Icon
+                          name={milestone.icon}
+                          size={14}
+                          color={milestone.isCompleted ? colors.onPrimary : colors.textMuted}
+                          strokeWidth={2.2}
+                        />
                       </View>
                       <View style={styles.milestoneTextContainer}>
                         <Text
@@ -305,12 +329,32 @@ export default function GoalDetailsScreen() {
         </Card>
       </View>
 
+      {/* Completed banner — once complete, a goal is permanently done: no more contributions, ever */}
+      {completed ? (
+        <View style={styles.completedBanner}>
+          <Icon name="checkmark-circle" size={18} color={colors.success} />
+          <Text style={styles.completedBannerText}>
+            Goal complete — locked from further contributions. Withdraw anytime, or start a new goal to keep saving.
+          </Text>
+        </View>
+      ) : null}
+
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
+        {canContribute ? (
+          <AppButton
+            title="Add Contribution"
+            onPress={handleAddContribution}
+            variant="primary"
+            size="lg"
+            fullWidth
+            style={styles.button}
+          />
+        ) : null}
         <AppButton
-          title="Add Contribution"
-          onPress={handleAddContribution}
-          variant="primary"
+          title="Withdraw to Wallet"
+          onPress={() => navigateApp('WithdrawFromGoal', { goalId: params.goalId })}
+          variant={canContribute ? 'outline' : 'primary'}
           size="lg"
           fullWidth
           style={styles.button}
@@ -465,9 +509,14 @@ const createStyles = (colors: ThemeColors) =>
     width: '48%',
     alignItems: 'center',
   },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: spacing.smd,
+  statIconWrap: {
+    alignItems: 'center',
+    backgroundColor: colors.primaryBackground,
+    borderRadius: radius.full,
+    height: 34,
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+    width: 34,
   },
   statLabel: {
     color: colors.textSecondary,
@@ -542,6 +591,20 @@ const createStyles = (colors: ThemeColors) =>
   },
   milestoneIcon: {
     fontSize: 18,
+  },
+  completedBanner: {
+    alignItems: 'center',
+    backgroundColor: colors.successLight,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    padding: spacing.smd,
+  },
+  completedBannerText: {
+    ...typography.bodySm,
+    color: colors.textPrimary,
+    flex: 1,
   },
   buttonContainer: {
     gap: spacing.md,

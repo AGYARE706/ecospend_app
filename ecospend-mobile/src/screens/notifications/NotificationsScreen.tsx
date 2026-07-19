@@ -89,7 +89,7 @@ export default function NotificationsScreen() {
         {isEmpty ? (
           <View style={styles.emptyWrap}>
             <EmptyState
-              emoji="🔔"
+              icon="bell"
               title="No notifications"
               subtitle="Alerts about budgets, goals, vaults, and insights will appear here."
             />

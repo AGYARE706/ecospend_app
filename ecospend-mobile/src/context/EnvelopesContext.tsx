@@ -9,12 +9,9 @@ import {
   useState,
 } from 'react';
 
-import { CATEGORY_CONFIG } from '../constants/categories';
-import {
-  MOCK_ENVELOPE_SAVE_DELAY_MS,
-  MOCK_LOADING_DELAY_MS,
-  mockEnvelopes,
-} from '../data/mock/mockData';
+import * as envelopesApi from '../api/envelopesApi';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
+import { useAuth } from './AuthContext';
 import type {
   AddEnvelopePayload,
   BudgetEnvelope,
@@ -32,18 +29,6 @@ import {
 
 const TOAST_DURATION_MS = 2000;
 
-function createEnvelopeId(): string {
-  return `env-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
-const ENVELOPE_COLORS: Envelope['color'][] = [
-  'primaryBackground',
-  'blueLight',
-  'warningLight',
-  'successLight',
-  'errorLight',
-];
-
 interface EnvelopesContextValue {
   allEnvelopes: Envelope[];
   filteredEnvelopes: Envelope[];
@@ -58,6 +43,7 @@ interface EnvelopesContextValue {
   currentMonth: number;
   currentYear: number;
   loading: boolean;
+  refreshEnvelopes: () => Promise<void>;
   addEnvelope: (payload: AddEnvelopePayload) => Promise<boolean>;
   editEnvelope: (payload: EditEnvelopePayload) => Promise<boolean>;
   getEnvelopeById: (id: string) => Envelope | undefined;
@@ -73,7 +59,8 @@ const EnvelopesContext = createContext<EnvelopesContextValue | undefined>(
 );
 
 export function EnvelopesProvider({ children }: { children: ReactNode }) {
-  const [allEnvelopes, setAllEnvelopes] = useState<Envelope[]>(mockEnvelopes);
+  const { isAuthenticated } = useAuth();
+  const [allEnvelopes, setAllEnvelopes] = useState<Envelope[]>([]);
   const [activeFilter, setFilter] = useState<EnvelopeFilter>('All');
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -83,11 +70,6 @@ export function EnvelopesProvider({ children }: { children: ReactNode }) {
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), MOCK_LOADING_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
 
   const showToast = useCallback((message: string) => {
     if (toastTimerRef.current) {
@@ -108,6 +90,29 @@ export function EnvelopesProvider({ children }: { children: ReactNode }) {
     }
     setToastMessage(null);
   }, []);
+
+  const refreshEnvelopes = useCallback(async () => {
+    if (!isAuthenticated) {
+      setAllEnvelopes([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const list = await envelopesApi.listEnvelopes();
+      setAllEnvelopes(list);
+    } catch (error) {
+      console.warn('Failed to load envelopes', getApiErrorMessage(error));
+      showToast(getApiErrorMessage(error, 'Could not load envelopes'));
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, showToast]);
+
+  useEffect(() => {
+    void refreshEnvelopes();
+  }, [refreshEnvelopes]);
 
   const filteredEnvelopes = useMemo(
     () => filterEnvelopes(allEnvelopes, activeFilter),
@@ -167,76 +172,53 @@ export function EnvelopesProvider({ children }: { children: ReactNode }) {
   const addEnvelope = useCallback(
     async (payload: AddEnvelopePayload): Promise<boolean> => {
       setIsSaving(true);
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, MOCK_ENVELOPE_SAVE_DELAY_MS),
-      );
-
-      const categoryConfig = CATEGORY_CONFIG[payload.category];
-      const color = ENVELOPE_COLORS[allEnvelopes.length % ENVELOPE_COLORS.length];
-
-      const nextEnvelope: Envelope = {
-        id: createEnvelopeId(),
-        category: payload.category,
-        emoji: categoryConfig.emoji,
-        monthlyLimit: payload.monthlyLimit,
-        currentSpend: 0,
-        month: currentMonth,
-        year: currentYear,
-        color,
-      };
-
-      setAllEnvelopes((current) => {
-        const withoutDuplicate = current.filter(
-          (envelope) =>
-            !(
-              envelope.category === payload.category &&
-              envelope.month === currentMonth &&
-              envelope.year === currentYear
-            ),
+      try {
+        const nextEnvelope = await envelopesApi.createEnvelope(payload);
+        setAllEnvelopes((current) => {
+          const withoutDuplicate = current.filter(
+            (envelope) =>
+              !(
+                envelope.category === payload.category &&
+                envelope.month === currentMonth &&
+                envelope.year === currentYear
+              ),
+          );
+          return [nextEnvelope, ...withoutDuplicate];
+        });
+        showToast(
+          `${payload.category} envelope set to GHS ${payload.monthlyLimit.toFixed(2)}`,
         );
-
-        return [nextEnvelope, ...withoutDuplicate];
-      });
-
-      setIsSaving(false);
-      showToast(
-        `${payload.category} envelope set to GHS ${payload.monthlyLimit.toFixed(2)}`,
-      );
-      return true;
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not create envelope'));
+        return false;
+      } finally {
+        setIsSaving(false);
+      }
     },
-    [allEnvelopes.length, currentMonth, currentYear, showToast],
+    [currentMonth, currentYear, showToast],
   );
 
   const editEnvelope = useCallback(
     async (payload: EditEnvelopePayload): Promise<boolean> => {
       setIsSaving(true);
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, MOCK_ENVELOPE_SAVE_DELAY_MS),
-      );
-
-      let categoryLabel = 'Envelope';
-
-      setAllEnvelopes((current) =>
-        current.map((envelope) => {
-          if (envelope.id !== payload.id) {
-            return envelope;
-          }
-
-          categoryLabel = envelope.category;
-          return {
-            ...envelope,
-            monthlyLimit: payload.monthlyLimit,
-          };
-        }),
-      );
-
-      setIsSaving(false);
-      showToast(
-        `${categoryLabel} limit updated to GHS ${payload.monthlyLimit.toFixed(2)}`,
-      );
-      return true;
+      try {
+        const updated = await envelopesApi.updateEnvelope(payload);
+        setAllEnvelopes((current) =>
+          current.map((envelope) =>
+            envelope.id === payload.id ? updated : envelope,
+          ),
+        );
+        showToast(
+          `${updated.category} limit updated to GHS ${payload.monthlyLimit.toFixed(2)}`,
+        );
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Could not update envelope'));
+        return false;
+      } finally {
+        setIsSaving(false);
+      }
     },
     [showToast],
   );
@@ -256,6 +238,7 @@ export function EnvelopesProvider({ children }: { children: ReactNode }) {
       currentMonth,
       currentYear,
       loading,
+      refreshEnvelopes,
       addEnvelope,
       editEnvelope,
       getEnvelopeById,
@@ -281,6 +264,7 @@ export function EnvelopesProvider({ children }: { children: ReactNode }) {
       isSaving,
       loading,
       overallPercent,
+      refreshEnvelopes,
       statusCounts,
       toastMessage,
       totalLimit,

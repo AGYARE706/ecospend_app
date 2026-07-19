@@ -6,7 +6,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../../components/ui/icons';
 import type { IconName } from '../../components/ui/icons';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
-import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../hooks/useProfile';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
@@ -23,7 +22,7 @@ import type { ThemeColors, ThemeMode } from '../../theme';
 
 type ProfileNavigationProp = StackNavigationProp<ProfileStackParamList, 'Profile'>;
 
-type MenuRoute = Exclude<keyof ProfileStackParamList, 'Profile'>;
+type MenuRoute = Exclude<keyof ProfileStackParamList, 'Profile' | 'LessonTrack' | 'LessonDetail'>;
 
 const menuItems: Array<{
   label: string;
@@ -43,6 +42,7 @@ const menuItems: Array<{
     route: 'BadgesAndStreaks',
     icon: 'trophy-outline',
   },
+  { label: 'Financial Lessons', route: 'Learn', icon: 'book' },
   { label: 'Help & Support', route: 'HelpSupport', icon: 'help-circle-outline' },
   { label: 'About', route: 'About', icon: 'information-circle-outline' },
 ];
@@ -57,23 +57,14 @@ const appearanceOptions: Array<{
   { value: 'system', label: 'System', icon: 'device' },
 ];
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
-}
-
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<ProfileNavigationProp>();
-  const { signOut } = useAuth();
   const { name, formattedPhone, isPlus, stats } = useProfile();
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={[]}>
       <View style={styles.screen}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -81,18 +72,6 @@ export default function ProfileScreen() {
         >
           {/* Profile Header */}
           <View style={styles.headerCard}>
-            <View style={styles.avatarRing}>
-              <LinearGradient
-                colors={[colors.primaryDark, colors.primary]}
-                style={styles.avatar}
-              >
-                <Text style={styles.avatarText}>{getInitials(name)}</Text>
-              </LinearGradient>
-              <View style={styles.avatarBadge}>
-                <Icon name="checkmark" size={12} color={colors.white} />
-              </View>
-            </View>
-
             <Text style={styles.name} numberOfLines={1}>{name}</Text>
             <View style={styles.phoneRow}>
               <Icon name="call-outline" size={14} color={colors.textMuted} />
@@ -108,7 +87,6 @@ export default function ProfileScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.membershipCard}
             >
-              <View style={styles.membershipGlow} />
               <View style={styles.membershipTop}>
                 <View style={styles.membershipIconRing}>
                   <Icon name="star" size={18} color={colors.white} />
@@ -193,23 +171,6 @@ export default function ProfileScreen() {
                 onPress={() => navigation.navigate(item.route)}
               />
             ))}
-          </View>
-
-          {/* Logout */}
-          <View style={styles.logoutSection}>
-            <Pressable
-              onPress={signOut}
-              style={({ pressed }) => [
-                styles.logoutButton,
-                pressed && styles.logoutButtonPressed,
-              ]}
-            >
-              <Icon name="log-out-outline" size={18} color={colors.error} />
-              <Text style={styles.logoutButtonText}>Log Out</Text>
-            </Pressable>
-            <Text style={styles.logoutHint}>
-              You'll be signed out of EcoSpend on this device.
-            </Text>
           </View>
 
           <View style={styles.bottomSpacer} />
@@ -474,7 +435,7 @@ const createStyles = (colors: ThemeColors) =>
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
@@ -485,40 +446,9 @@ const createStyles = (colors: ThemeColors) =>
     borderRadius: radius.heroCard,
     borderWidth: 1,
     marginBottom: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
     ...shadowMd,
-  },
-  avatarRing: {
-    marginBottom: spacing.md,
-    position: 'relative',
-  },
-  avatar: {
-    alignItems: 'center',
-    borderRadius: radius.full,
-    height: 84,
-    justifyContent: 'center',
-    width: 84,
-    ...shadowSm,
-  },
-  avatarText: {
-    color: colors.white,
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-  },
-  avatarBadge: {
-    alignItems: 'center',
-    backgroundColor: colors.success,
-    borderColor: colors.cardBackground,
-    borderRadius: radius.full,
-    borderWidth: 2,
-    bottom: 2,
-    height: 24,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 2,
-    width: 24,
   },
   name: {
     color: colors.textDark,
@@ -668,35 +598,6 @@ const createStyles = (colors: ThemeColors) =>
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     ...shadowSm,
-  },
-  logoutSection: {
-    marginTop: spacing.xl,
-  },
-  logoutButton: {
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderColor: `${colors.error}55`,
-    borderRadius: radius.button,
-    borderWidth: 1.5,
-    flexDirection: 'row',
-    height: 52,
-    justifyContent: 'center',
-  },
-  logoutButtonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.98 }],
-  },
-  logoutButtonText: {
-    color: colors.error,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    marginLeft: spacing.sm,
-  },
-  logoutHint: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    marginTop: spacing.sm,
-    textAlign: 'center',
   },
   bottomSpacer: {
     height: spacing.lg,

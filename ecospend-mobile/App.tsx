@@ -9,12 +9,14 @@ import { useMemo } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppLockProvider } from './src/context/AppLockContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { EnvelopesProvider } from './src/context/EnvelopesContext';
 import { FinanceProvider } from './src/context/FinanceContext';
 import { GoalsProvider } from './src/context/GoalsContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { VaultProvider } from './src/context/VaultContext';
+import { WalletProvider } from './src/context/WalletContext';
 import { linking } from './src/navigation/linking';
 import { navigationRef } from './src/navigation/navigationRef';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -51,15 +53,21 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <FinanceProvider>
-              <GoalsProvider>
-                <EnvelopesProvider>
-                  <VaultProvider>
-                    <ThemedApp />
-                  </VaultProvider>
-                </EnvelopesProvider>
-              </GoalsProvider>
-            </FinanceProvider>
+            <AppLockProvider>
+              <WalletProvider>
+                <FinanceProvider>
+                  {/* Envelopes must wrap Goals/Vault: their contribute flows
+                      call useEnvelopes() to refresh spend after an expense. */}
+                  <EnvelopesProvider>
+                    <GoalsProvider>
+                      <VaultProvider>
+                        <ThemedApp />
+                      </VaultProvider>
+                    </GoalsProvider>
+                  </EnvelopesProvider>
+                </FinanceProvider>
+              </WalletProvider>
+            </AppLockProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

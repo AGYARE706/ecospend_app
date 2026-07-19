@@ -82,9 +82,9 @@ export default function BudgetEnvelopeCard({ envelope }: BudgetEnvelopeCardProps
       </View>
 
       <View style={styles.amountRow}>
-        <GhsText amount={envelope.spent} size="sm" numberOfLines={1} style={styles.spentAmount} />
-        <Text style={styles.ofText}> of </Text>
-        <GhsText amount={envelope.limit} size="sm" numberOfLines={1} style={styles.limitAmount} />
+        <GhsText amount={envelope.spent} size="sm" compact numberOfLines={1} style={styles.spentAmount} />
+        <Text style={styles.ofText}> / </Text>
+        <GhsText amount={envelope.limit} size="sm" compact numberOfLines={1} style={styles.limitAmount} />
       </View>
 
       <Text style={[styles.percentLabel, { color: fillColor }]}>
@@ -101,10 +101,10 @@ const createStyles = (colors: ThemeColors) =>
     borderColor: colors.borderSubtle,
     borderRadius: radius.lg,
     borderWidth: 1,
-    marginRight: spacing.md,
+    marginRight: spacing.smd,
     overflow: 'hidden',
     padding: spacing.md,
-    width: 172,
+    width: 160,
     ...shadowSm,
   },
   accentStrip: {
@@ -117,14 +117,15 @@ const createStyles = (colors: ThemeColors) =>
   iconCircle: {
     alignItems: 'center',
     borderRadius: radius.full,
-    height: 42,
+    height: 38,
     justifyContent: 'center',
     marginBottom: spacing.sm,
-    width: 42,
+    width: 38,
   },
   name: {
-    ...typography.subheading,
+    ...typography.label,
     color: colors.textDark,
+    fontSize: 15,
     marginBottom: spacing.sm,
   },
   track: {

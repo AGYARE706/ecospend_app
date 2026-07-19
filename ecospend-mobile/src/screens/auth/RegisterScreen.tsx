@@ -41,7 +41,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     confirmPassword,
     setConfirmPassword,
     loading,
-    successMessage,
     handleSubmit,
     getFieldError,
   } = useRegister(navigation);
@@ -59,12 +58,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       <Text style={styles.subheading}>
         Join thousands of Ghanaians saving smarter
       </Text>
-
-      {successMessage ? (
-        <View style={styles.successBanner}>
-          <Text style={styles.successText}>{successMessage}</Text>
-        </View>
-      ) : null}
 
       <View style={styles.form}>
         <AppInput
@@ -114,6 +107,10 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
             Privacy Policy
           </Text>
         </Text>
+
+        {getFieldError('form') ? (
+          <Text style={styles.formError}>{getFieldError('form')}</Text>
+        ) : null}
 
         <AppButton
           title="Create Account"
@@ -204,6 +201,10 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.primary,
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
+  },
+  formError: {
+    color: colors.error,
+    fontSize: fontSize.sm,
   },
   loginRow: {
     alignItems: 'center',

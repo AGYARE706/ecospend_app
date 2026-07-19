@@ -3,10 +3,13 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect } from 'react';
 
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { useAuth } from '../../context/AuthContext';
 import { useGroupVaultDashboard } from '../../hooks/useGroupVaultDashboard';
-import { navigateApp } from '../../navigation/navigationRef';
+import { useUnreadNotificationsCount } from '../../hooks/useUnreadNotificationsCount';
+import { navigateApp, navigateToSubscription } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -67,6 +70,7 @@ export default function GroupVaultDashboardScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<GroupVaultDashNavProp>();
+  const { tier } = useAuth();
   const {
     groups,
     pendingRequests,
@@ -74,6 +78,13 @@ export default function GroupVaultDashboardScreen() {
     isEmpty,
     hasPendingRequests,
   } = useGroupVaultDashboard();
+  const unreadNotifications = useUnreadNotificationsCount();
+
+  useEffect(() => {
+    if (tier === 'FREE') {
+      navigateToSubscription();
+    }
+  }, [tier]);
 
   const openDetails = (vault: GroupVault) => {
     navigation.navigate('GroupVaultDetails', { groupVaultId: vault.id });
@@ -86,11 +97,27 @@ export default function GroupVaultDashboardScreen() {
     });
   };
 
-  const openCreateGroup = () => navigateApp('CreateGroupVault');
-  const openJoinGroup = () => navigateApp('JoinGroupVault');
+  const openCreateGroup = () => {
+    if (tier === 'FREE') {
+      navigateToSubscription();
+      return;
+    }
+    navigateApp('CreateGroupVault');
+  };
+  const openJoinGroup = () => {
+    if (tier === 'FREE') {
+      navigateToSubscription();
+      return;
+    }
+    navigateApp('JoinGroupVault');
+  };
+
+  if (tier === 'FREE') {
+    return null;
+  }
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={['top']}>
       <View style={styles.screen}>
         {/* ─── 1. Header ──────────────────────────────────────── */}
         <View style={styles.header}>
@@ -114,7 +141,7 @@ export default function GroupVaultDashboardScreen() {
             <HeaderIconBtn
               icon="notifications-outline"
               onPress={() => navigateApp('Notifications')}
-              badge={summary.pendingApprovals > 0 ? summary.pendingApprovals : undefined}
+              badge={unreadNotifications > 0 ? unreadNotifications : undefined}
             />
             <HeaderIconBtn
               icon="enter-outline"
@@ -142,6 +169,7 @@ export default function GroupVaultDashboardScreen() {
               totalSavings={summary.totalGroupSavings}
               activeGroups={summary.activeGroups}
               pendingApprovals={summary.pendingApprovals}
+              totalGroups={groups.length}
             />
 
             {/* ─── Quick Actions ────────────────────────────────── */}
@@ -299,10 +327,12 @@ function GroupSummaryCard({
   totalSavings,
   activeGroups,
   pendingApprovals,
+  totalGroups,
 }: {
   totalSavings: number;
   activeGroups: number;
   pendingApprovals: number;
+  totalGroups: number;
 }) {
   const summaryStyles = useThemedStyles(createSummaryStyles);
   const { colors } = useTheme();
@@ -346,7 +376,7 @@ function GroupSummaryCard({
         <SummaryMetric
           icon="people-outline"
           label="My Groups"
-          value="4"
+          value={String(totalGroups)}
         />
       </View>
     </LinearGradient>
@@ -1240,7 +1270,7 @@ const createEmptyStyles = (colors: ThemeColors) =>
     alignItems: 'center',
     height: 180,
     justifyContent: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     width: 180,
   },
   outerRing: {
@@ -1292,7 +1322,7 @@ const createEmptyStyles = (colors: ThemeColors) =>
     color: colors.textMuted,
     fontSize: fontSize.sm,
     lineHeight: 22,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   primaryBtn: {
@@ -1424,6 +1454,6 @@ const createStyles = (colors: ThemeColors) =>
     textAlign: 'center',
   },
   bottomSpacer: {
-    height: spacing.xxl,
+    height: spacing.xs,
   },
 });

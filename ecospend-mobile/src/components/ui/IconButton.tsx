@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { radius, shadowXs, spacing, useTheme } from '../../theme';
 import type { ThemeColors } from '../../theme';
@@ -20,6 +20,8 @@ export interface IconButtonProps {
   accessibilityLabel?: string;
   disabled?: boolean;
   style?: ViewStyle;
+  /** Small red count badge in the top-right corner; omitted when 0 or undefined. */
+  badgeCount?: number;
 }
 
 const DIMS = {
@@ -38,6 +40,7 @@ export default function IconButton({
   accessibilityLabel,
   disabled = false,
   style,
+  badgeCount,
 }: IconButtonProps) {
   const { colors } = useTheme();
   const dims = DIMS[size];
@@ -62,6 +65,11 @@ export default function IconButton({
       ]}
     >
       <Icon name={icon} size={dims.icon} color={iconColor} filled={filled} />
+      {badgeCount ? (
+        <View style={[styles.badge, { backgroundColor: colors.error, borderColor: colors.cardBackground }]}>
+          <Text style={styles.badgeText}>{badgeCount > 9 ? '9+' : badgeCount}</Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -90,5 +98,22 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.4,
+  },
+  badge: {
+    alignItems: 'center',
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    height: 18,
+    justifyContent: 'center',
+    minWidth: 18,
+    paddingHorizontal: 3,
+    position: 'absolute',
+    right: -4,
+    top: -4,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

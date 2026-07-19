@@ -1,7 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
-import { mockNotifications } from '../data/mock/notifications';
+import { getApiErrorMessage } from '../api/getApiErrorMessage';
+import * as notificationsApi from '../api/notificationsApi';
+import { useAuth } from '../context/AuthContext';
 import type { AppStackParamList } from '../navigation/types';
 import type {
   AppNotification,
@@ -22,7 +25,34 @@ const SECTION_TITLES = {
 } as const;
 
 export function useNotifications(navigation: NotificationsNavigationProp) {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const { isAuthenticated } = useAuth();
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const list = await notificationsApi.listNotifications();
+      setNotifications(list);
+      setError(null);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not load notifications'));
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.read).length,
@@ -41,23 +71,42 @@ export function useNotifications(navigation: NotificationsNavigationProp) {
       .filter((section) => section.data.length > 0);
   }, [notifications]);
 
-  const dismissNotification = useCallback((id: string) => {
+  const dismissNotification = useCallback(async (id: string) => {
     setNotifications((current) => current.filter((item) => item.id !== id));
-  }, []);
+    try {
+      await notificationsApi.dismissNotification(id);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not dismiss notification'));
+      void refresh();
+    }
+  }, [refresh]);
 
-  const markAsRead = useCallback((id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     setNotifications((current) =>
       current.map((item) => (item.id === id ? { ...item, read: true } : item)),
     );
+    try {
+      await notificationsApi.markNotificationRead(id);
+    } catch {
+      // keep optimistic update
+    }
   }, []);
 
-  const markAllRead = useCallback(() => {
-    setNotifications((current) => current.map((item) => ({ ...item, read: true })));
-  }, []);
+  const markAllRead = useCallback(async () => {
+    setNotifications((current) =>
+      current.map((item) => ({ ...item, read: true })),
+    );
+    try {
+      await notificationsApi.markAllNotificationsRead();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not mark all as read'));
+      void refresh();
+    }
+  }, [refresh]);
 
   const handleNotificationPress = useCallback(
     (notification: AppNotification) => {
-      markAsRead(notification.id);
+      void markAsRead(notification.id);
       navigateFromAction(notification.action, navigation);
     },
     [markAsRead, navigation],
@@ -67,9 +116,12 @@ export function useNotifications(navigation: NotificationsNavigationProp) {
     sections,
     unreadCount,
     isEmpty: notifications.length === 0,
+    loading,
+    error,
     dismissNotification,
     markAllRead,
     handleNotificationPress,
+    refresh,
   };
 }
 
@@ -113,6 +165,24 @@ function navigateFromAction(
               requestId: action.requestId,
             },
           },
+        });
+        break;
+      case 'group_vault_details':
+        navigation.navigate('MainTabs', {
+          screen: 'VaultTab',
+          params: {
+            screen: 'GroupVaultDetails',
+            params: { groupVaultId: action.groupVaultId },
+          },
+        });
+        break;
+      case 'join_group_vault':
+        navigation.navigate('JoinGroupVault', { inviteCode: action.inviteCode });
+        break;
+      case 'subscription':
+        navigation.navigate('MainTabs', {
+          screen: 'ProfileTab',
+          params: { screen: 'Subscription' },
         });
         break;
       case 'none':

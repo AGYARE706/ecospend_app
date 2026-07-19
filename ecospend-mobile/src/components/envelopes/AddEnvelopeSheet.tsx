@@ -52,7 +52,6 @@ export default function AddEnvelopeSheet({
     const config = CATEGORY_CONFIG[selectedCategory];
     return {
       category: config.label,
-      emoji: config.emoji,
       monthlyLimit: parsedLimit,
     };
   }, [parsedLimit, selectedCategory]);
@@ -132,7 +131,6 @@ export default function AddEnvelopeSheet({
       {preview ? (
         <EnvelopePreviewCard
           category={preview.category}
-          emoji={preview.emoji}
           monthlyLimit={preview.monthlyLimit}
         />
       ) : null}

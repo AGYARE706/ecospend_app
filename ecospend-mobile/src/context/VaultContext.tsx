@@ -3,31 +3,24 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 
-import {
-  buildGroupVaultSummary,
-  mockGroupVaults,
-  mockWithdrawalRequests,
-} from '../data/mock/groupVaults';
-import { buildVaultSummary, mockVaults } from '../data/mock/vaults';
+import { getApiErrorCode, getApiErrorMessage } from '../api/getApiErrorMessage';
+import * as groupVaultApi from '../api/groupVaultApi';
+import * as paymentsApi from '../api/paymentsApi';
+import * as vaultApi from '../api/vaultApi';
+import { toCanonicalGhanaPhone } from '../utils/validation';
+import { useAuth } from './AuthContext';
+import { buildGroupVaultSummary } from '../data/mock/groupVaults';
+import { buildVaultSummary } from '../data/mock/vaults';
 import type {
   GroupVault,
-  GroupVaultMember,
   WithdrawalRequest,
 } from '../types/groupVault';
 import type { Vault } from '../types/vault';
-
-const ACCENT_COLORS = [
-  '#2E7D32',
-  '#1565C0',
-  '#6A1B9A',
-  '#E65100',
-  '#0277BD',
-  '#37474F',
-];
 
 export interface CreateVaultPayload {
   name: string;
@@ -42,6 +35,8 @@ export interface CreateGroupVaultPayload {
   targetAmount: number;
   maturityDate: string;
   memberLimit: number;
+  /** WEEKLY | MONTHLY — cadence of the automatic contribution plan. */
+  contributionFrequency: string;
   members: Array<{ phone: string; displayPhone: string }>;
 }
 
@@ -49,49 +44,101 @@ interface VaultContextValue {
   vaults: Vault[];
   groupVaults: GroupVault[];
   withdrawalRequests: WithdrawalRequest[];
+  loading: boolean;
+  lastError: string | null;
+  lastErrorCode: string | null;
+  clearError: () => void;
+  refreshVaults: () => Promise<void>;
   getVaultById: (id: string) => Vault | undefined;
   getGroupVaultById: (id: string) => GroupVault | undefined;
   getWithdrawalRequestById: (id: string) => WithdrawalRequest | undefined;
-  createVault: (payload: CreateVaultPayload) => Vault;
+  createVault: (payload: CreateVaultPayload) => Promise<Vault>;
+  depositFromWallet: (vaultId: string, amount: number) => Promise<Vault>;
+  contributeToGroup: (groupId: string, amount: number) => Promise<GroupVault>;
   withdrawVault: (
     vaultId: string,
     amountReceived: number,
     feeCharged: number,
-  ) => void;
-  createGroupVault: (payload: CreateGroupVaultPayload) => GroupVault;
-  joinGroupVault: (inviteCode: string) => GroupVault | null;
-  voteWithdrawal: (requestId: string, approve: boolean) => void;
-  lookupInviteCode: (code: string) => GroupVault | null;
+    mode?: 'matured' | 'early',
+  ) => Promise<void>;
+  createGroupVault: (payload: CreateGroupVaultPayload) => Promise<GroupVault>;
+  joinGroupVault: (inviteCode: string) => Promise<GroupVault | null>;
+  requestWithdrawal: (groupId: string, amount: number, note?: string) => Promise<WithdrawalRequest>;
+  voteWithdrawal: (requestId: string, approve: boolean) => Promise<void>;
+  lookupInviteCode: (code: string) => Promise<GroupVault | null>;
 }
 
 const VaultContext = createContext<VaultContextValue | undefined>(undefined);
 
-const INVITE_CODE_MAP: Record<string, string> = {
-  'TRIP-2026': 'gv-trip',
-  'TECH-TEAM': 'gv-office',
-  'FAM-SAFE': 'gv-family',
-  'STRT-PAD': 'gv-startup',
-};
-
-function createVaultId(): string {
-  return `vault-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
-function createGroupVaultId(): string {
-  return `gv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
-function initialsFromPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '').slice(-4);
-  return digits.slice(0, 2).toUpperCase() || 'MB';
-}
-
 export function VaultProvider({ children }: { children: ReactNode }) {
-  const [vaults, setVaults] = useState<Vault[]>(mockVaults);
-  const [groupVaults, setGroupVaults] = useState<GroupVault[]>(mockGroupVaults);
+  const { isAuthenticated } = useAuth();
+  const [vaults, setVaults] = useState<Vault[]>([]);
+  const [groupVaults, setGroupVaults] = useState<GroupVault[]>([]);
   const [withdrawalRequests, setWithdrawalRequests] = useState<
     WithdrawalRequest[]
-  >(mockWithdrawalRequests);
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [lastErrorCode, setLastErrorCode] = useState<string | null>(null);
+
+  const clearError = useCallback(() => {
+    setLastError(null);
+    setLastErrorCode(null);
+  }, []);
+
+  const refreshVaults = useCallback(async () => {
+    if (!isAuthenticated) {
+      setVaults([]);
+      setGroupVaults([]);
+      setWithdrawalRequests([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const personal = await vaultApi.listVaults();
+      setVaults(personal);
+
+      try {
+        const groups = await groupVaultApi.listGroupVaults();
+        setGroupVaults(groups);
+
+        const withdrawals = (
+          await Promise.all(
+            groups.map(async (group) => {
+              try {
+                const list = await groupVaultApi.listWithdrawals(group.id);
+                return list.map((item) => ({
+                  ...item,
+                  groupVaultName: group.name,
+                }));
+              } catch {
+                return [] as WithdrawalRequest[];
+              }
+            }),
+          )
+        ).flat();
+        setWithdrawalRequests(withdrawals);
+      } catch (error) {
+        const code = getApiErrorCode(error);
+        if (code === 'GROUP_VAULT_REQUIRES_PLUS') {
+          setGroupVaults([]);
+          setWithdrawalRequests([]);
+        } else {
+          console.warn('Failed to load group vaults', getApiErrorMessage(error));
+        }
+      }
+    } catch (error) {
+      setLastError(getApiErrorMessage(error, 'Could not load vaults'));
+      setLastErrorCode(getApiErrorCode(error) ?? null);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    void refreshVaults();
+  }, [refreshVaults]);
 
   const getVaultById = useCallback(
     (id: string) => vaults.find((vault) => vault.id === id),
@@ -108,201 +155,273 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [withdrawalRequests],
   );
 
-  const createVault = useCallback((payload: CreateVaultPayload): Vault => {
-    const deposit = Math.max(0, payload.initialDeposit);
-    const created: Vault = {
-      id: createVaultId(),
-      name: payload.name.trim(),
-      currentBalance: deposit,
-      targetAmount: payload.targetAmount,
-      maturityDate: payload.maturityDate,
-      createdDate: new Date().toISOString().slice(0, 10),
-      estimatedWithdrawalFee: Math.round(deposit * 0.02 * 100) / 100,
-      status: 'active',
-      accentColor: ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)],
-      contributions:
-        deposit > 0
-          ? [
-              {
-                id: `c-${Date.now()}`,
-                date: new Date().toISOString().slice(0, 10),
-                amount: deposit,
-                note: 'Initial deposit',
-              },
-            ]
-          : [],
-    };
+  const createVault = useCallback(
+    async (payload: CreateVaultPayload): Promise<Vault> => {
+      clearError();
+      try {
+        let created = await vaultApi.createVault({
+          name: payload.name.trim(),
+          targetAmount: payload.targetAmount,
+          lockedUntil: payload.maturityDate,
+        });
 
-    setVaults((current) => [created, ...current]);
-    return created;
-  }, []);
+        if (payload.initialDeposit > 0) {
+          // Initial deposit is real money moved from the central wallet.
+          // If the wallet can't cover it, the vault still exists — the
+          // user just funds it later from the vault screen.
+          try {
+            await paymentsApi.transferToVault(created.id, payload.initialDeposit);
+            created = await vaultApi.getVault(created.id);
+          } catch (error) {
+            setLastError(
+              getApiErrorMessage(
+                error,
+                'Vault created, but the initial deposit could not be made',
+              ),
+            );
+            setLastErrorCode(getApiErrorCode(error) ?? null);
+          }
+        }
+
+        setVaults((current) => [created, ...current]);
+        return created;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not create vault'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
+    },
+    [clearError],
+  );
+
+  const depositFromWallet = useCallback(
+    async (vaultId: string, amount: number): Promise<Vault> => {
+      clearError();
+      try {
+        await paymentsApi.transferToVault(vaultId, amount);
+        const updated = await vaultApi.getVault(vaultId);
+        setVaults((current) =>
+          current.map((item) => (item.id === vaultId ? updated : item)),
+        );
+        return updated;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not deposit from wallet'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
+    },
+    [clearError],
+  );
+
+  const contributeToGroup = useCallback(
+    async (groupId: string, amount: number): Promise<GroupVault> => {
+      clearError();
+      try {
+        await paymentsApi.transferToGroup(groupId, amount);
+        const updated = await groupVaultApi.getGroupVault(groupId);
+        setGroupVaults((current) =>
+          current.map((item) => (item.id === groupId ? updated : item)),
+        );
+        return updated;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not contribute from wallet'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
+    },
+    [clearError],
+  );
 
   const withdrawVault = useCallback(
-    (vaultId: string, amountReceived: number, feeCharged: number) => {
-      setVaults((current) =>
-        current.map((vault) => {
-          if (vault.id !== vaultId) {
-            return vault;
-          }
+    async (
+      vaultId: string,
+      _amountReceived: number,
+      feeCharged: number,
+      mode: 'matured' | 'early' = 'matured',
+    ) => {
+      clearError();
+      try {
+        const vault = vaults.find((item) => item.id === vaultId);
+        if (!vault) {
+          throw new Error('Vault not found');
+        }
 
-          return {
-            ...vault,
-            currentBalance: 0,
-            status: 'withdrawn',
-            withdrawalDate: new Date().toISOString().slice(0, 10),
-            feeCharged,
-            estimatedWithdrawalFee: 0,
-          };
-        }),
-      );
-      void amountReceived;
+        const updated =
+          mode === 'early'
+            ? await vaultApi.breakVault(vaultId)
+            : await vaultApi.withdrawFromVault(vaultId, vault.currentBalance);
+
+        setVaults((current) =>
+          current.map((item) =>
+            item.id === vaultId
+              ? {
+                  ...updated,
+                  status: 'withdrawn',
+                  currentBalance: 0,
+                  feeCharged,
+                  withdrawalDate: new Date().toISOString().slice(0, 10),
+                }
+              : item,
+          ),
+        );
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not withdraw'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
     },
-    [],
+    [clearError, vaults],
   );
 
   const createGroupVault = useCallback(
-    (payload: CreateGroupVaultPayload): GroupVault => {
-      const me: GroupVaultMember = {
-        id: 'm-self',
-        name: 'Frank Mensah',
-        initials: 'FM',
-        role: 'admin',
-        lastContribution: new Date().toISOString().slice(0, 10),
-      };
-
-      const invited: GroupVaultMember[] = payload.members.map((member, index) => ({
-        id: `m-invite-${Date.now()}-${index}`,
-        name: member.displayPhone,
-        initials: initialsFromPhone(member.phone),
-        role: 'member',
-      }));
-
-      const created: GroupVault = {
-        id: createGroupVaultId(),
-        name: payload.name.trim(),
-        goalName: payload.goalName.trim(),
-        description: `Group savings toward ${payload.goalName.trim()}`,
-        amountSaved: 0,
-        targetAmount: payload.targetAmount,
-        maturityDate: payload.maturityDate,
-        createdDate: new Date().toISOString().slice(0, 10),
-        status: 'active',
-        accentColor:
-          ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)],
-        myContribution: 0,
-        members: [me, ...invited],
-      };
-
-      setGroupVaults((current) => [created, ...current]);
-      return created;
+    async (payload: CreateGroupVaultPayload): Promise<GroupVault> => {
+      clearError();
+      try {
+        const created = await groupVaultApi.createGroupVault({
+          name: payload.name.trim() || payload.goalName.trim(),
+          targetAmount: payload.targetAmount,
+          lockedUntil: payload.maturityDate,
+          maxMembers: payload.memberLimit,
+          contributionFrequency: payload.contributionFrequency,
+          memberPhones: payload.members.map((member) => toCanonicalGhanaPhone(member.phone)),
+        });
+        setGroupVaults((current) => [created, ...current]);
+        return created;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not create group vault'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
     },
-    [],
+    [clearError],
   );
 
   const lookupInviteCode = useCallback(
-    (code: string): GroupVault | null => {
-      const normalized = code.trim().toUpperCase();
-      const mappedId = INVITE_CODE_MAP[normalized];
-      if (mappedId) {
-        return groupVaults.find((vault) => vault.id === mappedId) ?? null;
+    async (code: string): Promise<GroupVault | null> => {
+      clearError();
+      try {
+        return await groupVaultApi.previewGroupByCode(code.trim());
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Invite code not found'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        return null;
       }
-
-      return (
-        groupVaults.find(
-          (vault) =>
-            vault.name.toUpperCase().replace(/\s+/g, '-').includes(normalized) ||
-            vault.id.toUpperCase() === normalized,
-        ) ?? null
-      );
     },
-    [groupVaults],
+    [clearError],
   );
 
   const joinGroupVault = useCallback(
-    (inviteCode: string): GroupVault | null => {
-      const found = lookupInviteCode(inviteCode);
-      if (!found) {
+    async (inviteCode: string): Promise<GroupVault | null> => {
+      clearError();
+      try {
+        const joined = await groupVaultApi.joinGroupByCode(inviteCode.trim());
+        setGroupVaults((current) => {
+          const exists = current.some((vault) => vault.id === joined.id);
+          return exists
+            ? current.map((vault) => (vault.id === joined.id ? joined : vault))
+            : [joined, ...current];
+        });
+        return joined;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not join group vault'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
         return null;
       }
-
-      const alreadyMember = found.members.some((member) => member.id === 'm-self');
-      if (alreadyMember) {
-        return found;
-      }
-
-      const me: GroupVaultMember = {
-        id: 'm-self',
-        name: 'Frank Mensah',
-        initials: 'FM',
-        role: 'member',
-        lastContribution: undefined,
-      };
-
-      const updated: GroupVault = {
-        ...found,
-        members: [...found.members, me],
-      };
-
-      setGroupVaults((current) =>
-        current.map((vault) => (vault.id === found.id ? updated : vault)),
-      );
-
-      return updated;
     },
-    [lookupInviteCode],
+    [clearError],
   );
 
-  const voteWithdrawal = useCallback((requestId: string, approve: boolean) => {
-    setWithdrawalRequests((current) =>
-      current.map((request) => {
-        if (request.id !== requestId || request.hasVoted) {
-          return request;
-        }
-
-        const votesFor = approve ? request.votesFor + 1 : request.votesFor;
-        const votesAgainst = approve
-          ? request.votesAgainst
-          : request.votesAgainst + 1;
-        const approved = votesFor >= request.requiredVotes;
-        const rejected =
-          votesAgainst > request.requiredVotes - request.votesFor &&
-          votesAgainst >= Math.ceil(request.requiredVotes / 2);
-
-        return {
-          ...request,
-          votesFor,
-          votesAgainst,
-          hasVoted: true,
-          status: approved ? 'approved' : rejected ? 'rejected' : 'pending',
+  const requestWithdrawal = useCallback(
+    async (groupId: string, amount: number, note?: string): Promise<WithdrawalRequest> => {
+      clearError();
+      try {
+        const group = groupVaults.find((g) => g.id === groupId);
+        const created = await groupVaultApi.requestWithdrawal(groupId, amount, note);
+        const withName: WithdrawalRequest = {
+          ...created,
+          groupVaultName: group?.name ?? created.groupVaultName,
         };
-      }),
-    );
-  }, []);
+        setWithdrawalRequests((current) => [withName, ...current]);
+        return withName;
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not request a withdrawal'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
+    },
+    [clearError, groupVaults],
+  );
+
+  const voteWithdrawal = useCallback(
+    async (requestId: string, approve: boolean) => {
+      clearError();
+      const existing = withdrawalRequests.find((item) => item.id === requestId);
+      if (!existing) {
+        return;
+      }
+
+      try {
+        const updated = await groupVaultApi.voteWithdrawal(
+          existing.groupVaultId,
+          requestId,
+          approve,
+        );
+        setWithdrawalRequests((current) =>
+          current.map((item) =>
+            item.id === requestId
+              ? { ...updated, groupVaultName: existing.groupVaultName }
+              : item,
+          ),
+        );
+      } catch (error) {
+        setLastError(getApiErrorMessage(error, 'Could not submit vote'));
+        setLastErrorCode(getApiErrorCode(error) ?? null);
+        throw error;
+      }
+    },
+    [clearError, withdrawalRequests],
+  );
 
   const value = useMemo(
     () => ({
       vaults,
       groupVaults,
       withdrawalRequests,
+      loading,
+      lastError,
+      lastErrorCode,
+      clearError,
+      refreshVaults,
       getVaultById,
       getGroupVaultById,
       getWithdrawalRequestById,
       createVault,
+      depositFromWallet,
+      contributeToGroup,
       withdrawVault,
       createGroupVault,
       joinGroupVault,
+      requestWithdrawal,
       voteWithdrawal,
       lookupInviteCode,
     }),
     [
+      clearError,
+      contributeToGroup,
       createGroupVault,
       createVault,
+      depositFromWallet,
       getGroupVaultById,
       getVaultById,
       getWithdrawalRequestById,
       groupVaults,
       joinGroupVault,
+      lastError,
+      lastErrorCode,
+      loading,
       lookupInviteCode,
+      refreshVaults,
+      requestWithdrawal,
       vaults,
       voteWithdrawal,
       withdrawVault,

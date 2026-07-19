@@ -7,6 +7,7 @@ import {
   SPLASH_LOGO_FADE_MS,
 } from '../data/mock/auth';
 import type { AuthStackParamList } from '../navigation/types';
+import { hasSeenOnboarding } from '../utils/onboardingStorage';
 
 type SplashNavigationProp = StackNavigationProp<AuthStackParamList, 'Splash'>;
 
@@ -15,6 +16,8 @@ export function useSplash(navigation: SplashNavigationProp) {
   const taglineOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let cancelled = false;
+
     Animated.timing(logoOpacity, {
       toValue: 1,
       duration: SPLASH_LOGO_FADE_MS,
@@ -30,10 +33,18 @@ export function useSplash(navigation: SplashNavigationProp) {
     });
 
     const timer = setTimeout(() => {
-      navigation.replace('Login');
+      void hasSeenOnboarding().then((seen) => {
+        if (cancelled) {
+          return;
+        }
+        navigation.replace(seen ? 'Login' : 'Onboarding');
+      });
     }, SPLASH_DURATION_MS);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [logoOpacity, navigation, taglineOpacity]);
 
   return { logoOpacity, taglineOpacity };

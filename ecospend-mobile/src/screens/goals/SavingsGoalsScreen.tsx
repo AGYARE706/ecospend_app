@@ -8,8 +8,8 @@ import GoalCard from '../../components/goals/GoalCard';
 import GoalsSummaryBar from '../../components/goals/GoalsSummaryBar';
 import GoalsTabToggle from '../../components/goals/GoalsTabToggle';
 import GoalToast from '../../components/goals/GoalToast';
+import FloatingActionButton from '../../components/finance/FloatingActionButton';
 import EmptyState from '../../components/ui/EmptyState';
-import IconButton from '../../components/ui/IconButton';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import SkeletonBox from '../../components/ui/SkeletonBox';
@@ -45,26 +45,7 @@ export default function SavingsGoalsScreen() {
   const listHeader = useMemo(
     () => (
       <View>
-        <ScreenHeader
-          title="Savings Goals"
-          subtitle="Save towards what matters"
-          right={
-            <>
-              <IconButton
-                icon="notifications-outline"
-                variant="soft"
-                onPress={() => navigateApp('Notifications')}
-                accessibilityLabel="Notifications"
-              />
-              <IconButton
-                icon="add"
-                variant="solid"
-                onPress={() => navigateApp('CreateGoal')}
-                accessibilityLabel="Create goal"
-              />
-            </>
-          }
-        />
+        <ScreenHeader title="Savings Goals" subtitle="Save towards what matters" />
 
         <GoalsSummaryBar
           activeGoalCount={activeGoalCount}
@@ -88,7 +69,13 @@ export default function SavingsGoalsScreen() {
   const renderItem = useCallback(
     ({ item, index }: { item: SavingsGoal; index: number }) => {
       if (activeTab === 'completed') {
-        return <CompletedGoalCard goal={item} index={index} />;
+        return (
+          <CompletedGoalCard
+            goal={item}
+            index={index}
+            onPress={(goal) => navigation.navigate('GoalDetails', { goalId: goal.id })}
+          />
+        );
       }
 
       return (
@@ -115,7 +102,7 @@ export default function SavingsGoalsScreen() {
     if (activeTab === 'active') {
       return (
         <EmptyState
-          emoji="🎯"
+          imageSource={require('../../../assets/goal.png')}
           title="No active goals"
           subtitle="Tap the + button to create your first savings goal"
         />
@@ -124,7 +111,7 @@ export default function SavingsGoalsScreen() {
 
     return (
       <EmptyState
-        emoji="🏆"
+        icon="trophy"
         title="No completed goals yet"
         subtitle="Keep going — you're making progress!"
       />
@@ -132,13 +119,13 @@ export default function SavingsGoalsScreen() {
   }, [activeTab, loading]);
 
   return (
-    <ScreenWrapper background="page" padded={false}>
+    <ScreenWrapper background="page" padded={false} edges={[]}>
       {toastMessage ? <GoalToast message={toastMessage} /> : null}
 
       <FlatList
         style={styles.list}
         data={loading ? [] : listData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: SavingsGoal) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={emptyComponent}
@@ -146,6 +133,8 @@ export default function SavingsGoalsScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
+
+      <FloatingActionButton onPress={() => navigateApp('CreateGoal')} />
     </ScreenWrapper>
   );
 }
@@ -162,7 +151,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },

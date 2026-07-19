@@ -3,10 +3,20 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 // ─── Auth ────────────────────────────────────────────────────────────────────
 export type AuthStackParamList = {
   Splash: undefined;
+  Onboarding: undefined;
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { phone: string };
+  VerifyOtp: { phone: string; purpose: 'register' | 'login' };
+};
+
+// ─── Compulsory first-login account setup ─────────────────────────────────────
+export type AccountSetupStackParamList = {
+  SetupWelcome: undefined;
+  SetupIncome: undefined;
+  SetupBudgets: undefined;
+  SetupNotifications: undefined;
 };
 
 // ─── Per-feature stacks ───────────────────────────────────────────────────────
@@ -17,7 +27,6 @@ export type DashboardStackParamList = {
 export type TransactionsStackParamList = {
   TransactionsList: undefined;
   TransactionDetails: { transactionId: string };
-  EditTransaction: { transactionId: string };
 };
 
 export type GoalsStackParamList = {
@@ -32,6 +41,8 @@ export type VaultStackParamList = {
   VaultHistory: { vaultId: string };
   GroupVaultDashboard: undefined;
   GroupVaultDetails: { groupVaultId: string };
+  GroupVaultActivity: { groupVaultId: string };
+  GroupVaultMembers: { groupVaultId: string };
   WithdrawalApproval: { groupVaultId: string; requestId: string };
 };
 
@@ -44,6 +55,9 @@ export type ProfileStackParamList = {
   HelpSupport: undefined;
   About: undefined;
   BadgesAndStreaks: undefined;
+  Learn: undefined;
+  LessonTrack: { trackId: string };
+  LessonDetail: { lessonId: string };
 };
 
 // ─── Bottom Tabs ─────────────────────────────────────────────────────────────
@@ -58,17 +72,21 @@ export type TabParamList = {
 // ─── Root App Stack (global modals + tabs) ───────────────────────────────────
 export type AppStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList>;
-  // Transactions
-  AddTransaction: undefined;
   // Goals
   CreateGoal: undefined;
   AddGoalContribution: { goalId: string };
+  WithdrawFromGoal: { goalId: string };
   // Budget (fullscreen modal — accessible from Dashboard + Goals)
   BudgetEnvelopes: undefined;
-  // Calculator (fullscreen modal — accessible from Dashboard + Transactions)
-  MoMoCalculator: undefined;
+  // Wallet (money in/out of the app via Paystack)
+  TopUpWallet: undefined;
+  SendMoney: undefined;
+  // Bills (recurring subscriptions paid from the wallet)
+  Bills: undefined;
+  AddBill: undefined;
   // Vault
   CreateVault: undefined;
+  AddMoney: { vaultId: string };
   WithdrawVault: { vaultId: string };
   VaultSuccess: {
     /** Generic success headline (used by CreateVault flow) */
@@ -78,13 +96,20 @@ export type AppStackParamList = {
     amountReceived?: number;
     feeCharged?: number;
     isWithdrawal?: boolean;
+    /** The real personal vault this success screen is about, if any. */
+    vaultId?: string;
+    /** The real group vault this success screen is about, if any. */
+    groupVaultId?: string;
   };
   // Group Vault
   CreateGroupVault: undefined;
-  JoinGroupVault: undefined;
+  JoinGroupVault: { inviteCode?: string } | undefined;
+  ContributeGroup: { groupVaultId: string };
+  RequestGroupWithdrawal: { groupVaultId: string };
   // Global overlays
   Notifications: undefined;
   WeeklyInsights: undefined;
+  AskCoach: undefined;
 };
 
 /** @deprecated Use TabParamList instead */

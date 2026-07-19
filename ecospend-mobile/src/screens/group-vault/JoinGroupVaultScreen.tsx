@@ -6,15 +6,18 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import AppButton from '../../components/ui/AppButton';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { useAuth } from '../../context/AuthContext';
 import { useVaults } from '../../context/VaultContext';
-import { MOCK_SAVE_DELAY_MS } from '../../data/mock/mockData';
+import { navigateToSubscription } from '../../navigation/navigationRef';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -35,15 +38,15 @@ type JoinGroupVaultNavProp = StackNavigationProp<
   AppStackParamList,
   'JoinGroupVault'
 >;
+type JoinGroupVaultRouteProp = RouteProp<AppStackParamList, 'JoinGroupVault'>;
 
 interface JoinGroupVaultScreenProps {
   navigation: JoinGroupVaultNavProp;
 }
 
 // ─── Invite code length ───────────────────────────────────────────────────────
-const CODE_LENGTH = 8; // matches "TRIP-2026" pattern
-const LOOKUP_DELAY = 900; // simulate network
-const DEMO_INVITE_CODES = ['TRIP-2026', 'TECH-TEAM', 'FAM-SAFE', 'STRT-PAD'];
+const CODE_LENGTH = 12;
+const LOOKUP_DELAY = 400;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function ghs(amount: number): string {
@@ -67,7 +70,9 @@ export default function JoinGroupVaultScreen({
 }: JoinGroupVaultScreenProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { lookupInviteCode, joinGroupVault } = useVaults();
+  const { tier } = useAuth();
+  const { params } = useRoute<JoinGroupVaultRouteProp>();
+  const { lookupInviteCode, joinGroupVault, lastError } = useVaults();
   const [rawCode, setRawCode] = useState('');
   const [lookupState, setLookupState] = useState<
     'idle' | 'loading' | 'found' | 'not_found'
@@ -93,9 +98,11 @@ export default function JoinGroupVaultScreen({
 
       setLookupState('loading');
       lookupTimer.current = setTimeout(() => {
-        const match = lookupInviteCode(normalised);
-        setFoundVault(match);
-        setLookupState(match ? 'found' : 'not_found');
+        void (async () => {
+          const match = await lookupInviteCode(normalised);
+          setFoundVault(match);
+          setLookupState(match ? 'found' : 'not_found');
+        })();
       }, LOOKUP_DELAY);
     },
     [lookupInviteCode],
@@ -108,17 +115,35 @@ export default function JoinGroupVaultScreen({
     if (lookupTimer.current) clearTimeout(lookupTimer.current);
   }, []);
 
+  // Arriving from a "You're invited" notification prefills and looks up the code.
+  useEffect(() => {
+    if (params?.inviteCode) {
+      handleCodeChange(params.inviteCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── Join ──────────────────────────────────────────────────────────────
   const handleJoin = useCallback(async () => {
     if (!foundVault) return;
+    if (tier === 'FREE') {
+      navigateToSubscription();
+      return;
+    }
     setIsJoining(true);
-    await new Promise((resolve) => setTimeout(resolve, MOCK_SAVE_DELAY_MS));
-    const joined = joinGroupVault(displayCode);
-    setIsJoining(false);
-    navigation.replace('VaultSuccess', {
-      message: `You've joined "${joined?.name ?? foundVault.name}"! Your contribution will help reach the shared goal.`,
-    });
-  }, [displayCode, foundVault, joinGroupVault, navigation]);
+    try {
+      const joined = await joinGroupVault(displayCode);
+      if (!joined) {
+        return;
+      }
+      navigation.replace('VaultSuccess', {
+        message: `You've joined "${joined.name}"! Your contribution will help reach the shared goal.`,
+        groupVaultId: joined.id,
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  }, [displayCode, foundVault, joinGroupVault, navigation, tier]);
 
   return (
     <ScreenWrapper background="page" padded={false}>
@@ -223,24 +248,6 @@ export default function JoinGroupVaultScreen({
               </View>
             ) : null}
 
-            {/* Sample codes hint */}
-            {lookupState === 'idle' && displayCode.length === 0 ? (
-              <View style={styles.sampleCodes}>
-                <Text style={styles.sampleLabel}>Try a demo code:</Text>
-                {DEMO_INVITE_CODES.map((code) => (
-                  <Pressable
-                    key={code}
-                    onPress={() => handleCodeChange(code)}
-                    style={({ pressed }) => [
-                      styles.sampleChip,
-                      pressed && styles.sampleChipPressed,
-                    ]}
-                  >
-                    <Text style={styles.sampleChipText}>{code}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
           </View>
 
           {/* ─── Group Preview Card ────────────────────────────── */}

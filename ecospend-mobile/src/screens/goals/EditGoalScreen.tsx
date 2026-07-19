@@ -15,9 +15,12 @@ import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import GoalIcon from '../../components/ui/GoalIcon';
 import { Icon } from '../../components/ui/icons';
 import { GOAL_CATEGORIES } from '../../constants/categories';
 import { useGoals } from '../../context/GoalsContext';
+import { useUnreadNotificationsCount } from '../../hooks/useUnreadNotificationsCount';
+import { navigateApp } from '../../navigation/navigationRef';
 import type { GoalsStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -49,6 +52,7 @@ export default function EditGoalScreen() {
     const navigation = useNavigation();
     const { getGoalById, updateGoal, deleteGoal, isSavingGoal } = useGoals();
     const existing = getGoalById(params.goalId);
+    const unreadNotifications = useUnreadNotificationsCount();
 
     const [form, setForm] = useState<EditGoalFormState>({
         name: '',
@@ -140,7 +144,7 @@ export default function EditGoalScreen() {
       return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <EmptyState
-            icon="target"
+            imageSource={require('../../../assets/goal.png')}
             title="Goal not found"
             subtitle="This goal may have been deleted."
             actionLabel="Go back"
@@ -174,18 +178,30 @@ export default function EditGoalScreen() {
                     <Text style={[typography.h3, styles.headerTitle]}>Edit Goal</Text>
                 </View>
 
-                <TouchableOpacity style={styles.iconButton}>
+                <TouchableOpacity
+                    style={styles.iconButton}
+                    onPress={() => navigateApp('Notifications')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Notifications"
+                >
                     <Icon name="bell" size={20} color={colors.textPrimary} />
+                    {unreadNotifications > 0 ? (
+                        <View style={[styles.notifBadge, { backgroundColor: colors.error }]}>
+                            <Text style={styles.notifBadgeText}>
+                                {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                            </Text>
+                        </View>
+                    ) : null}
                 </TouchableOpacity>
             </View>
 
             <View style={styles.heroSection}>
-                <Card variant="default" padding="lg" style={styles.heroCard}>
+                <Card variant="default" padding="sm" style={styles.heroCard}>
                     <View style={styles.heroIllustration}>
                         <View style={styles.heroRingOuter}>
                             <View style={styles.heroRingInner}>
                                 <View style={styles.heroCenter}>
-                                    <Icon name="flag" size={28} color={colors.primary} />
+                                    <GoalIcon size={28} color={colors.primary} />
                                 </View>
                             </View>
                         </View>
@@ -260,7 +276,12 @@ export default function EditGoalScreen() {
                                             style={[styles.categoryChip, active && styles.categoryChipActive]}
                                         >
                                             <View style={[styles.categoryIconWrap, active && styles.categoryIconWrapActive]}>
-                                                <Text style={styles.categoryEmoji}>{category.emoji}</Text>
+                                                <Icon
+                                                    name={category.icon}
+                                                    size={18}
+                                                    color={active ? colors.onPrimary : colors.textSecondary}
+                                                    strokeWidth={1.9}
+                                                />
                                             </View>
                                             <Text style={[styles.categoryLabel, active && styles.categoryLabelActive]}>
                                                 {category.label}
@@ -275,7 +296,7 @@ export default function EditGoalScreen() {
             </View>
 
             <View style={styles.section}>
-                <Card variant="insight" padding="lg" style={styles.summaryCard}>
+                <Card variant="insight" padding="md" style={styles.summaryCard}>
                     <View style={styles.summaryHeader}>
                         <Icon name="bar-chart" size={20} color={colors.primary} />
                         <Text style={[typography.h3, styles.summaryTitle]}>Impact Summary</Text>
@@ -383,6 +404,24 @@ const createStyles = (colors: ThemeColors) =>
         height: 44,
         justifyContent: 'center',
         width: 44,
+    },
+    notifBadge: {
+        alignItems: 'center',
+        borderColor: colors.cardBackground,
+        borderRadius: radius.full,
+        borderWidth: 1.5,
+        height: 18,
+        justifyContent: 'center',
+        minWidth: 18,
+        paddingHorizontal: 3,
+        position: 'absolute',
+        right: -4,
+        top: -4,
+    },
+    notifBadgeText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: '700',
     },
     headerTextWrap: {
         alignItems: 'center',
@@ -504,9 +543,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     categoryIconWrapActive: {
         backgroundColor: colors.primary,
-    },
-    categoryEmoji: {
-        fontSize: 24,
     },
     categoryLabel: {
         color: colors.textSecondary,

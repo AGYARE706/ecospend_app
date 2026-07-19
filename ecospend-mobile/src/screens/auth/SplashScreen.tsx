@@ -4,7 +4,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useSplash } from '../../hooks/useSplash';
 import type { AuthStackParamList } from '../../navigation/types';
-import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
+import { fontSize, spacing, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
 
 type SplashScreenNavigationProp = StackNavigationProp<
@@ -16,6 +16,9 @@ interface SplashScreenProps {
   navigation: SplashScreenNavigationProp;
 }
 
+const LOGO_ASPECT_RATIO = 531 / 484;
+const LOGO_WIDTH = 220;
+
 export default function SplashScreen({ navigation }: SplashScreenProps) {
   const styles = useThemedStyles(createStyles);
   const { logoOpacity, taglineOpacity } = useSplash(navigation);
@@ -23,9 +26,12 @@ export default function SplashScreen({ navigation }: SplashScreenProps) {
   return (
     <ScreenWrapper background="white">
       <View style={styles.content}>
-        <Animated.Text style={[styles.logo, { opacity: logoOpacity }]}>
-          EcoSpend
-        </Animated.Text>
+        <Animated.Image
+          source={require('../../../assets/logo.png')}
+          style={[styles.logo, { opacity: logoOpacity }]}
+          resizeMode="contain"
+          accessibilityLabel="EcoSpend"
+        />
         <Animated.Text style={[styles.tagline, { opacity: taglineOpacity }]}>
           Save Smarter. Track Better. Grow Faster.
         </Animated.Text>
@@ -43,10 +49,9 @@ const createStyles = (colors: ThemeColors) =>
     justifyContent: 'center',
   },
   logo: {
-    color: colors.primary,
-    fontSize: fontSize.xxxl,
-    fontWeight: fontWeight.bold,
+    height: LOGO_WIDTH / LOGO_ASPECT_RATIO,
     marginBottom: spacing.md,
+    width: LOGO_WIDTH,
   },
   tagline: {
     color: colors.textGrey,

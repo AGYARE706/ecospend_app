@@ -1,15 +1,25 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import * as sessionsApi from '../api/sessionsApi';
+import type { ApiSession } from '../api/sessionsApi';
+import * as usersApi from '../api/usersApi';
+import { useAppLock } from '../context/AppLockContext';
 import { useAuth } from '../context/AuthContext';
 import { MOCK_SAVE_DELAY_MS } from '../data/mock/mockData';
+import { formatNotificationTime } from '../utils/notifications';
 
 export interface ActiveSession {
   id: string;
   device: string;
-  platform: string;
-  location: string;
   lastActive: string;
   isCurrent: boolean;
+}
+
+export interface SessionHistoryEntry {
+  id: string;
+  device: string;
+  loggedInAt: string;
+  revoked: boolean;
 }
 
 export interface PasswordFormErrors {
@@ -18,32 +28,40 @@ export interface PasswordFormErrors {
   confirmPassword?: string;
 }
 
-const MOCK_SESSIONS: ActiveSession[] = [
-  {
-    id: 'session-current',
-    device: 'iPhone 15',
-    platform: 'iOS',
-    location: 'Accra, Ghana',
-    lastActive: 'Active now',
-    isCurrent: true,
-  },
-  {
-    id: 'session-android',
-    device: 'Samsung Galaxy A54',
-    platform: 'Android',
-    location: 'Kumasi, Ghana',
-    lastActive: '2 days ago',
-    isCurrent: false,
-  },
-];
+function mapSession(session: ApiSession): ActiveSession {
+  return {
+    id: session.id,
+    device: session.deviceLabel ?? 'Unknown device',
+    lastActive: formatNotificationTime(session.lastUsedAt ?? session.createdAt),
+    isCurrent: session.isCurrent,
+  };
+}
+
+function mapHistoryEntry(session: ApiSession): SessionHistoryEntry {
+  return {
+    id: session.id,
+    device: session.deviceLabel ?? 'Unknown device',
+    loggedInAt: formatNotificationTime(session.createdAt),
+    revoked: session.revokedAt != null,
+  };
+}
 
 export function useSecurity() {
   const { signOut } = useAuth();
+  const {
+    biometricLockEnabled,
+    biometricAvailable,
+    setBiometricLockEnabled: persistBiometricLock,
+  } = useAppLock();
 
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [sessions, setSessions] = useState(MOCK_SESSIONS);
+  const [twoFactorSaving, setTwoFactorSaving] = useState(false);
+  const [sessions, setSessions] = useState<ActiveSession[]>([]);
+  const [loginHistory, setLoginHistory] = useState<SessionHistoryEntry[]>([]);
+  const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
   const [showPasswordSheet, setShowPasswordSheet] = useState(false);
   const [showSessionsSheet, setShowSessionsSheet] = useState(false);
+  const [showLoginHistorySheet, setShowLoginHistorySheet] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -56,6 +74,33 @@ export function useSecurity() {
   const [passwordSuccessMessage, setPasswordSuccessMessage] = useState<string | null>(
     null,
   );
+
+  // The auth response never carries twoFactorEnabled (only name+phone) —
+  // fetch the real value from the profile once this screen is opened.
+  useEffect(() => {
+    let cancelled = false;
+    void usersApi.getMe().then((profile) => {
+      if (!cancelled) {
+        setTwoFactorEnabled(profile.twoFactorEnabled);
+      }
+    }).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const refreshSessions = useCallback(async () => {
+    try {
+      const list = await sessionsApi.listSessions();
+      setSessions(list.map(mapSession));
+    } catch {
+      // Keep whatever was already shown — a failed refresh isn't worth surfacing here.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshSessions();
+  }, [refreshSessions]);
 
   const activeSessionCount = sessions.length;
 
@@ -125,22 +170,61 @@ export function useSecurity() {
     setShowPasswordSheet(false);
   }, [resetPasswordForm, validatePasswordForm]);
 
-  const toggleTwoFactor = useCallback(() => {
-    setTwoFactorEnabled((current) => !current);
-  }, []);
+  const toggleTwoFactor = useCallback(async () => {
+    const next = !twoFactorEnabled;
+    setTwoFactorEnabled(next);
+    setTwoFactorSaving(true);
+    try {
+      const profile = await usersApi.updateTwoFactor(next);
+      setTwoFactorEnabled(profile.twoFactorEnabled);
+    } catch {
+      // Roll back — the toggle didn't actually take on the server.
+      setTwoFactorEnabled(!next);
+    } finally {
+      setTwoFactorSaving(false);
+    }
+  }, [twoFactorEnabled]);
+
+  const toggleBiometricLock = useCallback(async () => {
+    await persistBiometricLock(!biometricLockEnabled);
+  }, [biometricLockEnabled, persistBiometricLock]);
 
   const openSessionsSheet = useCallback(() => {
     setShowSessionsSheet(true);
-  }, []);
+    void refreshSessions();
+  }, [refreshSessions]);
 
   const closeSessionsSheet = useCallback(() => {
     setShowSessionsSheet(false);
   }, []);
 
-  const revokeSession = useCallback((sessionId: string) => {
-    setSessions((current) =>
-      current.filter((session) => session.id !== sessionId || session.isCurrent),
-    );
+  const revokeSession = useCallback(
+    async (sessionId: string) => {
+      const previous = sessions;
+      setSessions((current) =>
+        current.filter((session) => session.id !== sessionId || session.isCurrent),
+      );
+      try {
+        await sessionsApi.revokeSession(sessionId);
+      } catch {
+        setSessions(previous);
+      }
+    },
+    [sessions],
+  );
+
+  const openLoginHistorySheet = useCallback(() => {
+    setShowLoginHistorySheet(true);
+    setLoginHistoryLoading(true);
+    sessionsApi
+      .getLoginHistory()
+      .then((list) => setLoginHistory(list.map(mapHistoryEntry)))
+      .catch(() => undefined)
+      .finally(() => setLoginHistoryLoading(false));
+  }, []);
+
+  const closeLoginHistorySheet = useCallback(() => {
+    setShowLoginHistorySheet(false);
   }, []);
 
   const openLogoutConfirm = useCallback(() => {
@@ -174,11 +258,18 @@ export function useSecurity() {
 
   return {
     twoFactorEnabled,
+    twoFactorSaving,
+    biometricLockEnabled,
+    biometricAvailable,
+    toggleBiometricLock,
     sessions,
     activeSessionCount,
+    loginHistory,
+    loginHistoryLoading,
     securityStatus,
     showPasswordSheet,
     showSessionsSheet,
+    showLoginHistorySheet,
     showLogoutConfirm,
     showDeleteConfirm,
     currentPassword,
@@ -198,6 +289,8 @@ export function useSecurity() {
     openSessionsSheet,
     closeSessionsSheet,
     revokeSession,
+    openLoginHistorySheet,
+    closeLoginHistorySheet,
     openLogoutConfirm,
     closeLogoutConfirm,
     handleLogout,
