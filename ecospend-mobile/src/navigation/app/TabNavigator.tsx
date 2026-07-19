@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import FloatingHeaderBar from '../../components/ui/FloatingHeaderBar';
+import GoalIcon from '../../components/ui/GoalIcon';
 import { Icon } from '../../components/ui/icons';
 import type { IconName } from '../../components/ui/icons';
 import { useTheme } from '../../theme';
@@ -55,14 +56,17 @@ export default function TabNavigator() {
           // Always render the outline variant: swapping the SVG tree between
           // outline and solid on focus intermittently paints black on
           // Android. Focus is signalled by color, weight and the pill.
-          tabBarIcon: ({ color, focused, size }) => (
-            <Icon
-              name={tabIcons[route.name]}
-              size={size}
-              color={color}
-              strokeWidth={focused ? 2.4 : 1.8}
-            />
-          ),
+          tabBarIcon: ({ color, focused, size }) =>
+            route.name === 'GoalsTab' ? (
+              <GoalIcon size={size} color={color} />
+            ) : (
+              <Icon
+                name={tabIcons[route.name]}
+                size={size}
+                color={color}
+                strokeWidth={focused ? 2.4 : 1.8}
+              />
+            ),
           tabBarLabel: tabLabels[route.name],
         })}
       >

@@ -1,18 +1,14 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
 import AppButton from '../../components/ui/AppButton';
 import AppInput from '../../components/ui/AppInput';
-import CompletionCelebration from '../../components/ui/CompletionCelebration';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { getApiErrorMessage } from '../../api/getApiErrorMessage';
-import { useEnvelopes } from '../../context/EnvelopesContext';
-import { useFinance } from '../../context/FinanceContext';
 import { useVaults } from '../../context/VaultContext';
-import { useWallet } from '../../context/WalletContext';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -24,13 +20,14 @@ import {
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
+import { groupWithdrawalFeeRate } from '../../utils/vault';
 
-type ContributeRouteProp = RouteProp<AppStackParamList, 'ContributeGroup'>;
-type ContributeNavProp = StackNavigationProp<AppStackParamList, 'ContributeGroup'>;
+type RequestRouteProp = RouteProp<AppStackParamList, 'RequestGroupWithdrawal'>;
+type RequestNavProp = StackNavigationProp<AppStackParamList, 'RequestGroupWithdrawal'>;
 
-interface ContributeGroupVaultScreenProps {
-  route: ContributeRouteProp;
-  navigation: ContributeNavProp;
+interface RequestGroupWithdrawalScreenProps {
+  route: RequestRouteProp;
+  navigation: RequestNavProp;
 }
 
 function ghs(amount: number): string {
@@ -42,81 +39,52 @@ function ghs(amount: number): string {
 
 type Phase = 'input' | 'processing' | 'success' | 'failed';
 
-export default function ContributeGroupVaultScreen({
+export default function RequestGroupWithdrawalScreen({
   route,
   navigation,
-}: ContributeGroupVaultScreenProps) {
+}: RequestGroupWithdrawalScreenProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { groupVaultId } = route.params;
-  const { getGroupVaultById, contributeToGroup } = useVaults();
-  const { balance, refreshWallet } = useWallet();
-  const { refreshTransactions } = useFinance();
-  const { refreshEnvelopes } = useEnvelopes();
+  const { getGroupVaultById, requestWithdrawal } = useVaults();
 
   const group = getGroupVaultById(groupVaultId);
   const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
   const [phase, setPhase] = useState<Phase>('input');
   const [error, setError] = useState<string | null>(null);
-  const [justCompleted, setJustCompleted] = useState(false);
-  const [celebrationClosed, setCelebrationClosed] = useState(false);
 
   const parsedAmount = parseFloat(amount);
+  const ownBalance = group?.myContribution ?? 0;
   const isAmountValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
-  const walletBalance = balance ?? 0;
-  const hasEnoughBalance = isAmountValid && parsedAmount <= walletBalance;
-  const remaining = group && group.targetAmount > 0
-    ? Math.max(group.targetAmount - group.amountSaved, 0)
-    : Infinity;
-  const exceedsRemaining = isAmountValid && parsedAmount > remaining;
+  const withinOwnBalance = isAmountValid && parsedAmount <= ownBalance;
 
-  const handleContribute = useCallback(async () => {
+  const feeRate = group ? groupWithdrawalFeeRate(group) : 0.02;
+  const feeAmount = isAmountValid ? parsedAmount * feeRate : 0;
+  const netAmount = isAmountValid ? parsedAmount - feeAmount : 0;
+  const isEarly = group ? new Date() < new Date(group.maturityDate) : false;
+  const isShortfall = !isEarly && group ? group.amountSaved < group.targetAmount && group.targetAmount > 0 : false;
+
+  const handleRequest = useCallback(async () => {
     if (!group || !isAmountValid) {
       setError('Enter an amount greater than 0');
       return;
     }
-    if (exceedsRemaining) {
-      setError(
-        remaining <= 0
-          ? 'This group vault has already hit its target — no further deposits accepted'
-          : `That's more than this group vault needs — enter GHS ${remaining.toFixed(2)} or less`,
-      );
+    if (!withinOwnBalance) {
+      setError('Amount exceeds your own balance in this group vault');
       return;
     }
-    if (!hasEnoughBalance) {
-      setError('Amount exceeds your wallet balance — top up first');
-      return;
-    }
-
-    const wasComplete = group.targetAmount > 0 && group.amountSaved >= group.targetAmount;
 
     setPhase('processing');
     setError(null);
     try {
-      const updated = await contributeToGroup(group.id, parsedAmount);
+      await requestWithdrawal(group.id, parsedAmount, note.trim() || undefined);
       setPhase('success');
-      setJustCompleted(
-        updated.targetAmount > 0 && updated.amountSaved >= updated.targetAmount && !wasComplete,
-      );
-      void refreshWallet();
-      void refreshTransactions();
-      void refreshEnvelopes();
     } catch (err) {
       setPhase('failed');
-      setError(getApiErrorMessage(err, 'Could not contribute to the group vault'));
+      setError(getApiErrorMessage(err, 'Could not request a withdrawal'));
     }
-  }, [
-    contributeToGroup,
-    exceedsRemaining,
-    group,
-    hasEnoughBalance,
-    isAmountValid,
-    parsedAmount,
-    refreshEnvelopes,
-    refreshTransactions,
-    refreshWallet,
-    remaining,
-  ]);
+  }, [group, isAmountValid, note, parsedAmount, requestWithdrawal, withinOwnBalance]);
 
   if (!group) {
     return (
@@ -125,9 +93,6 @@ export default function ContributeGroupVaultScreen({
       </ScreenWrapper>
     );
   }
-
-  const showTopUpPrompt =
-    isAmountValid && !hasEnoughBalance && phase !== 'success';
 
   return (
     <ScreenWrapper background="page" padded={false}>
@@ -140,7 +105,7 @@ export default function ContributeGroupVaultScreen({
           >
             <Ionicons name="chevron-back" size={24} color={colors.textDark} />
           </Pressable>
-          <Text style={styles.headerTitle}>Contribute Funds</Text>
+          <Text style={styles.headerTitle}>Request Withdrawal</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -148,50 +113,62 @@ export default function ContributeGroupVaultScreen({
           <View style={styles.groupCard}>
             <Text style={styles.groupName}>{group.name}</Text>
             <Text style={styles.groupBalance}>
-              Your contribution {ghs(group.myContribution)}
+              Your balance in this vault {ghs(ownBalance)}
             </Text>
-            <View style={styles.walletRow}>
-              <Ionicons name="wallet-outline" size={16} color={colors.primary} />
-              <Text style={styles.walletRowText}>
-                Wallet balance {ghs(walletBalance)}
-              </Text>
-            </View>
           </View>
 
           {phase !== 'success' ? (
             <>
               <AppInput
-                label="Amount to contribute (GHS)"
+                label="Amount to request (GHS)"
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="0.00"
                 keyboardType="decimal-pad"
-                error={
-                  exceedsRemaining
-                    ? `That's more than this group vault needs — enter GHS ${remaining.toFixed(2)} or less`
-                    : error ?? undefined
-                }
-                hint="Moves instantly from your wallet into your group balance"
+                error={error ?? undefined}
+                hint="Capped at your own balance — never another member's"
               />
-              <AppButton
-                title={phase === 'processing' ? 'Contributing…' : 'Contribute from Wallet'}
-                icon="wallet-outline"
-                onPress={() => void handleContribute()}
-                loading={phase === 'processing'}
-                disabled={!isAmountValid || exceedsRemaining || !hasEnoughBalance || phase === 'processing'}
-              />
-              {showTopUpPrompt ? (
-                <AppButton
-                  title="Top up wallet first"
-                  variant="outline"
-                  icon="add-circle-outline"
-                  onPress={() => navigation.navigate('TopUpWallet')}
+
+              <View style={styles.noteField}>
+                <Text style={styles.noteLabel}>Reason (optional)</Text>
+                <TextInput
+                  style={styles.noteInput}
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Let the group know why you're withdrawing"
+                  placeholderTextColor={colors.textLight}
+                  multiline
+                  maxLength={280}
                 />
+              </View>
+
+              {isAmountValid ? (
+                <View style={styles.feePreview}>
+                  <View style={styles.feePreviewRow}>
+                    <Text style={styles.feePreviewLabel}>
+                      Fee if approved ({Math.round(feeRate * 100)}%
+                      {isEarly ? ' — before the lock date' : isShortfall ? ' — group under target' : ''})
+                    </Text>
+                    <Text style={styles.feePreviewValue}>− {ghs(feeAmount)}</Text>
+                  </View>
+                  <View style={styles.feePreviewRow}>
+                    <Text style={styles.feePreviewLabel}>You'd receive</Text>
+                    <Text style={styles.feePreviewNet}>{ghs(netAmount)}</Text>
+                  </View>
+                </View>
               ) : null}
+
+              <AppButton
+                title={phase === 'processing' ? 'Submitting…' : 'Submit for Group Vote'}
+                icon="thumbs-up-outline"
+                onPress={() => void handleRequest()}
+                loading={phase === 'processing'}
+                disabled={!isAmountValid || !withinOwnBalance || phase === 'processing'}
+              />
               <Text style={styles.securityNote}>
-                Contributions stay in your own member balance and are recorded
-                automatically in your transactions. Withdrawals need a majority
-                vote from the group.
+                Your own approval is counted automatically. A majority of
+                active members must approve for this to pay out — it never
+                touches other members' funds.
               </Text>
             </>
           ) : null}
@@ -199,9 +176,10 @@ export default function ContributeGroupVaultScreen({
           {phase === 'success' ? (
             <View style={styles.stateCard}>
               <Ionicons name="checkmark-circle" size={56} color={colors.success} />
-              <Text style={styles.stateTitle}>Contribution complete</Text>
+              <Text style={styles.stateTitle}>Request submitted</Text>
               <Text style={styles.stateBody}>
-                {ghs(parsedAmount)} moved from your wallet into “{group.name}”.
+                Your request for {ghs(parsedAmount)} from “{group.name}” is
+                now up for a group vote.
               </Text>
               <AppButton
                 title="Done"
@@ -224,16 +202,6 @@ export default function ContributeGroupVaultScreen({
           ) : null}
         </ScrollView>
       </View>
-
-      <CompletionCelebration
-        visible={phase === 'success' && justCompleted && !celebrationClosed}
-        icon="lock-closed"
-        title="Group Target Reached! 🎯"
-        subtitle={`"${group.name}" has hit its target — but it's still locked until ${new Date(group.maturityDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}. Reaching the target early doesn't unlock a withdrawal — only the date, or a group vote, does.`}
-        primaryLabel="Got it"
-        primaryIcon="checkmark"
-        onPrimaryPress={() => setCelebrationClosed(true)}
-      />
     </ScreenWrapper>
   );
 }
@@ -286,16 +254,51 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: fontSize.sm,
       marginTop: spacing.xs,
     },
-    walletRow: {
+    noteField: {
+      gap: spacing.xs,
+    },
+    noteLabel: {
+      color: colors.textMuted,
+      fontSize: fontSize.xs,
+      fontWeight: fontWeight.semibold,
+      textTransform: 'uppercase',
+    },
+    noteInput: {
+      backgroundColor: colors.cardBackground,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.card,
+      borderWidth: 1.5,
+      color: colors.textDark,
+      fontSize: fontSize.sm,
+      minHeight: 72,
+      padding: spacing.md,
+      textAlignVertical: 'top',
+    },
+    feePreview: {
+      backgroundColor: colors.chipBg,
+      borderRadius: radius.card,
+      gap: spacing.xs,
+      padding: spacing.md,
+    },
+    feePreviewRow: {
       alignItems: 'center',
       flexDirection: 'row',
-      gap: spacing.xs,
-      marginTop: spacing.sm,
+      justifyContent: 'space-between',
     },
-    walletRowText: {
-      color: colors.primary,
+    feePreviewLabel: {
+      color: colors.textMuted,
+      flex: 1,
+      fontSize: fontSize.xs,
+    },
+    feePreviewValue: {
+      color: colors.error,
       fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
+      fontWeight: fontWeight.semibold,
+    },
+    feePreviewNet: {
+      color: colors.textDark,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.bold,
     },
     securityNote: {
       color: colors.textMuted,

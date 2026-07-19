@@ -27,6 +27,7 @@ export interface AuthUser {
   phone: string;
   photoUrl?: string | null;
   setupCompleted: boolean;
+  momoProvider?: string | null;
 }
 
 export interface AuthSession {
@@ -47,6 +48,7 @@ interface AuthContextValue {
   updatePhoto: (photoBase64: string) => Promise<void>;
   upgradeToPlus: () => Promise<boolean>;
   markSetupComplete: () => Promise<void>;
+  setMomoProvider: (momoProvider: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -96,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             phone: profile.phone,
             photoUrl: profile.photoUrl,
             setupCompleted: profile.setupCompleted,
+            momoProvider: profile.momoProvider,
           });
           setTier(
             profile.tier === 'PLUS' || profile.tier === 'PREMIUM' ? 'PLUS' : 'FREE',
@@ -130,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   phone: profile.phone,
                   photoUrl: profile.photoUrl,
                   setupCompleted: profile.setupCompleted,
+                  momoProvider: profile.momoProvider,
                 });
               }
             } catch {
@@ -175,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: profile.phone,
         photoUrl: profile.photoUrl,
         setupCompleted: profile.setupCompleted,
+        momoProvider: profile.momoProvider,
       };
       setUser(fullUser);
       await updateStoredUser(fullUser);
@@ -205,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       phone: profile.phone,
       photoUrl: profile.photoUrl,
       setupCompleted: profile.setupCompleted,
+      momoProvider: profile.momoProvider,
     };
     setUser(nextUser);
     await updateStoredUser(nextUser);
@@ -217,6 +223,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       phone: profile.phone,
       photoUrl: profile.photoUrl,
       setupCompleted: profile.setupCompleted,
+      momoProvider: profile.momoProvider,
+    };
+    setUser(nextUser);
+    await updateStoredUser(nextUser);
+  }, []);
+
+  /** Persists the account's MoMo provider once, so send-to-self flows never have to ask again. */
+  const setMomoProvider = useCallback(async (momoProvider: string) => {
+    const profile = await usersApi.updateMomoProvider(momoProvider);
+    const nextUser = {
+      name: profile.name,
+      phone: profile.phone,
+      photoUrl: profile.photoUrl,
+      setupCompleted: profile.setupCompleted,
+      momoProvider: profile.momoProvider,
     };
     setUser(nextUser);
     await updateStoredUser(nextUser);
@@ -271,11 +292,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updatePhoto,
       upgradeToPlus,
       markSetupComplete,
+      setMomoProvider,
     }),
     [
       isAuthenticated,
       isLoading,
       markSetupComplete,
+      setMomoProvider,
       signIn,
       signOut,
       tier,

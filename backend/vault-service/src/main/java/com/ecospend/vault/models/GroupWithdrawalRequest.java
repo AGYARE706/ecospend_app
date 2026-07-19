@@ -27,6 +27,10 @@ public class GroupWithdrawalRequest {
     @Column(name = "amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
+    /** Optional — why the requester wants the money, shown to members before they vote. */
+    @Column(name = "note", length = 280)
+    private String note;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 10)
     private Status status = Status.PENDING;

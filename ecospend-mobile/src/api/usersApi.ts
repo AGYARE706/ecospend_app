@@ -9,6 +9,7 @@ export interface UserProfileResponse {
   photoUrl?: string | null;
   twoFactorEnabled: boolean;
   setupCompleted: boolean;
+  momoProvider?: string | null;
   createdAt?: string;
 }
 
@@ -45,6 +46,14 @@ export async function updateTwoFactor(enabled: boolean): Promise<UserProfileResp
 export async function completeSetup(): Promise<UserProfileResponse> {
   const { data } = await apiClient.put<UserProfileResponse>('/api/users/me/setup-completed', {
     completed: true,
+  });
+  return data;
+}
+
+/** Persists the provider (MTN/Telecel/AT) for the account's own linked number, for "send to myself" MoMo transfers. */
+export async function updateMomoProvider(momoProvider: string): Promise<UserProfileResponse> {
+  const { data } = await apiClient.put<UserProfileResponse>('/api/users/me/momo-provider', {
+    momoProvider,
   });
   return data;
 }

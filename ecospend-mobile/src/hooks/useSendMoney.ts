@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as paymentsApi from '../api/paymentsApi';
+import { useAuth } from '../context/AuthContext';
 import { useEnvelopes } from '../context/EnvelopesContext';
 import { useFinance } from '../context/FinanceContext';
 import { useWallet } from '../context/WalletContext';
@@ -29,10 +30,11 @@ export function useSendMoney() {
   const { balance, refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
   const { refreshEnvelopes } = useEnvelopes();
+  const { user, setMomoProvider: persistMomoProvider } = useAuth();
 
   const [amount, setAmount] = useState('');
   const [momoNumber, setMomoNumber] = useState('');
-  const [momoProvider, setMomoProvider] = useState<MomoProvider>('MTN');
+  const [momoProvider, setMomoProviderState] = useState<MomoProvider>('MTN');
   const [category, setCategory] = useState<TransactionCategory | null>(null);
   const [phase, setPhase] = useState<SendMoneyPhase>('input');
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,35 @@ export function useSendMoney() {
   const isAmountValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const walletBalance = balance ?? 0;
   const hasEnoughBalance = isAmountValid && parsedAmount <= walletBalance;
+
+  const ownPhone = user?.phone?.trim() ?? '';
+  const isOwnNumber = momoNumber.trim().length > 0 && momoNumber.trim() === ownPhone;
+
+  /** Fills the field with the account's own linked number — and its saved provider, if known — instead of typing it. */
+  const useMyNumber = useCallback(() => {
+    if (!ownPhone) {
+      return;
+    }
+    setMomoNumber(ownPhone);
+    if (user?.momoProvider && MOMO_PROVIDERS.some((p) => p.key === user.momoProvider)) {
+      setMomoProviderState(user.momoProvider as MomoProvider);
+    }
+  }, [ownPhone, user?.momoProvider]);
+
+  /**
+   * Selecting a provider while the number matches the user's own is what
+   * "links" it to the account — persisted silently so it's remembered
+   * next time, with no separate settings screen needed.
+   */
+  const selectMomoProvider = useCallback(
+    (provider: MomoProvider) => {
+      setMomoProviderState(provider);
+      if (momoNumber.trim() === ownPhone && ownPhone && provider !== user?.momoProvider) {
+        void persistMomoProvider(provider).catch(() => undefined);
+      }
+    },
+    [momoNumber, ownPhone, persistMomoProvider, user?.momoProvider],
+  );
 
   const handleSend = useCallback(async () => {
     setError(null);
@@ -105,7 +136,7 @@ export function useSendMoney() {
     momoNumber,
     setMomoNumber,
     momoProvider,
-    setMomoProvider,
+    setMomoProvider: selectMomoProvider,
     category,
     setCategory,
     parsedAmount,
@@ -115,5 +146,8 @@ export function useSendMoney() {
     error,
     handleSend,
     reset,
+    ownPhone,
+    isOwnNumber,
+    useMyNumber,
   };
 }

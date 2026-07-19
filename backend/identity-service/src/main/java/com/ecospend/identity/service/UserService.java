@@ -75,6 +75,14 @@ public class UserService {
     }
 
     @Transactional
+    public UserProfileResponse setMomoProvider(UUID userId, String momoProvider) {
+        User user = findUser(userId);
+        user.setMomoProvider(momoProvider);
+        userRepository.save(user);
+        return toProfile(user);
+    }
+
+    @Transactional
     public UserProfileResponse updatePhoto(UUID userId, String photoBase64) {
         if (!photoBase64.startsWith("data:image/")) {
             throw new InvalidPhotoException("Photo must be a data URI (data:image/...)");
@@ -158,6 +166,7 @@ public class UserService {
                 user.getProfilePhoto(),
                 user.isTwoFactorEnabled(),
                 user.isSetupCompleted(),
+                user.getMomoProvider(),
                 user.getCreatedAt()
         );
     }

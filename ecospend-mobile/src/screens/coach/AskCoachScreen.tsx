@@ -67,7 +67,7 @@ export default function AskCoachScreen() {
             <Icon name="x" size={22} color={colors.textDark} />
           </Pressable>
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Ask EcoSpend</Text>
+            <Text style={styles.headerTitle}>Abena</Text>
             <Text style={styles.headerSub}>Your AI financial coach</Text>
           </View>
           <View style={styles.headerBtn} />
@@ -94,7 +94,7 @@ export default function AskCoachScreen() {
 
           {phase === 'sending' ? (
             <View style={styles.typingRow}>
-              <Text style={styles.typingText}>Ask EcoSpend is thinking…</Text>
+              <Text style={styles.typingText}>Abena is thinking…</Text>
             </View>
           ) : null}
 

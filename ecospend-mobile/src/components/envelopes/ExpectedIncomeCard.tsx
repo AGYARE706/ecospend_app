@@ -110,13 +110,14 @@ export default function ExpectedIncomeCard() {
       ) : hasTarget ? (
         <>
           <View style={styles.amountRow}>
-            <GhsText amount={received} size="lg" numberOfLines={1} />
+            <GhsText amount={received} size="lg" compact numberOfLines={1} />
             <Text style={styles.ofText}>
-              {' '}of{' '}
+              {' '}/{' '}
             </Text>
             <GhsText
               amount={incomeTarget}
               size="lg"
+              compact
               numberOfLines={1}
               style={styles.targetAmount}
             />

@@ -105,6 +105,7 @@ export type AppStackParamList = {
   CreateGroupVault: undefined;
   JoinGroupVault: { inviteCode?: string } | undefined;
   ContributeGroup: { groupVaultId: string };
+  RequestGroupWithdrawal: { groupVaultId: string };
   // Global overlays
   Notifications: undefined;
   WeeklyInsights: undefined;

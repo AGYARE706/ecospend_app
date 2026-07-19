@@ -113,8 +113,11 @@ export default function CreateVaultScreen({
               <View style={styles.bannerText}>
                 <Text style={styles.bannerTitle}>How Vaults Work</Text>
                 <Text style={styles.bannerBody}>
-                  Lock your savings until a chosen date and stay committed to
-                  your goals. Early access incurs a small fee.
+                  Lock your savings until your target date — hitting your
+                  savings target early doesn't unlock it, only the date does.
+                  Withdrawing before the date costs more than waiting, and
+                  reaching the date without hitting your target still costs
+                  more than reaching it on time.
                 </Text>
               </View>
             </View>
@@ -203,12 +206,25 @@ export default function CreateVaultScreen({
             <FeeRow
               icon="checkmark-circle"
               iconColor={colors.success}
-              label="On-Time Withdrawal"
+              label="On-Time, Target Met"
               rateLabel="2% fee"
               feeAmount={feePreview.onTimeFee}
               netAmount={feePreview.onTimeWithdrawal}
               locked={feePreview.lockedAmount}
               highlight="success"
+            />
+
+            <View style={styles.feeDivider} />
+
+            <FeeRow
+              icon="alert-circle"
+              iconColor={colors.warning}
+              label="On-Time, Under Target"
+              rateLabel="4% fee"
+              feeAmount={feePreview.shortfallFee}
+              netAmount={feePreview.shortfallWithdrawal}
+              locked={feePreview.lockedAmount}
+              highlight="warning"
             />
 
             <View style={styles.feeDivider} />

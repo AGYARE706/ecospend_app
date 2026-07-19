@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import GoalIcon from '../ui/GoalIcon';
 import { Icon } from '../ui/icons';
 import {
   radius,
@@ -32,8 +33,7 @@ export default function GoalsTabToggle({
         style={[styles.tab, activeTab === 'active' ? styles.activeTab : styles.inactiveTab]}
         onPress={() => onTabChange('active')}
       >
-        <Icon
-          name="flag-outline"
+        <GoalIcon
           size={16}
           color={activeTab === 'active' ? colors.primary : colors.textMuted}
         />

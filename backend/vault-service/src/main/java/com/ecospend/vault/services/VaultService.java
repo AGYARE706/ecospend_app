@@ -68,9 +68,34 @@ public class VaultService {
         Vault vault = findOne(userId, vaultId);
         requireActive(vault);
 
+        if (vault.getTargetAmount() != null) {
+            BigDecimal remaining = vault.getTargetAmount().subtract(vault.getBalance());
+            if (request.amount().compareTo(remaining) > 0) {
+                throw VaultException.badRequest(remaining.signum() <= 0
+                        ? "This vault has already reached its target and no longer accepts deposits. Withdraw once matured, or create a new vault."
+                        : "That's more than this vault needs — enter GHS " + remaining + " or less to stay within the target.");
+            }
+        }
+
         vault.setBalance(vault.getBalance().add(request.amount()));
         record(vault, VaultTransaction.Type.DEPOSIT, request.amount(), request.note());
-        return vaultRepository.save(vault);
+        Vault saved = vaultRepository.save(vault);
+
+        // The guard above means a deposit can never overshoot the target, so
+        // reaching it here is always a fresh crossing — no before/after diff needed.
+        if (hasReachedTarget(saved)) {
+            notificationClient.send(userId, "Target reached",
+                    String.format("\"%s\" has hit its target of GHS %.2f — it stays locked until %s.",
+                            saved.getName(), saved.getTargetAmount(), saved.getLockedUntil()),
+                    "VAULT_TARGET_REACHED", Map.of("vaultId", saved.getId().toString()));
+        }
+        return saved;
+    }
+
+    /** Never true for a vault with no target set — over-saving toward "nothing" isn't a completion. */
+    private boolean hasReachedTarget(Vault vault) {
+        return vault.getTargetAmount() != null
+                && vault.getBalance().compareTo(vault.getTargetAmount()) >= 0;
     }
 
     @Transactional
@@ -86,11 +111,15 @@ public class VaultService {
             throw VaultException.badRequest("Insufficient vault balance");
         }
 
-        BigDecimal fee = Fees.feeOn(request.amount(), Fees.WITHDRAWAL_FEE_RATE);
+        // On time, but never actually hit the target: the date was kept, the commitment wasn't.
+        boolean shortfall = !hasReachedTarget(vault);
+        BigDecimal rate = shortfall ? Fees.SHORTFALL_FEE_RATE : Fees.WITHDRAWAL_FEE_RATE;
+        BigDecimal fee = Fees.feeOn(request.amount(), rate);
         BigDecimal payout = request.amount().subtract(fee);
 
         vault.setBalance(vault.getBalance().subtract(request.amount()));
-        record(vault, VaultTransaction.Type.FEE, fee, "Platform sustainability fee (2%)");
+        record(vault, VaultTransaction.Type.FEE, fee,
+                shortfall ? "Below-target maturity fee (4%)" : "Platform sustainability fee (2%)");
         record(vault, VaultTransaction.Type.WITHDRAWAL, payout,
                 request.note() != null ? request.note() : "Withdrawal payout");
         Vault saved = vaultRepository.save(vault);

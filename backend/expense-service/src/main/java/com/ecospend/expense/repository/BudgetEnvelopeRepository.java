@@ -15,6 +15,8 @@ public interface BudgetEnvelopeRepository extends JpaRepository<BudgetEnvelope, 
 
     List<BudgetEnvelope> findByUserId(UUID userId);
 
+    List<BudgetEnvelope> findByUserIdAndMonthAndYear(UUID userId, int month, int year);
+
     Optional<BudgetEnvelope> findByIdAndUserId(UUID id, UUID userId);
 
     Optional<BudgetEnvelope> findByUserIdAndCategoryAndMonthAndYear(

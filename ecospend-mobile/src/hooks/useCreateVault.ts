@@ -9,6 +9,7 @@ import { getDaysRemaining } from '../utils/vault';
 type CreateVaultNavProp = StackNavigationProp<AppStackParamList, 'CreateVault'>;
 
 export const ON_TIME_FEE_RATE = 0.02;
+export const SHORTFALL_FEE_RATE = 0.04;
 export const EARLY_FEE_RATE = 0.05;
 
 export type DatePreset = '3m' | '6m' | '1y' | '2y';
@@ -56,10 +57,13 @@ export interface CreateVaultFormErrors {
 export interface VaultFeePreview {
   lockedAmount: number;
   onTimeFeeRate: number;
+  shortfallFeeRate: number;
   earlyFeeRate: number;
   onTimeFee: number;
+  shortfallFee: number;
   earlyFee: number;
   onTimeWithdrawal: number;
+  shortfallWithdrawal: number;
   earlyWithdrawal: number;
 }
 
@@ -81,14 +85,18 @@ export function useCreateVault(navigation: CreateVaultNavProp) {
 
   const feePreview = useMemo<VaultFeePreview>(() => {
     const onTimeFee = lockedAmount * ON_TIME_FEE_RATE;
+    const shortfallFee = lockedAmount * SHORTFALL_FEE_RATE;
     const earlyFee = lockedAmount * EARLY_FEE_RATE;
     return {
       lockedAmount,
       onTimeFeeRate: ON_TIME_FEE_RATE,
+      shortfallFeeRate: SHORTFALL_FEE_RATE,
       earlyFeeRate: EARLY_FEE_RATE,
       onTimeFee,
+      shortfallFee,
       earlyFee,
       onTimeWithdrawal: lockedAmount - onTimeFee,
+      shortfallWithdrawal: lockedAmount - shortfallFee,
       earlyWithdrawal: lockedAmount - earlyFee,
     };
   }, [lockedAmount]);

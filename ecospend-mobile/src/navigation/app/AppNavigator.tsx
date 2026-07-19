@@ -7,6 +7,7 @@ import AskCoachScreen from '../../screens/coach/AskCoachScreen';
 import ContributeGroupVaultScreen from '../../screens/group-vault/ContributeGroupVaultScreen';
 import CreateGroupVaultScreen from '../../screens/group-vault/CreateGroupVaultScreen';
 import JoinGroupVaultScreen from '../../screens/group-vault/JoinGroupVaultScreen';
+import RequestGroupWithdrawalScreen from '../../screens/group-vault/RequestGroupWithdrawalScreen';
 import AddGoalContributionScreen from '../../screens/goals/AddGoalContributionScreen';
 import CreateGoalScreen from '../../screens/goals/CreateGoalScreen';
 import WithdrawFromGoalScreen from '../../screens/goals/WithdrawFromGoalScreen';
@@ -56,6 +57,7 @@ export default function AppNavigator() {
         <Stack.Screen name="CreateGroupVault" component={CreateGroupVaultScreen} />
         <Stack.Screen name="JoinGroupVault" component={JoinGroupVaultScreen} />
         <Stack.Screen name="ContributeGroup" component={ContributeGroupVaultScreen} />
+        <Stack.Screen name="RequestGroupWithdrawal" component={RequestGroupWithdrawalScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
       </Stack.Group>
 

@@ -169,6 +169,7 @@ export default function GroupVaultDashboardScreen() {
               totalSavings={summary.totalGroupSavings}
               activeGroups={summary.activeGroups}
               pendingApprovals={summary.pendingApprovals}
+              totalGroups={groups.length}
             />
 
             {/* ─── Quick Actions ────────────────────────────────── */}
@@ -326,10 +327,12 @@ function GroupSummaryCard({
   totalSavings,
   activeGroups,
   pendingApprovals,
+  totalGroups,
 }: {
   totalSavings: number;
   activeGroups: number;
   pendingApprovals: number;
+  totalGroups: number;
 }) {
   const summaryStyles = useThemedStyles(createSummaryStyles);
   const { colors } = useTheme();
@@ -373,7 +376,7 @@ function GroupSummaryCard({
         <SummaryMetric
           icon="people-outline"
           label="My Groups"
-          value="4"
+          value={String(totalGroups)}
         />
       </View>
     </LinearGradient>

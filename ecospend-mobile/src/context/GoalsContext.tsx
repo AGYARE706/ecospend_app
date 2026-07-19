@@ -33,7 +33,10 @@ interface GoalsContextValue {
   activeTab: GoalsTabMode;
   setActiveTab: (tab: GoalsTabMode) => void;
   addGoal: (payload: AddGoalPayload) => Promise<boolean>;
-  contributeToGoal: (goalId: string, amount: number) => Promise<boolean>;
+  contributeToGoal: (
+    goalId: string,
+    amount: number,
+  ) => Promise<{ success: boolean; justCompleted: boolean }>;
   withdrawFromGoal: (goalId: string, amount: number) => Promise<boolean>;
   updateGoal: (goalId: string, payload: UpdateGoalPayload) => Promise<boolean>;
   deleteGoal: (goalId: string) => Promise<boolean>;
@@ -143,9 +146,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   );
 
   const contributeToGoal = useCallback(
-    async (goalId: string, amount: number): Promise<boolean> => {
+    async (goalId: string, amount: number): Promise<{ success: boolean; justCompleted: boolean }> => {
       setIsContributing(true);
       try {
+        const before = goals.find((goal) => goal.id === goalId);
         const updated = await goalsApi.contributeToGoal(goalId, amount);
         setGoals((current) =>
           current.map((goal) => (goal.id === goalId ? updated : goal)),
@@ -153,16 +157,20 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         void refreshWallet();
         void refreshTransactions();
         void refreshEnvelopes();
-        showToast(`GHS ${amount.toFixed(2)} moved from wallet to ${updated.name}!`);
-        return true;
+        const justCompleted =
+          isGoalCompleted(updated) && !(before ? isGoalCompleted(before) : false);
+        if (!justCompleted) {
+          showToast(`GHS ${amount.toFixed(2)} moved from wallet to ${updated.name}!`);
+        }
+        return { success: true, justCompleted };
       } catch (error) {
         showToast(getApiErrorMessage(error, 'Could not contribute'));
-        return false;
+        return { success: false, justCompleted: false };
       } finally {
         setIsContributing(false);
       }
     },
-    [refreshEnvelopes, refreshTransactions, refreshWallet, showToast],
+    [goals, refreshEnvelopes, refreshTransactions, refreshWallet, showToast],
   );
 
   const withdrawFromGoal = useCallback(

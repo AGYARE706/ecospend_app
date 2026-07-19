@@ -1,8 +1,5 @@
 package com.ecospend.expense.services;
 
-import com.anthropic.core.JsonValue;
-import com.anthropic.models.messages.Tool;
-import com.ecospend.expense.client.ClaudeClient;
 import com.ecospend.expense.client.VaultClient;
 import com.ecospend.expense.dto.TransactionSummaryResponse;
 import com.ecospend.expense.models.BudgetEnvelope;
@@ -13,7 +10,9 @@ import com.ecospend.expense.repository.BudgetEnvelopeRepository;
 import com.ecospend.expense.repository.IncomeTargetRepository;
 import com.ecospend.expense.repository.SavingsGoalRepository;
 import com.ecospend.expense.repository.TransactionRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.genai.types.FunctionDeclaration;
+import com.google.genai.types.Schema;
+import com.google.genai.types.Type;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -48,95 +47,88 @@ public class CoachToolService {
     private final SavingsGoalRepository savingsGoalRepository;
     private final IncomeTargetRepository incomeTargetRepository;
     private final VaultClient vaultClient;
-    private final ObjectMapper objectMapper;
 
     public CoachToolService(TransactionRepository transactionRepository,
             BudgetEnvelopeRepository budgetEnvelopeRepository,
             SavingsGoalRepository savingsGoalRepository,
             IncomeTargetRepository incomeTargetRepository,
-            VaultClient vaultClient,
-            ObjectMapper objectMapper) {
+            VaultClient vaultClient) {
         this.transactionRepository = transactionRepository;
         this.budgetEnvelopeRepository = budgetEnvelopeRepository;
         this.savingsGoalRepository = savingsGoalRepository;
         this.incomeTargetRepository = incomeTargetRepository;
         this.vaultClient = vaultClient;
-        this.objectMapper = objectMapper;
     }
 
-    public List<Tool> tools() {
+    public List<FunctionDeclaration> tools() {
         return List.of(
-                Tool.builder()
+                FunctionDeclaration.builder()
                         .name(GET_SPENDING_SUMMARY)
                         .description("Get total income, total expense, net balance and transaction count for a "
                                 + "given month. Call this when the user asks about overall spending/income for a "
                                 + "specific or the current month. Defaults to the current month/year if omitted.")
-                        .inputSchema(Tool.InputSchema.builder()
-                                .properties(Tool.InputSchema.Properties.builder()
-                                        .putAdditionalProperty("month", JsonValue.from(Map.of(
-                                                "type", "integer",
-                                                "description", "Month number 1-12. Defaults to the current month.")))
-                                        .putAdditionalProperty("year", JsonValue.from(Map.of(
-                                                "type", "integer",
-                                                "description", "Four-digit year. Defaults to the current year.")))
-                                        .build())
+                        .parameters(Schema.builder()
+                                .type(Type.Known.OBJECT)
+                                .properties(Map.of(
+                                        "month", Schema.builder()
+                                                .type(Type.Known.INTEGER)
+                                                .description("Month number 1-12. Defaults to the current month.")
+                                                .build(),
+                                        "year", Schema.builder()
+                                                .type(Type.Known.INTEGER)
+                                                .description("Four-digit year. Defaults to the current year.")
+                                                .build()))
                                 .build())
                         .build(),
-                Tool.builder()
+                FunctionDeclaration.builder()
                         .name(GET_BUDGET_STATUS)
                         .description("Get every budget envelope (category, monthly limit, amount spent so far, "
                                 + "percent used) for the current month. Call this whenever the user asks whether "
                                 + "they are on track, over budget, or overspending in any category.")
-                        .inputSchema(Tool.InputSchema.builder()
-                                .properties(Tool.InputSchema.Properties.builder().build())
-                                .build())
+                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
                         .build(),
-                Tool.builder()
+                FunctionDeclaration.builder()
                         .name(LIST_RECENT_TRANSACTIONS)
                         .description("List the user's most recent transactions, newest first, optionally filtered "
                                 + "to one category. Call this when the user asks about specific recent purchases "
                                 + "or wants examples backing up a spending claim.")
-                        .inputSchema(Tool.InputSchema.builder()
-                                .properties(Tool.InputSchema.Properties.builder()
-                                        .putAdditionalProperty("category", JsonValue.from(Map.of(
-                                                "type", "string",
-                                                "description", "Only include transactions in this category. Omit for all categories.")))
-                                        .putAdditionalProperty("limit", JsonValue.from(Map.of(
-                                                "type", "integer",
-                                                "description", "Max transactions to return. Defaults to 10.")))
-                                        .build())
+                        .parameters(Schema.builder()
+                                .type(Type.Known.OBJECT)
+                                .properties(Map.of(
+                                        "category", Schema.builder()
+                                                .type(Type.Known.STRING)
+                                                .description("Only include transactions in this category. Omit for all categories.")
+                                                .build(),
+                                        "limit", Schema.builder()
+                                                .type(Type.Known.INTEGER)
+                                                .description("Max transactions to return. Defaults to 10.")
+                                                .build()))
                                 .build())
                         .build(),
-                Tool.builder()
+                FunctionDeclaration.builder()
                         .name(GET_GOALS_PROGRESS)
                         .description("Get every savings goal (name, target amount, current amount, deadline, days "
                                 + "remaining, completed flag). Call this when the user asks about savings goals or "
                                 + "whether they are on track to reach one.")
-                        .inputSchema(Tool.InputSchema.builder()
-                                .properties(Tool.InputSchema.Properties.builder().build())
-                                .build())
+                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
                         .build(),
-                Tool.builder()
+                FunctionDeclaration.builder()
                         .name(GET_INCOME_TARGET_STATUS)
                         .description("Get the user's expected monthly income target versus their actual recorded "
                                 + "income so far this month. Call this when the user asks about income, pay, or "
                                 + "whether they're earning what they expect.")
-                        .inputSchema(Tool.InputSchema.builder()
-                                .properties(Tool.InputSchema.Properties.builder().build())
-                                .build())
+                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
                         .build(),
-                Tool.builder()
+                FunctionDeclaration.builder()
                         .name(GET_VAULT_SUMMARY)
                         .description("Get the user's personal locked savings vaults and group (susu) vaults, with "
                                 + "balances and targets. Call this when the user asks about their vaults, locked "
                                 + "savings, or group susu contributions.")
-                        .inputSchema(Tool.InputSchema.builder()
-                                .properties(Tool.InputSchema.Properties.builder().build())
-                                .build())
+                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
                         .build());
     }
 
-    public String execute(String toolName, JsonValue input, UUID userId) {
+    public Object execute(String toolName, Map<String, Object> input, UUID userId) {
         return switch (toolName) {
             case GET_SPENDING_SUMMARY -> getSpendingSummary(input, userId);
             case GET_BUDGET_STATUS -> getBudgetStatus(userId);
@@ -148,7 +140,7 @@ public class CoachToolService {
         };
     }
 
-    private String getSpendingSummary(JsonValue input, UUID userId) {
+    private Map<String, Object> getSpendingSummary(Map<String, Object> input, UUID userId) {
         LocalDate now = LocalDate.now();
         int month = intField(input, "month").orElse(now.getMonthValue());
         int year = intField(input, "year").orElse(now.getYear());
@@ -162,14 +154,15 @@ public class CoachToolService {
         result.put("totalExpense", summary.totalExpense());
         result.put("netBalance", summary.netBalance());
         result.put("transactionCount", summary.transactionCount());
-        return toJson(result);
+        return result;
     }
 
-    private String getBudgetStatus(UUID userId) {
-        List<Map<String, Object>> items = budgetEnvelopeRepository.findByUserId(userId).stream()
+    private List<Map<String, Object>> getBudgetStatus(UUID userId) {
+        LocalDate now = LocalDate.now();
+        return budgetEnvelopeRepository
+                .findByUserIdAndMonthAndYear(userId, now.getMonthValue(), now.getYear()).stream()
                 .map(this::envelopeToMap)
                 .toList();
-        return toJson(items);
     }
 
     private Map<String, Object> envelopeToMap(BudgetEnvelope envelope) {
@@ -187,11 +180,11 @@ public class CoachToolService {
         return m;
     }
 
-    private String listRecentTransactions(JsonValue input, UUID userId) {
+    private List<Map<String, Object>> listRecentTransactions(Map<String, Object> input, UUID userId) {
         Optional<String> category = stringField(input, "category");
         int limit = intField(input, "limit").orElse(10);
 
-        List<Map<String, Object>> items = transactionRepository.findByUserId(userId).stream()
+        return transactionRepository.findByUserId(userId).stream()
                 .filter(t -> category.isEmpty() || category.get().equalsIgnoreCase(t.getCategory()))
                 .sorted(Comparator.comparing(Transaction::getCreatedAt,
                         Comparator.nullsLast(Comparator.reverseOrder())))
@@ -206,12 +199,11 @@ public class CoachToolService {
                     return m;
                 })
                 .toList();
-        return toJson(items);
     }
 
-    private String getGoalsProgress(UUID userId) {
+    private List<Map<String, Object>> getGoalsProgress(UUID userId) {
         LocalDate today = LocalDate.now();
-        List<Map<String, Object>> items = savingsGoalRepository.findByUserId(userId).stream()
+        return savingsGoalRepository.findByUserId(userId).stream()
                 .map(g -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("name", g.getName());
@@ -223,10 +215,9 @@ public class CoachToolService {
                     return m;
                 })
                 .toList();
-        return toJson(items);
     }
 
-    private String getIncomeTargetStatus(UUID userId) {
+    private Map<String, Object> getIncomeTargetStatus(UUID userId) {
         BigDecimal target = incomeTargetRepository.findById(userId)
                 .map(IncomeTarget::getMonthlyAmount)
                 .orElse(BigDecimal.ZERO);
@@ -238,30 +229,16 @@ public class CoachToolService {
         result.put("monthlyTarget", target);
         result.put("actualIncomeThisMonth", summary.totalIncome());
         result.put("shortfall", target.subtract(summary.totalIncome()).max(BigDecimal.ZERO));
-        return toJson(result);
+        return result;
     }
 
-    private String toJson(Object value) {
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (Exception e) {
-            return "{}";
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> asMap(JsonValue input) {
-        Map<String, Object> raw = input.convert(Map.class);
-        return raw != null ? raw : Map.of();
-    }
-
-    private static Optional<Integer> intField(JsonValue input, String key) {
-        Object value = asMap(input).get(key);
+    private static Optional<Integer> intField(Map<String, Object> input, String key) {
+        Object value = input.get(key);
         return value instanceof Number number ? Optional.of(number.intValue()) : Optional.empty();
     }
 
-    private static Optional<String> stringField(JsonValue input, String key) {
-        Object value = asMap(input).get(key);
+    private static Optional<String> stringField(Map<String, Object> input, String key) {
+        Object value = input.get(key);
         return value instanceof String text ? Optional.of(text) : Optional.empty();
     }
 }

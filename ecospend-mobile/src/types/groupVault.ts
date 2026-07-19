@@ -1,6 +1,6 @@
 // ─── Status ───────────────────────────────────────────────────────────────────
 export type GroupVaultStatus = 'active' | 'locked' | 'matured' | 'closed';
-export type WithdrawalRequestStatus = 'pending' | 'approved' | 'rejected';
+export type WithdrawalRequestStatus = 'pending' | 'approved' | 'rejected' | 'executed';
 export type MemberRole = 'admin' | 'member';
 
 // ─── Member ───────────────────────────────────────────────────────────────────

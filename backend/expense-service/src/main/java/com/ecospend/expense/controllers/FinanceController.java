@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -164,9 +165,11 @@ public class FinanceController {
         if (details.getTargetAmount() != null) {
             goal.setTargetAmount(details.getTargetAmount());
         }
-        if (details.getCurrentAmount() != null) {
-            goal.setCurrentAmount(details.getCurrentAmount());
-        }
+        // currentAmount is deliberately not settable here: it may only move
+        // through /contribute and /withdraw, which validate against the
+        // wallet and record transactions. (SavingsGoal.currentAmount has a
+        // ZERO field initializer, so a request body that omits it would
+        // otherwise silently zero out real progress on every edit.)
         if (details.getDeadline() != null) {
             goal.setDeadline(details.getDeadline());
         }
@@ -193,6 +196,11 @@ public class FinanceController {
             @Valid @RequestBody ContributeGoalRequest request) {
         SavingsGoal goal = savingsGoalRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+
+        if (goal.getCompletedAt() != null) {
+            throw new BadRequestException(
+                    "This goal is already complete and no longer accepts contributions. Withdraw or start a new goal.");
+        }
 
         BigDecimal remaining = goal.getTargetAmount().subtract(goal.getCurrentAmount());
         if (request.amount().compareTo(remaining) > 0) {
@@ -259,17 +267,23 @@ public class FinanceController {
     public ResponseEntity<BudgetEnvelope> createEnvelope(
             @RequestHeader("X-User-Id") UUID userId,
             @RequestBody BudgetEnvelope envelope) {
+        LocalDate now = LocalDate.now();
         envelope.setId(null);
         envelope.setUserId(userId);
-        if (envelope.getCurrentSpent() == null) {
-            envelope.setCurrentSpent(BigDecimal.ZERO);
-        }
+        envelope.setCurrentSpent(BigDecimal.ZERO);
+        // Always "this month" server-side — never trust a client-supplied
+        // month/year, which could be missing, stale, or spoofed.
+        envelope.setMonth(now.getMonthValue());
+        envelope.setYear(now.getYear());
         return ResponseEntity.ok(budgetEnvelopeRepository.save(envelope));
     }
 
+    /** Scoped to the current month — envelopes are a monthly concept, not a running lifetime list. */
     @GetMapping("/envelopes")
     public ResponseEntity<List<BudgetEnvelope>> getEnvelopes(@RequestHeader("X-User-Id") UUID userId) {
-        return ResponseEntity.ok(budgetEnvelopeRepository.findByUserId(userId));
+        LocalDate now = LocalDate.now();
+        return ResponseEntity.ok(budgetEnvelopeRepository
+                .findByUserIdAndMonthAndYear(userId, now.getMonthValue(), now.getYear()));
     }
 
     @PutMapping("/envelopes/{id}")
@@ -283,17 +297,19 @@ public class FinanceController {
         return ResponseEntity.ok(budgetEnvelopeRepository.save(envelope));
     }
 
-    /** Returns true only on the null -&gt; completed transition, so callers notify exactly once. */
+    /**
+     * Returns true only on the null -&gt; completed transition, so callers
+     * notify exactly once. Completion is permanent once reached — a later
+     * withdrawal that drops the balance back below target (e.g. cashing
+     * out a finished goal) must not un-complete it.
+     */
     private static boolean markCompletedIfNeeded(SavingsGoal goal) {
         boolean wasCompleted = goal.getCompletedAt() != null;
-        if (goal.getCurrentAmount() != null
+        if (!wasCompleted
+                && goal.getCurrentAmount() != null
                 && goal.getTargetAmount() != null
                 && goal.getCurrentAmount().compareTo(goal.getTargetAmount()) >= 0) {
-            if (goal.getCompletedAt() == null) {
-                goal.setCompletedAt(OffsetDateTime.now());
-            }
-        } else {
-            goal.setCompletedAt(null);
+            goal.setCompletedAt(OffsetDateTime.now());
         }
         return !wasCompleted && goal.getCompletedAt() != null;
     }

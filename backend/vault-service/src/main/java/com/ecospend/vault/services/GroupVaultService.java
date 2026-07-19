@@ -195,6 +195,17 @@ public class GroupVaultService {
         requireActive(group);
         GroupVaultMember member = requireActiveMember(groupId, userId);
 
+        BigDecimal totalBefore = groupTotalBalance(groupId);
+
+        if (group.getTargetAmount() != null) {
+            BigDecimal remaining = group.getTargetAmount().subtract(totalBefore);
+            if (request.amount().compareTo(remaining) > 0) {
+                throw VaultException.badRequest(remaining.signum() <= 0
+                        ? "This group vault has already reached its target and no longer accepts deposits."
+                        : "That's more than this group vault needs — enter GHS " + remaining + " or less to stay within the target.");
+            }
+        }
+
         member.setBalance(member.getBalance().add(request.amount()));
         memberRepository.save(member);
         record(groupId, userId, VaultTransaction.Type.DEPOSIT, request.amount(), request.note());
@@ -204,6 +215,16 @@ public class GroupVaultService {
         notifyActiveMembers(groupId, userId, "New contribution",
                 String.format("A member contributed GHS %.2f to \"%s\".", request.amount(), group.getName()),
                 "GROUP_VAULT_ACTIVITY", Map.of("groupVaultId", groupId.toString()));
+
+        BigDecimal totalAfter = totalBefore.add(request.amount());
+        if (group.getTargetAmount() != null
+                && totalBefore.compareTo(group.getTargetAmount()) < 0
+                && totalAfter.compareTo(group.getTargetAmount()) >= 0) {
+            notifyActiveMembers(groupId, null, "Group target reached",
+                    String.format("\"%s\" has hit its target of GHS %.2f — it stays locked until %s.",
+                            group.getName(), group.getTargetAmount(), group.getLockedUntil()),
+                    "GROUP_VAULT_TARGET_REACHED", Map.of("groupVaultId", groupId.toString()));
+        }
 
         return view(group, userId);
     }
@@ -216,19 +237,25 @@ public class GroupVaultService {
         BigDecimal balance = member.getBalance();
         if (balance.compareTo(BigDecimal.ZERO) > 0) {
             boolean early = LocalDate.now().isBefore(group.getLockedUntil());
-            BigDecimal rate = early ? Fees.EARLY_EXIT_FEE_RATE : Fees.WITHDRAWAL_FEE_RATE;
+            boolean shortfall = !early && group.getTargetAmount() != null
+                    && groupTotalBalance(groupId).compareTo(group.getTargetAmount()) < 0;
+            BigDecimal rate = early ? Fees.EARLY_EXIT_FEE_RATE
+                    : shortfall ? Fees.SHORTFALL_FEE_RATE
+                    : Fees.WITHDRAWAL_FEE_RATE;
             BigDecimal fee = Fees.feeOn(balance, rate);
             BigDecimal payout = balance.subtract(fee);
 
             record(groupId, userId,
                     early ? VaultTransaction.Type.PENALTY : VaultTransaction.Type.FEE,
-                    fee, early ? "Early exit fee (5% of own balance)" : "Platform sustainability fee (2%)");
+                    fee, early ? "Early exit fee (5% of own balance)"
+                            : shortfall ? "Below-target maturity fee (4% of own balance)"
+                            : "Platform sustainability fee (2%)");
             record(groupId, userId, VaultTransaction.Type.WITHDRAWAL, payout, "Exit payout");
 
             // Net exit payout lands in the member's central wallet.
             paymentClient.creditWallet(userId, payout, "ecospend-gx-" + UUID.randomUUID(),
                     "Group vault exit — " + group.getName()
-                            + (early ? " (net of 5% early fee)" : " (net of 2% fee)"));
+                            + (early ? " (net of 5% early fee)" : shortfall ? " (net of 4% fee)" : " (net of 2% fee)"));
         }
 
         member.setBalance(BigDecimal.ZERO);
@@ -241,6 +268,14 @@ public class GroupVaultService {
                     r.setStatus(GroupWithdrawalRequest.Status.REJECTED);
                     requestRepository.save(r);
                 });
+
+        // Leaving shrinks the active-member count, which is the denominator
+        // every pending request's majority is measured against — a request
+        // that was one vote short before could already have enough now.
+        // Re-run the math for anything still pending so it doesn't sit
+        // stuck waiting for a redundant vote nobody will cast.
+        requestRepository.findByGroupIdAndStatus(groupId, GroupWithdrawalRequest.Status.PENDING)
+                .forEach(r -> evaluate(r, group, null));
 
         activity(groupId, userId, GroupVaultActivity.Type.MEMBER_EXITED,
                 "A member exited the group vault", balance.compareTo(BigDecimal.ZERO) > 0 ? balance : null);
@@ -269,6 +304,7 @@ public class GroupVaultService {
         wr.setGroupId(groupId);
         wr.setRequesterId(userId);
         wr.setAmount(request.amount());
+        wr.setNote(request.note());
         wr = requestRepository.save(wr);
 
         activity(groupId, userId, GroupVaultActivity.Type.WITHDRAWAL_REQUESTED,
@@ -339,10 +375,15 @@ public class GroupVaultService {
     }
 
     private WithdrawalRequestView evaluate(GroupWithdrawalRequest wr, GroupVault group, UUID viewerId) {
-        long active = memberRepository.countByGroupIdAndStatus(
-                group.getId(), GroupVaultMember.Status.ACTIVE);
-        long approvals = voteRepository.countByRequestIdAndApprove(wr.getId(), true);
-        long rejections = voteRepository.countByRequestIdAndApprove(wr.getId(), false);
+        List<UUID> activeMemberIds = memberRepository
+                .findByGroupIdAndStatus(group.getId(), GroupVaultMember.Status.ACTIVE).stream()
+                .map(GroupVaultMember::getUserId)
+                .toList();
+        long active = activeMemberIds.size();
+        // Scoped to currently-active members — a vote cast by someone who has
+        // since exited shouldn't keep counting toward (or against) a majority.
+        long approvals = voteRepository.countByRequestIdAndApproveAndVoterIdIn(wr.getId(), true, activeMemberIds);
+        long rejections = voteRepository.countByRequestIdAndApproveAndVoterIdIn(wr.getId(), false, activeMemberIds);
 
         if (approvals * 2 > active) {
             execute(wr, group);
@@ -362,6 +403,14 @@ public class GroupVaultService {
         return currentView(wr, group, viewerId);
     }
 
+    /**
+     * Fee is time- and target-gated exactly like exit() — a majority vote
+     * must never be a cheaper or faster way to pull money out early than
+     * exiting outright would be. Before this, execute() charged a flat 2%
+     * regardless of lockedUntil, which let a majority bypass the vault's
+     * entire locked-commitment premise for less than the intentional
+     * early-exit penalty.
+     */
     private void execute(GroupWithdrawalRequest wr, GroupVault group) {
         GroupVaultMember member = requireActiveMember(group.getId(), wr.getRequesterId());
         if (member.getBalance().compareTo(wr.getAmount()) < 0) {
@@ -370,13 +419,21 @@ public class GroupVaultService {
             return;
         }
 
-        BigDecimal fee = Fees.feeOn(wr.getAmount(), Fees.WITHDRAWAL_FEE_RATE);
+        boolean early = LocalDate.now().isBefore(group.getLockedUntil());
+        boolean shortfall = !early && group.getTargetAmount() != null
+                && groupTotalBalance(group.getId()).compareTo(group.getTargetAmount()) < 0;
+        BigDecimal rate = early ? Fees.EARLY_EXIT_FEE_RATE
+                : shortfall ? Fees.SHORTFALL_FEE_RATE
+                : Fees.WITHDRAWAL_FEE_RATE;
+        BigDecimal fee = Fees.feeOn(wr.getAmount(), rate);
         BigDecimal payout = wr.getAmount().subtract(fee);
 
         member.setBalance(member.getBalance().subtract(wr.getAmount()));
         memberRepository.save(member);
-        record(group.getId(), wr.getRequesterId(), VaultTransaction.Type.FEE,
-                fee, "Platform sustainability fee (2%)");
+        record(group.getId(), wr.getRequesterId(), VaultTransaction.Type.FEE, fee,
+                early ? "Early withdrawal fee (5% — executed before the lock date)"
+                        : shortfall ? "Below-target maturity fee (4%)"
+                        : "Platform sustainability fee (2%)");
         record(group.getId(), wr.getRequesterId(), VaultTransaction.Type.WITHDRAWAL,
                 payout, "Approved withdrawal payout");
 
@@ -394,17 +451,21 @@ public class GroupVaultService {
         // The request id keys the wallet credit, so a replayed execution
         // can never pay the requester twice.
         paymentClient.creditWallet(wr.getRequesterId(), payout, "ecospend-gw-" + wr.getId(),
-                "Group vault withdrawal — " + group.getName() + " (net of 2% fee)");
+                "Group vault withdrawal — " + group.getName()
+                        + (early ? " (net of 5% early fee)" : shortfall ? " (net of 4% fee)" : " (net of 2% fee)"));
     }
 
     private WithdrawalRequestView currentView(GroupWithdrawalRequest wr, GroupVault group, UUID viewerId) {
-        long active = memberRepository.countByGroupIdAndStatus(
-                group.getId(), GroupVaultMember.Status.ACTIVE);
+        List<UUID> activeMemberIds = memberRepository
+                .findByGroupIdAndStatus(group.getId(), GroupVaultMember.Status.ACTIVE).stream()
+                .map(GroupVaultMember::getUserId)
+                .toList();
+        long active = activeMemberIds.size();
         boolean hasVoted = viewerId != null
                 && voteRepository.findByRequestIdAndVoterId(wr.getId(), viewerId).isPresent();
         return new WithdrawalRequestView(wr,
-                voteRepository.countByRequestIdAndApprove(wr.getId(), true),
-                voteRepository.countByRequestIdAndApprove(wr.getId(), false),
+                voteRepository.countByRequestIdAndApproveAndVoterIdIn(wr.getId(), true, activeMemberIds),
+                voteRepository.countByRequestIdAndApproveAndVoterIdIn(wr.getId(), false, activeMemberIds),
                 active,
                 active / 2 + 1,
                 hasVoted);
@@ -482,6 +543,12 @@ public class GroupVaultService {
             throw VaultException.badRequest("contributionFrequency must be WEEKLY or MONTHLY");
         }
         return normalized;
+    }
+
+    private BigDecimal groupTotalBalance(UUID groupId) {
+        return memberRepository.findByGroupId(groupId).stream()
+                .map(GroupVaultMember::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private GroupVault requireGroup(UUID groupId) {

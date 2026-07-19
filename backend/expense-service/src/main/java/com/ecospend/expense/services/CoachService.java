@@ -1,8 +1,6 @@
 package com.ecospend.expense.services;
 
-import com.anthropic.core.JsonValue;
-import com.anthropic.models.messages.MessageParam;
-import com.ecospend.expense.client.ClaudeClient;
+import com.ecospend.expense.client.GeminiClient;
 import com.ecospend.expense.dto.AskCoachResponse;
 import com.ecospend.expense.dto.CoachMessageView;
 import com.ecospend.expense.dto.InsightOfTheDayResponse;
@@ -13,6 +11,9 @@ import com.ecospend.expense.models.CoachMessage;
 import com.ecospend.expense.repository.CoachConversationRepository;
 import com.ecospend.expense.repository.CoachDailyInsightRepository;
 import com.ecospend.expense.repository.CoachMessageRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.genai.types.Content;
+import com.google.genai.types.Part;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +31,7 @@ public class CoachService {
     private static final int HISTORY_LIMIT = 20;
 
     private static final String CHAT_SYSTEM_PROMPT = """
-            You are "Ask EcoSpend", a friendly, concise financial coach inside the EcoSpend budgeting app.
+            You are "Abena", a friendly, concise financial coach inside the EcoSpend budgeting app.
             You have tools that read the user's real transactions, budgets, savings goals, income target and vaults.
 
             Rules:
@@ -52,23 +53,26 @@ public class CoachService {
     private final CoachConversationRepository conversationRepository;
     private final CoachMessageRepository messageRepository;
     private final CoachDailyInsightRepository dailyInsightRepository;
-    private final ClaudeClient claudeClient;
+    private final GeminiClient geminiClient;
     private final CoachToolService toolService;
+    private final ObjectMapper objectMapper;
 
     public CoachService(CoachConversationRepository conversationRepository,
             CoachMessageRepository messageRepository,
             CoachDailyInsightRepository dailyInsightRepository,
-            ClaudeClient claudeClient,
-            CoachToolService toolService) {
+            GeminiClient geminiClient,
+            CoachToolService toolService,
+            ObjectMapper objectMapper) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.dailyInsightRepository = dailyInsightRepository;
-        this.claudeClient = claudeClient;
+        this.geminiClient = geminiClient;
         this.toolService = toolService;
+        this.objectMapper = objectMapper;
     }
 
     public boolean isConfigured() {
-        return claudeClient.isConfigured();
+        return geminiClient.isConfigured();
     }
 
     @Transactional
@@ -79,12 +83,12 @@ public class CoachService {
                 : createConversation(userId, message);
 
         List<CoachMessage> priorMessages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
-        List<MessageParam> history = new ArrayList<>();
+        List<Content> history = new ArrayList<>();
         int start = Math.max(0, priorMessages.size() - HISTORY_LIMIT);
         for (CoachMessage m : priorMessages.subList(start, priorMessages.size())) {
-            history.add(toMessageParam(m));
+            history.add(toContent(m));
         }
-        history.add(MessageParam.builder().role(MessageParam.Role.USER).content(message).build());
+        history.add(Content.builder().role("user").parts(List.of(Part.fromText(message))).build());
 
         CoachMessage userMessage = new CoachMessage();
         userMessage.setConversationId(conversation.getId());
@@ -92,7 +96,7 @@ public class CoachService {
         userMessage.setContent(message);
         messageRepository.save(userMessage);
 
-        String reply = claudeClient.runToolLoop(CHAT_SYSTEM_PROMPT, history, toolService.tools(),
+        String reply = geminiClient.runToolLoop(CHAT_SYSTEM_PROMPT, history, toolService.tools(),
                 (toolName, input) -> toolService.execute(toolName, input, userId));
 
         CoachMessage assistantMessage = new CoachMessage();
@@ -122,7 +126,7 @@ public class CoachService {
     /** Lazily generates and caches one insight per user per day. Empty when the coach isn't configured. */
     @Transactional
     public Optional<InsightOfTheDayResponse> insightOfTheDay(UUID userId) {
-        if (!claudeClient.isConfigured()) {
+        if (!geminiClient.isConfigured()) {
             return Optional.empty();
         }
 
@@ -133,12 +137,12 @@ public class CoachService {
             return Optional.of(new InsightOfTheDayResponse(insight.getHeading(), insight.getMessage(), insight.getGeneratedAt()));
         }
 
-        String spendingJson = toolService.execute(CoachToolService.GET_SPENDING_SUMMARY, JsonValue.from(Map.of()), userId);
-        String budgetJson = toolService.execute(CoachToolService.GET_BUDGET_STATUS, JsonValue.from(Map.of()), userId);
+        Object spendingResult = toolService.execute(CoachToolService.GET_SPENDING_SUMMARY, Map.of(), userId);
+        Object budgetResult = toolService.execute(CoachToolService.GET_BUDGET_STATUS, Map.of(), userId);
 
-        String prompt = "Spending summary JSON: " + spendingJson
-                + "\nBudget status JSON: " + budgetJson;
-        String narrated = claudeClient.narrate(INSIGHT_SYSTEM_PROMPT, prompt);
+        String prompt = "Spending summary JSON: " + toJson(spendingResult)
+                + "\nBudget status JSON: " + toJson(budgetResult);
+        String narrated = geminiClient.narrate(INSIGHT_SYSTEM_PROMPT, prompt);
         String[] parsed = parseHeadingAndMessage(narrated);
 
         CoachDailyInsight insight = new CoachDailyInsight();
@@ -149,6 +153,14 @@ public class CoachService {
         dailyInsightRepository.save(insight);
 
         return Optional.of(new InsightOfTheDayResponse(parsed[0], parsed[1], insight.getGeneratedAt()));
+    }
+
+    private String toJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            return String.valueOf(value);
+        }
     }
 
     private static String[] parseHeadingAndMessage(String narrated) {
@@ -166,7 +178,7 @@ public class CoachService {
             }
         }
         if (message.isBlank()) {
-            message = "Ask EcoSpend for a breakdown of your spending this month.";
+            message = "Ask Abena for a breakdown of your spending this month.";
         }
         return new String[] { heading, message };
     }
@@ -178,11 +190,9 @@ public class CoachService {
         return conversationRepository.save(conversation);
     }
 
-    private static MessageParam toMessageParam(CoachMessage message) {
-        MessageParam.Role role = CoachMessage.ROLE_USER.equals(message.getRole())
-                ? MessageParam.Role.USER
-                : MessageParam.Role.ASSISTANT;
-        return MessageParam.builder().role(role).content(message.getContent()).build();
+    private static Content toContent(CoachMessage message) {
+        String role = CoachMessage.ROLE_USER.equals(message.getRole()) ? "user" : "model";
+        return Content.builder().role(role).parts(List.of(Part.fromText(message.getContent()))).build();
     }
 
     private CoachMessageView toView(CoachMessage message) {

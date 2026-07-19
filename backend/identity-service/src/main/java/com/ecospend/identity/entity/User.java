@@ -77,6 +77,10 @@ public class User {
     @Builder.Default
     private boolean setupCompleted = false;
 
+    /** MTN/TELECEL/AT — the provider for phoneNumber, used for "send to myself" MoMo transfers. Null until first chosen. */
+    @Column(name = "momo_provider", length = 20)
+    private String momoProvider;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -11,6 +11,7 @@ import {
   radius,
   shadowLg,
   spacing,
+  typography,
   useTheme,
   useThemedStyles,
 } from '../../theme';
@@ -33,7 +34,7 @@ export default function FloatingHeaderBar() {
         colors={[colors.cardBackground, colors.primaryBackground]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.bar, { borderColor: colors.primary }, shadowLg]}
+        style={[styles.bar, { borderColor: colors.primaryLight }, shadowLg]}
       >
         <Pressable
           onPress={navigateToProfileTab}
@@ -45,6 +46,12 @@ export default function FloatingHeaderBar() {
             <AvatarInitials name={user?.name ?? ''} photoUrl={user?.photoUrl} size={32} />
           </View>
         </Pressable>
+
+        <View style={styles.brandWrap} pointerEvents="none">
+          <Text style={styles.brandText} numberOfLines={1}>
+            Save Smarter
+          </Text>
+        </View>
 
         <View style={styles.actions}>
           <IconButton
@@ -95,6 +102,14 @@ const createStyles = (colors: ThemeColors) =>
     iconBorder: {
       borderColor: colors.primary,
       borderWidth: 2,
+    },
+    brandWrap: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    brandText: {
+      ...typography.label,
+      color: colors.primaryDark,
     },
     actions: {
       alignItems: 'center',

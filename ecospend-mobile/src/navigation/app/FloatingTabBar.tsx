@@ -36,7 +36,7 @@ export default function FloatingTabBar({
           styles.bar,
           {
             backgroundColor: colors.cardBackground,
-            borderColor: colors.primary,
+            borderColor: colors.primaryLight,
           },
           shadowLg,
         ]}
@@ -96,6 +96,12 @@ export default function FloatingTabBar({
             >
               {icon}
               <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+              <View
+                style={[
+                  styles.dot,
+                  { backgroundColor: isFocused ? colors.primary : 'transparent' },
+                ]}
+              />
             </Pressable>
           );
         })}
@@ -136,6 +142,12 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     letterSpacing: 0.1,
     textAlign: 'center',
+  },
+  dot: {
+    borderRadius: 2,
+    height: 4,
+    marginTop: 2,
+    width: 4,
   },
   pressed: {
     opacity: 0.88,
