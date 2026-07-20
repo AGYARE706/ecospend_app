@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { navigateToTabScreen } from '../../navigation/navigationRef';
 import type { AppStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -64,30 +65,21 @@ export default function VaultSuccessScreen() {
   const ref = mockRef();
   const timestamp = nowTimestamp();
 
-  // navigate() (not reset()) so the Vault tab's existing stack — with
-  // VaultDashboard ("My Vaults") as its root — is preserved underneath;
-  // reset() was rebuilding it with only the target screen, leaving the
-  // tab permanently stuck there with no way back to My Vaults.
+  // navigateToTabScreen() bakes in `initial: false` for deep screens, so the
+  // Vault tab's stack becomes [VaultDashboard, target] — Back returns to
+  // "My Vaults" and popToTopOnBlur resets to it, instead of stranding the tab
+  // on the deep screen (which sent Back to the Dashboard).
   function goToDashboard() {
-    navigation.navigate('MainTabs', {
-      screen: 'VaultTab',
-      params: { screen: 'VaultDashboard' },
-    });
+    navigateToTabScreen('VaultTab', 'VaultDashboard');
   }
 
   function goToDetail() {
     if (isGroupFlow && groupVaultId) {
-      navigation.navigate('MainTabs', {
-        screen: 'VaultTab',
-        params: { screen: 'GroupVaultDetails', params: { groupVaultId } },
-      });
+      navigateToTabScreen('VaultTab', 'GroupVaultDetails', { groupVaultId });
       return;
     }
     if (vaultId) {
-      navigation.navigate('MainTabs', {
-        screen: 'VaultTab',
-        params: { screen: 'VaultHistory', params: { vaultId } },
-      });
+      navigateToTabScreen('VaultTab', 'VaultHistory', { vaultId });
       return;
     }
     goToDashboard();

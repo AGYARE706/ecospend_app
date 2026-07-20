@@ -1,12 +1,6 @@
 import { useCallback } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
-import {
-  CompositeNavigationProp,
-  useFocusEffect,
-  useNavigation,
-} from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { useFocusEffect } from '@react-navigation/native';
 
 import AskCoachFab from '../../components/dashboard/AskCoachFab';
 import DashboardAnalyticsCard from '../../components/dashboard/DashboardAnalyticsCard';
@@ -26,11 +20,11 @@ import SkeletonBox from '../../components/ui/SkeletonBox';
 import { useDashboard } from '../../hooks/useDashboard';
 import { useInsightOfTheDay } from '../../hooks/useInsightOfTheDay';
 import { useLearnStreak } from '../../hooks/useLearnStreak';
-import { navigateApp, navigateToLearn } from '../../navigation/navigationRef';
-import type {
-  DashboardStackParamList,
-  TabParamList,
-} from '../../navigation/types';
+import {
+  navigateApp,
+  navigateToLearn,
+  navigateToTabScreen,
+} from '../../navigation/navigationRef';
 import {
   cardShadow,
   radius,
@@ -40,11 +34,6 @@ import {
   useThemedStyles,
 } from '../../theme';
 import type { ThemeColors } from '../../theme';
-
-type DashboardNavigationProp = CompositeNavigationProp<
-  StackNavigationProp<DashboardStackParamList, 'Dashboard'>,
-  BottomTabNavigationProp<TabParamList, 'DashboardTab'>
->;
 
 const LOGO_ASPECT_RATIO = 531 / 484;
 const LOGO_HEIGHT = 50;
@@ -71,7 +60,6 @@ function getGreetingIcon(date = new Date()): 'sun' | 'moon' {
 export default function DashboardScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const navigation = useNavigation<DashboardNavigationProp>();
   const {
     userName,
     todayLabel,
@@ -86,7 +74,6 @@ export default function DashboardScreen() {
     refresh,
   } = useDashboard();
 
-  const tabNavigation = navigation.getParent<BottomTabNavigationProp<TabParamList>>();
   const { insight, refresh: refreshInsight } = useInsightOfTheDay();
   const { streak, refresh: refreshStreak } = useLearnStreak();
 
@@ -151,9 +138,7 @@ export default function DashboardScreen() {
           <FadeSlideIn delay={70}>
             <QuickActionRow
               onAddPress={() => navigateApp('TopUpWallet')}
-              onGoalsPress={() =>
-                tabNavigation?.navigate('GoalsTab', { screen: 'SavingsGoals' })
-              }
+              onGoalsPress={() => navigateToTabScreen('GoalsTab', 'SavingsGoals')}
               onTransferPress={() => navigateApp('SendMoney')}
               onMorePress={() => navigateApp('Bills')}
             />
@@ -187,9 +172,7 @@ export default function DashboardScreen() {
               title="Recent transactions"
               actionLabel="See all"
               onActionPress={() =>
-                tabNavigation?.navigate('TransactionsTab', {
-                  screen: 'TransactionsList',
-                })
+                navigateToTabScreen('TransactionsTab', 'TransactionsList')
               }
             />
 
@@ -208,10 +191,8 @@ export default function DashboardScreen() {
                     variant="flat"
                     showDivider={index < recentTransactions.length - 1}
                     onPress={() =>
-                      tabNavigation?.navigate('TransactionsTab', {
-                        screen: 'TransactionDetails',
-                        params: { transactionId: transaction.id },
-                        initial: false,
+                      navigateToTabScreen('TransactionsTab', 'TransactionDetails', {
+                        transactionId: transaction.id,
                       })
                     }
                   />

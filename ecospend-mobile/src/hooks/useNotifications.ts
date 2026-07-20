@@ -5,6 +5,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as notificationsApi from '../api/notificationsApi';
 import { useAuth } from '../context/AuthContext';
+import { navigateToTabScreen } from '../navigation/navigationRef';
 import type { AppStackParamList } from '../navigation/types';
 import type {
   AppNotification,
@@ -138,52 +139,27 @@ function navigateFromAction(
         navigation.navigate('BudgetEnvelopes');
         break;
       case 'goal_details':
-        navigation.navigate('MainTabs', {
-          screen: 'GoalsTab',
-          params: {
-            screen: 'GoalDetails',
-            params: { goalId: action.goalId },
-          },
-        });
+        navigateToTabScreen('GoalsTab', 'GoalDetails', { goalId: action.goalId });
         break;
       case 'vault_details':
-        navigation.navigate('MainTabs', {
-          screen: 'VaultTab',
-          params: {
-            screen: 'VaultDetails',
-            params: { vaultId: action.vaultId },
-          },
-        });
+        navigateToTabScreen('VaultTab', 'VaultDetails', { vaultId: action.vaultId });
         break;
       case 'withdrawal_approval':
-        navigation.navigate('MainTabs', {
-          screen: 'VaultTab',
-          params: {
-            screen: 'WithdrawalApproval',
-            params: {
-              groupVaultId: action.groupVaultId,
-              requestId: action.requestId,
-            },
-          },
+        navigateToTabScreen('VaultTab', 'WithdrawalApproval', {
+          groupVaultId: action.groupVaultId,
+          requestId: action.requestId,
         });
         break;
       case 'group_vault_details':
-        navigation.navigate('MainTabs', {
-          screen: 'VaultTab',
-          params: {
-            screen: 'GroupVaultDetails',
-            params: { groupVaultId: action.groupVaultId },
-          },
+        navigateToTabScreen('VaultTab', 'GroupVaultDetails', {
+          groupVaultId: action.groupVaultId,
         });
         break;
       case 'join_group_vault':
         navigation.navigate('JoinGroupVault', { inviteCode: action.inviteCode });
         break;
       case 'subscription':
-        navigation.navigate('MainTabs', {
-          screen: 'ProfileTab',
-          params: { screen: 'Subscription' },
-        });
+        navigateToTabScreen('ProfileTab', 'Subscription');
         break;
       case 'none':
       default:

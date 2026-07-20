@@ -2,6 +2,7 @@
   "expo": {
     "name": "ecospend-mobile",
     "slug": "ecospend-mobile",
+    "scheme": "ecospend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,7 +35,8 @@
         {
           "faceIDPermission": "Allow EcoSpend to use Face ID to unlock the app."
         }
-      ]
+      ],
+      "expo-web-browser"
     ]
   }
 }
