@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking } from 'react-native';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as paymentsApi from '../api/paymentsApi';
@@ -65,12 +66,30 @@ export function useTopUp() {
         return;
       }
 
-      // Real checkout: open the Paystack page and poll until it settles.
-      if (deposit.authorizationUrl) {
-        await Linking.openURL(deposit.authorizationUrl);
-      }
+      // Real checkout: open the Paystack page inside the app. The poll loop
+      // (keyed on phase 'awaiting') is the fallback confirmation path.
       pollCount.current = 0;
       setPhase('awaiting');
+      if (deposit.authorizationUrl) {
+        // Paystack redirects here after checkout; the in-app browser closes
+        // itself when it sees this URL. Matches the backend PAYSTACK_CALLBACK_URL.
+        const redirectUrl = Linking.createURL('payments/callback');
+        try {
+          await WebBrowser.openAuthSessionAsync(deposit.authorizationUrl, redirectUrl);
+        } catch {
+          // Could not open the in-app browser — the poll loop still confirms.
+        }
+
+        // Back in the app (completed, redirected, or dismissed): verify once
+        // immediately so a finished payment reflects without waiting for a poll.
+        const settled = await paymentsApi.verifyDeposit(deposit.reference);
+        if (settled.status === 'SUCCESS') {
+          finishSuccess();
+        } else if (settled.status === 'FAILED') {
+          setPhase('failed');
+          setError('The payment was declined. No money left your MoMo wallet.');
+        }
+      }
     } catch (err) {
       setPhase('failed');
       setError(getApiErrorMessage(err, 'Could not start the top-up'));
