@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   Dimensions,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -9,12 +10,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Icon } from '../../components/ui/icons';
-import type { IconName } from '../../components/ui/icons';
 import type { AuthStackParamList } from '../../navigation/types';
 import {
   fontSize,
@@ -32,24 +33,24 @@ type OnboardingNavProp = StackNavigationProp<AuthStackParamList, 'Onboarding'>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Slide {
-  icon: IconName;
+  image: ImageSourcePropType;
   title: string;
   body: string;
 }
 
 const SLIDES: Slide[] = [
   {
-    icon: 'wallet',
+    image: require('../../../assets/slide1.png'),
     title: 'Every move, tracked for you',
     body: 'Top up your wallet or send money through Paystack and Mobile Money, and EcoSpend records it automatically — categorized as Food, Rent, Transport and more. No manual entry, no missed spending.',
   },
   {
-    icon: 'lock',
+    image: require('../../../assets/slide2.png'),
     title: 'Save alone, or save together',
     body: 'Lock money away in a personal Vault until a target date, or pool savings with friends in a Group Vault — a digital susu with an automatic contribution plan, reminders, and majority-vote withdrawals.',
   },
   {
-    icon: 'bar-chart',
+    image: require('../../../assets/slide3.png'),
     title: 'Budgets that keep you honest',
     body: 'Set what you expect to earn and spend each month, then watch Weekly Insights and Month-End Projections show you — with real numbers — whether you\'re on track.',
   },
@@ -116,11 +117,7 @@ export default function OnboardingScreen() {
       >
         {SLIDES.map((slide) => (
           <View key={slide.title} style={styles.slide}>
-            <View style={styles.iconRingOuter}>
-              <View style={styles.iconRingInner}>
-                <Icon name={slide.icon} size={40} color={colors.white} strokeWidth={1.6} />
-              </View>
-            </View>
+            <Image source={slide.image} style={styles.slideImage} resizeMode="contain" />
 
             <Text style={styles.title}>{slide.title}</Text>
             <Text style={styles.body}>{slide.body}</Text>
@@ -193,22 +190,10 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: spacing.xl,
       width: SCREEN_WIDTH,
     },
-    iconRingOuter: {
-      alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.12)',
-      borderRadius: radius.full,
-      height: 156,
-      justifyContent: 'center',
+    slideImage: {
+      height: SCREEN_WIDTH * 0.8,
       marginBottom: spacing.xl,
-      width: 156,
-    },
-    iconRingInner: {
-      alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.16)',
-      borderRadius: radius.full,
-      height: 104,
-      justifyContent: 'center',
-      width: 104,
+      width: SCREEN_WIDTH * 0.8,
     },
     title: {
       color: colors.white,
