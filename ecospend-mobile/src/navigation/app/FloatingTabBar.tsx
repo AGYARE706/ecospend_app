@@ -57,7 +57,15 @@ export default function FloatingTabBar({
             });
 
             if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
+              // Navigate to the tab WITHOUT replaying route.params. Deep-link
+              // helpers (navigateToLearn, navigateToSecurity, Dashboard "See
+              // all", …) reach nested screens via navigate('MainTabs', { screen,
+              // params: { screen } }), which leaves that nested directive stored
+              // on the tab route's params. Passing it back here re-fired it, so
+              // e.g. tapping Profile jumped to Financial Lessons. popToTopOnBlur
+              // already resets the tab's stack on blur, so a bare switch lands
+              // on the tab's root screen.
+              navigation.navigate(route.name);
             }
           };
 
