@@ -50,7 +50,7 @@ export default function LockScreen() {
       <Text style={styles.subheading}>
         {biometricAvailable
           ? 'Use Face ID or your fingerprint to continue.'
-          : 'Biometric unlock isn’t set up on this device.'}
+          : 'Use your device passcode to continue.'}
       </Text>
 
       {failed ? (

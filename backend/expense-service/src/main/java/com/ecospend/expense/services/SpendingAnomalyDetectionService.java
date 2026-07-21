@@ -1,6 +1,6 @@
 package com.ecospend.expense.services;
 
-import com.ecospend.expense.client.GeminiClient;
+import com.ecospend.expense.client.GrokClient;
 import com.ecospend.expense.client.NotificationClient;
 import com.ecospend.expense.models.Transaction;
 import com.ecospend.expense.repository.TransactionRepository;
@@ -38,14 +38,14 @@ public class SpendingAnomalyDetectionService {
 
     private final TransactionRepository transactionRepository;
     private final NotificationClient notificationClient;
-    private final GeminiClient geminiClient;
+    private final GrokClient grokClient;
 
     public SpendingAnomalyDetectionService(TransactionRepository transactionRepository,
             NotificationClient notificationClient,
-            GeminiClient geminiClient) {
+            GrokClient grokClient) {
         this.transactionRepository = transactionRepository;
         this.notificationClient = notificationClient;
-        this.geminiClient = geminiClient;
+        this.grokClient = grokClient;
     }
 
     @Scheduled(cron = "0 0 8 * * *")
@@ -56,7 +56,7 @@ public class SpendingAnomalyDetectionService {
 
     /** Also callable from the internal trigger endpoint for demos/tests. */
     public int run() {
-        if (!geminiClient.isConfigured()) {
+        if (!grokClient.isConfigured()) {
             return 0;
         }
 
@@ -106,7 +106,7 @@ public class SpendingAnomalyDetectionService {
                     "A GHS %s transaction just happened in the \"%s\" category — unusually large for this user "
                             + "in that category recently. Write the alert sentence.",
                     candidate.getAmount(), candidate.getCategory());
-            String narrated = geminiClient.narrate(NARRATION_SYSTEM_PROMPT, prompt).trim();
+            String narrated = grokClient.narrate(NARRATION_SYSTEM_PROMPT, prompt).trim();
             body = narrated.isBlank() ? fallback : narrated;
         } catch (Exception e) {
             log.warn("Anomaly narration failed for transaction {}: {}", candidate.getId(), e.getMessage());

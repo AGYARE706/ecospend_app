@@ -94,7 +94,7 @@ The mobile app **never** calls these services directly — it only ever talks to
 **Tech stack, one line each:**
 - **Backend:** Java 21, Spring Boot 3.2.5, Spring Cloud Gateway (the api-gateway), Spring Data JPA/Hibernate, PostgreSQL 16, Flyway (database migrations), Maven, all running in Docker containers via Docker Compose.
 - **Mobile:** Expo (SDK 54) / React Native, TypeScript, React Navigation, React Context for state (no Redux).
-- **AI:** Google Gemini API (via the official `google-genai` Java SDK) powering Abena's chat and daily-insight features.
+- **AI:** Grok (xAI) via its OpenAI-compatible chat-completions API, powering Abena's chat and daily-insight features.
 
 ---
 
@@ -289,7 +289,7 @@ A group version of a vault — several people save toward one pot together, mode
 - A conversational AI assistant, reachable from the floating chat button on the dashboard or the "Ask Coach" screen.
 - Abena is grounded in your **real data** — it has tools it can call to look up your actual spending summary, budget status, recent transactions, goals progress, income target, and vault summary before answering. It's told never to make up a number it hasn't actually looked up.
 - **Daily Insight** — a short, auto-generated one-liner on the dashboard summarizing something useful about your spending that day.
-- Powered by **Google's Gemini API**. If no `GEMINI_API_KEY` is configured, the feature quietly disables itself (the endpoints return "service unavailable" and the mobile UI hides the coach) rather than breaking anything else.
+- Powered by **Grok (xAI)**. If no `GROK_API_KEY` is configured, the feature quietly disables itself (the endpoints return "service unavailable" and the mobile UI hides the coach) rather than breaking anything else.
 
 ### 8.8 Engagement / "Learn"
 
@@ -352,9 +352,9 @@ All services share one physical Postgres instance (simpler to run locally), but 
 ### 9.6 AI tool-use loop (Abena)
 
 Abena isn't just "send the question to an LLM." The chat flow is a manual tool-use loop:
-1. The user's message + conversation history is sent to Gemini along with a list of available "tools" (functions) it can call — get spending summary, get budget status, list transactions, etc.
-2. If Gemini's response is a request to call one or more tools, the backend actually executes them against the real database and sends the results back to Gemini.
-3. This repeats (capped at a few iterations) until Gemini responds with a plain text answer instead of another tool call.
+1. The user's message + conversation history is sent to Grok along with a list of available "tools" (functions) it can call — get spending summary, get budget status, list transactions, etc.
+2. If Grok's response is a request to call one or more tools, the backend actually executes them against the real database and sends the results back to Grok.
+3. This repeats (capped at a few iterations) until Grok responds with a plain text answer instead of another tool call.
 
 This is what "grounds" the AI in real numbers instead of letting it guess — worth explaining if a judge asks how you prevented the AI from hallucinating financial figures.
 
@@ -378,7 +378,8 @@ This is what "grounds" the AI in real numbers instead of letting it guess — wo
 | `JWT_EXPIRY_MS` / `JWT_REFRESH_EXPIRY_MS` | How long login tokens last | 15 min / 7 days |
 | `PAYSTACK_SECRET_KEY` | Paystack (payments provider) secret key | **blank = simulated mode** — see §11 |
 | `PAYSTACK_CALLBACK_URL` | Where Paystack redirects after checkout | `ecospend://payments/callback` |
-| `GEMINI_API_KEY` | Powers the Abena AI coach | blank = coach feature disabled, nothing else breaks |
+| `GROK_API_KEY` | Powers the Abena AI coach (Grok / xAI) | blank = coach feature disabled, nothing else breaks |
+| `GROK_MODEL` | Grok model id for the coach | optional, defaults to `grok-3` |
 | `EXPO_ACCESS_TOKEN` | Only needed if your Expo project has "Enhanced Security for Push Notifications" turned on | blank |
 | `*_SERVICE_PORT` (e.g. `IDENTITY_SERVICE_PORT`) | Which **host** port each service is reachable on | matches the port table in §3 |
 
@@ -448,9 +449,9 @@ Flyway refuses to start a service if a migration file it already applied has sin
 
 ### The AI Coach (Abena) returns a "service unavailable" or quota error
 
-- **503 / "not configured"** — `GEMINI_API_KEY` is blank in `.env`. This is expected behavior, not a bug, if you haven't set up a key.
-- **429 "quota exceeded" / "limit: 0"** — the Google account behind your API key doesn't have free-tier access enabled yet (this is a Google Cloud billing setting, not something wrong in the code). Check [aistudio.google.com/apikey](https://aistudio.google.com/apikey) for the project behind your key and see if it needs billing enabled.
-- **404 "no longer available to new users"** — that specific Gemini model isn't available to a newly-created key/project; try a different model name in `expense-service`'s `application.yml` under the `gemini:` section (e.g. `gemini-2.0-flash-001`, which doesn't carry that restriction).
+- **503 / "not configured"** — `GROK_API_KEY` is blank in `.env`. This is expected behavior, not a bug, if you haven't set up a key.
+- **401 / "invalid api key"** — the key is wrong or lacks access; check the key at [console.x.ai](https://console.x.ai).
+- **404 "model does not exist" / "model not found"** — your key can't access the configured model; set `GROK_MODEL` in `.env` (or `grok.chat-model` in `expense-service`'s `application.yml`) to a model your key supports.
 
 ### Registering/logging in seems to hang waiting for an OTP code
 

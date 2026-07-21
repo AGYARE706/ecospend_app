@@ -1,5 +1,6 @@
 package com.ecospend.expense.services;
 
+import com.ecospend.expense.client.GrokClient;
 import com.ecospend.expense.client.VaultClient;
 import com.ecospend.expense.dto.TransactionSummaryResponse;
 import com.ecospend.expense.models.BudgetEnvelope;
@@ -10,9 +11,6 @@ import com.ecospend.expense.repository.BudgetEnvelopeRepository;
 import com.ecospend.expense.repository.IncomeTargetRepository;
 import com.ecospend.expense.repository.SavingsGoalRepository;
 import com.ecospend.expense.repository.TransactionRepository;
-import com.google.genai.types.FunctionDeclaration;
-import com.google.genai.types.Schema;
-import com.google.genai.types.Type;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -60,72 +58,58 @@ public class CoachToolService {
         this.vaultClient = vaultClient;
     }
 
-    public List<FunctionDeclaration> tools() {
+    public List<GrokClient.ToolSpec> tools() {
         return List.of(
-                FunctionDeclaration.builder()
-                        .name(GET_SPENDING_SUMMARY)
-                        .description("Get total income, total expense, net balance and transaction count for a "
+                new GrokClient.ToolSpec(
+                        GET_SPENDING_SUMMARY,
+                        "Get total income, total expense, net balance and transaction count for a "
                                 + "given month. Call this when the user asks about overall spending/income for a "
-                                + "specific or the current month. Defaults to the current month/year if omitted.")
-                        .parameters(Schema.builder()
-                                .type(Type.Known.OBJECT)
-                                .properties(Map.of(
-                                        "month", Schema.builder()
-                                                .type(Type.Known.INTEGER)
-                                                .description("Month number 1-12. Defaults to the current month.")
-                                                .build(),
-                                        "year", Schema.builder()
-                                                .type(Type.Known.INTEGER)
-                                                .description("Four-digit year. Defaults to the current year.")
-                                                .build()))
-                                .build())
-                        .build(),
-                FunctionDeclaration.builder()
-                        .name(GET_BUDGET_STATUS)
-                        .description("Get every budget envelope (category, monthly limit, amount spent so far, "
+                                + "specific or the current month. Defaults to the current month/year if omitted.",
+                        objectSchema(Map.of(
+                                "month", property("integer", "Month number 1-12. Defaults to the current month."),
+                                "year", property("integer", "Four-digit year. Defaults to the current year.")))),
+                new GrokClient.ToolSpec(
+                        GET_BUDGET_STATUS,
+                        "Get every budget envelope (category, monthly limit, amount spent so far, "
                                 + "percent used) for the current month. Call this whenever the user asks whether "
-                                + "they are on track, over budget, or overspending in any category.")
-                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
-                        .build(),
-                FunctionDeclaration.builder()
-                        .name(LIST_RECENT_TRANSACTIONS)
-                        .description("List the user's most recent transactions, newest first, optionally filtered "
+                                + "they are on track, over budget, or overspending in any category.",
+                        objectSchema(Map.of())),
+                new GrokClient.ToolSpec(
+                        LIST_RECENT_TRANSACTIONS,
+                        "List the user's most recent transactions, newest first, optionally filtered "
                                 + "to one category. Call this when the user asks about specific recent purchases "
-                                + "or wants examples backing up a spending claim.")
-                        .parameters(Schema.builder()
-                                .type(Type.Known.OBJECT)
-                                .properties(Map.of(
-                                        "category", Schema.builder()
-                                                .type(Type.Known.STRING)
-                                                .description("Only include transactions in this category. Omit for all categories.")
-                                                .build(),
-                                        "limit", Schema.builder()
-                                                .type(Type.Known.INTEGER)
-                                                .description("Max transactions to return. Defaults to 10.")
-                                                .build()))
-                                .build())
-                        .build(),
-                FunctionDeclaration.builder()
-                        .name(GET_GOALS_PROGRESS)
-                        .description("Get every savings goal (name, target amount, current amount, deadline, days "
+                                + "or wants examples backing up a spending claim.",
+                        objectSchema(Map.of(
+                                "category", property("string", "Only include transactions in this category. Omit for all categories."),
+                                "limit", property("integer", "Max transactions to return. Defaults to 10.")))),
+                new GrokClient.ToolSpec(
+                        GET_GOALS_PROGRESS,
+                        "Get every savings goal (name, target amount, current amount, deadline, days "
                                 + "remaining, completed flag). Call this when the user asks about savings goals or "
-                                + "whether they are on track to reach one.")
-                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
-                        .build(),
-                FunctionDeclaration.builder()
-                        .name(GET_INCOME_TARGET_STATUS)
-                        .description("Get the user's expected monthly income target versus their actual recorded "
+                                + "whether they are on track to reach one.",
+                        objectSchema(Map.of())),
+                new GrokClient.ToolSpec(
+                        GET_INCOME_TARGET_STATUS,
+                        "Get the user's expected monthly income target versus their actual recorded "
                                 + "income so far this month. Call this when the user asks about income, pay, or "
-                                + "whether they're earning what they expect.")
-                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
-                        .build(),
-                FunctionDeclaration.builder()
-                        .name(GET_VAULT_SUMMARY)
-                        .description("Get the user's personal locked savings vaults and group (susu) vaults, with "
+                                + "whether they're earning what they expect.",
+                        objectSchema(Map.of())),
+                new GrokClient.ToolSpec(
+                        GET_VAULT_SUMMARY,
+                        "Get the user's personal locked savings vaults and group (susu) vaults, with "
                                 + "balances and targets. Call this when the user asks about their vaults, locked "
-                                + "savings, or group susu contributions.")
-                        .parameters(Schema.builder().type(Type.Known.OBJECT).properties(Map.of()).build())
-                        .build());
+                                + "savings, or group susu contributions.",
+                        objectSchema(Map.of())));
+    }
+
+    /** A JSON-Schema object node: {@code { "type": "object", "properties": {...} }}. */
+    private static Map<String, Object> objectSchema(Map<String, Object> properties) {
+        return Map.of("type", "object", "properties", properties);
+    }
+
+    /** A single JSON-Schema property: {@code { "type": <type>, "description": <desc> }}. */
+    private static Map<String, Object> property(String type, String description) {
+        return Map.of("type", type, "description", description);
     }
 
     public Object execute(String toolName, Map<String, Object> input, UUID userId) {
