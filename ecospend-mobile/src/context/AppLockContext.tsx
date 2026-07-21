@@ -36,20 +36,25 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   const [isLocked, setIsLocked] = useState(false);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  // Cold start: load the saved preference and hardware capability once,
-  // and start locked if the preference is on — closes the gap where an
-  // app relaunch would otherwise skip the lock screen entirely.
+  // Cold start: load the saved preference and device capability once, and
+  // start locked so every launch is gated. The lock is ON BY DEFAULT — it
+  // engages unless the user has explicitly turned it off in Security. It
+  // engages for any device auth (biometric OR passcode), not just biometrics,
+  // so a phone with only a PIN is still gated.
   useEffect(() => {
     (async () => {
-      const [stored, hasHardware, isEnrolled] = await Promise.all([
+      const [stored, hasHardware, isEnrolled, enrolledLevel] = await Promise.all([
         SecureStore.getItemAsync(BIOMETRIC_LOCK_KEY),
         LocalAuthentication.hasHardwareAsync(),
         LocalAuthentication.isEnrolledAsync(),
+        LocalAuthentication.getEnrolledLevelAsync(),
       ]);
-      const available = hasHardware && isEnrolled;
-      setBiometricAvailable(available);
+      setBiometricAvailable(hasHardware && isEnrolled);
 
-      const enabled = stored === 'true' && available;
+      // Any device credential (passcode or biometric) can drive the lock.
+      const canLock = enrolledLevel !== LocalAuthentication.SecurityLevel.NONE;
+      // Default ON: only 'false' (an explicit opt-out) disables it.
+      const enabled = stored !== 'false' && canLock;
       setBiometricLockEnabledState(enabled);
       if (enabled) {
         setIsLocked(true);
@@ -73,11 +78,9 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   }, [biometricLockEnabled, isAuthenticated]);
 
   const setBiometricLockEnabled = useCallback(async (enabled: boolean) => {
-    if (enabled) {
-      await SecureStore.setItemAsync(BIOMETRIC_LOCK_KEY, 'true');
-    } else {
-      await SecureStore.deleteItemAsync(BIOMETRIC_LOCK_KEY);
-    }
+    // Store 'false' explicitly on opt-out — the lock is on by default, so
+    // deleting the key would silently re-enable it on the next launch.
+    await SecureStore.setItemAsync(BIOMETRIC_LOCK_KEY, enabled ? 'true' : 'false');
     // Turning it on takes effect from the next backgrounding, not
     // immediately — surprising a user with a lock screen right after
     // they flip the switch reads as a bug, not a feature.

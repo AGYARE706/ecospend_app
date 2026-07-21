@@ -1,6 +1,6 @@
 package com.ecospend.expense.services;
 
-import com.ecospend.expense.client.GeminiClient;
+import com.ecospend.expense.client.GrokClient;
 import com.ecospend.expense.dto.AskCoachResponse;
 import com.ecospend.expense.dto.CoachMessageView;
 import com.ecospend.expense.dto.InsightOfTheDayResponse;
@@ -12,8 +12,6 @@ import com.ecospend.expense.repository.CoachConversationRepository;
 import com.ecospend.expense.repository.CoachDailyInsightRepository;
 import com.ecospend.expense.repository.CoachMessageRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.genai.types.Content;
-import com.google.genai.types.Part;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,26 +51,26 @@ public class CoachService {
     private final CoachConversationRepository conversationRepository;
     private final CoachMessageRepository messageRepository;
     private final CoachDailyInsightRepository dailyInsightRepository;
-    private final GeminiClient geminiClient;
+    private final GrokClient grokClient;
     private final CoachToolService toolService;
     private final ObjectMapper objectMapper;
 
     public CoachService(CoachConversationRepository conversationRepository,
             CoachMessageRepository messageRepository,
             CoachDailyInsightRepository dailyInsightRepository,
-            GeminiClient geminiClient,
+            GrokClient grokClient,
             CoachToolService toolService,
             ObjectMapper objectMapper) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.dailyInsightRepository = dailyInsightRepository;
-        this.geminiClient = geminiClient;
+        this.grokClient = grokClient;
         this.toolService = toolService;
         this.objectMapper = objectMapper;
     }
 
     public boolean isConfigured() {
-        return geminiClient.isConfigured();
+        return grokClient.isConfigured();
     }
 
     @Transactional
@@ -83,12 +81,12 @@ public class CoachService {
                 : createConversation(userId, message);
 
         List<CoachMessage> priorMessages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
-        List<Content> history = new ArrayList<>();
+        List<GrokClient.ChatTurn> history = new ArrayList<>();
         int start = Math.max(0, priorMessages.size() - HISTORY_LIMIT);
         for (CoachMessage m : priorMessages.subList(start, priorMessages.size())) {
-            history.add(toContent(m));
+            history.add(toTurn(m));
         }
-        history.add(Content.builder().role("user").parts(List.of(Part.fromText(message))).build());
+        history.add(new GrokClient.ChatTurn("user", message));
 
         CoachMessage userMessage = new CoachMessage();
         userMessage.setConversationId(conversation.getId());
@@ -96,7 +94,7 @@ public class CoachService {
         userMessage.setContent(message);
         messageRepository.save(userMessage);
 
-        String reply = geminiClient.runToolLoop(CHAT_SYSTEM_PROMPT, history, toolService.tools(),
+        String reply = grokClient.runToolLoop(CHAT_SYSTEM_PROMPT, history, toolService.tools(),
                 (toolName, input) -> toolService.execute(toolName, input, userId));
 
         CoachMessage assistantMessage = new CoachMessage();
@@ -126,7 +124,7 @@ public class CoachService {
     /** Lazily generates and caches one insight per user per day. Empty when the coach isn't configured. */
     @Transactional
     public Optional<InsightOfTheDayResponse> insightOfTheDay(UUID userId) {
-        if (!geminiClient.isConfigured()) {
+        if (!grokClient.isConfigured()) {
             return Optional.empty();
         }
 
@@ -142,7 +140,7 @@ public class CoachService {
 
         String prompt = "Spending summary JSON: " + toJson(spendingResult)
                 + "\nBudget status JSON: " + toJson(budgetResult);
-        String narrated = geminiClient.narrate(INSIGHT_SYSTEM_PROMPT, prompt);
+        String narrated = grokClient.narrate(INSIGHT_SYSTEM_PROMPT, prompt);
         String[] parsed = parseHeadingAndMessage(narrated);
 
         CoachDailyInsight insight = new CoachDailyInsight();
@@ -190,9 +188,9 @@ public class CoachService {
         return conversationRepository.save(conversation);
     }
 
-    private static Content toContent(CoachMessage message) {
-        String role = CoachMessage.ROLE_USER.equals(message.getRole()) ? "user" : "model";
-        return Content.builder().role(role).parts(List.of(Part.fromText(message.getContent()))).build();
+    private static GrokClient.ChatTurn toTurn(CoachMessage message) {
+        String role = CoachMessage.ROLE_USER.equals(message.getRole()) ? "user" : "assistant";
+        return new GrokClient.ChatTurn(role, message.getContent());
     }
 
     private CoachMessageView toView(CoachMessage message) {
