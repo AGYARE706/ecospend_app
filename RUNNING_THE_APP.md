@@ -112,7 +112,7 @@ The mobile app **never** calls these services directly — it only ever talks to
 **Tech stack, one line each:**
 - **Backend:** Java 21, Spring Boot 3.2.5, Spring Cloud Gateway (the api-gateway), Spring Data JPA/Hibernate, PostgreSQL 16, Flyway (database migrations), Maven, all running in Docker containers via Docker Compose.
 - **Mobile:** Expo (SDK 54) / React Native, TypeScript, React Navigation, React Context for state (no Redux).
-- **AI:** Grok (xAI) via its OpenAI-compatible chat-completions API, powering Abena's chat and daily-insight features.
+- **AI:** Google Gemini via its `generateContent` REST API, powering Abena's chat and daily-insight features.
 
 ---
 
@@ -302,7 +302,7 @@ A group version of a vault — several people save toward one pot together, mode
 - A conversational AI assistant, reachable from the floating chat button on the dashboard or the "Ask Coach" screen.
 - Abena is grounded in your **real data** — it has tools it can call to look up your actual spending summary, budget status, recent transactions, goals progress, income target, and vault summary before answering. It's told never to make up a number it hasn't actually looked up.
 - **Daily Insight** — a short, auto-generated one-liner on the dashboard summarizing something useful about your spending that day.
-- Powered by **Grok (xAI)**. If no `GROK_API_KEY` is configured, the feature quietly disables itself (the endpoints return "service unavailable" and the mobile UI hides the coach) rather than breaking anything else.
+- Powered by **Google Gemini** (free tier via [aistudio.google.com](https://aistudio.google.com/apikey), no credit card required). If no `GEMINI_API_KEY` is configured, the feature quietly disables itself (the endpoints return "service unavailable" and the mobile UI hides the coach) rather than breaking anything else.
 
 ### 8.8 Engagement / "Learn"
 
@@ -365,9 +365,9 @@ All services share one physical Postgres instance (simpler to run locally), but 
 ### 9.6 AI tool-use loop (Abena)
 
 Abena isn't just "send the question to an LLM." The chat flow is a manual tool-use loop:
-1. The user's message + conversation history is sent to Grok along with a list of available "tools" (functions) it can call — get spending summary, get budget status, list transactions, etc.
-2. If Grok's response is a request to call one or more tools, the backend actually executes them against the real database and sends the results back to Grok.
-3. This repeats (capped at a few iterations) until Grok responds with a plain text answer instead of another tool call.
+1. The user's message + conversation history is sent to Gemini along with a list of available "tools" (functions) it can call — get spending summary, get budget status, list transactions, etc.
+2. If Gemini's response is a request to call one or more tools (a `functionCall` part), the backend actually executes them against the real database and sends the results back to Gemini.
+3. This repeats (capped at a few iterations) until Gemini responds with a plain text answer instead of another tool call.
 
 This is what "grounds" the AI in real numbers instead of letting it guess — worth explaining if a judge asks how you prevented the AI from hallucinating financial figures.
 
@@ -392,8 +392,8 @@ This is what "grounds" the AI in real numbers instead of letting it guess — wo
 | `PAYSTACK_SECRET_KEY` | Paystack (payments provider) secret key | **blank = simulated mode** — see §11 |
 | `PAYSTACK_CALLBACK_URL` | Fallback for where Paystack redirects after checkout | `ecospend://payments/callback` — the app now sends its own actual redirect link with every top-up request (Expo Go and a standalone build resolve to different URL schemes, so it can't be hardcoded); this value is only used if the app doesn't send one |
 | `PAYSTACK_TRANSFERS_SIMULATED` | Whether Send Money (MoMo payouts) simulates instead of calling real Paystack transfers | **`true` by default** — independent of `PAYSTACK_SECRET_KEY`. Paystack rejects third-party payouts outright for a "Starter" business (account/KYC restriction, no code workaround), so payouts simulate even with a real key configured, while deposits still hit real Paystack. Set to `false` once the Paystack business is verified as Registered |
-| `GROK_API_KEY` | Powers the Abena AI coach (Grok / xAI) | blank = coach feature disabled, nothing else breaks |
-| `GROK_MODEL` | Grok model id for the coach | optional, defaults to `grok-3` |
+| `GEMINI_API_KEY` | Powers the Abena AI coach (Google Gemini) | blank = coach feature disabled, nothing else breaks. Free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), no card required |
+| `GEMINI_MODEL` | Gemini model id for the coach | optional, defaults to `gemini-flash-lite-latest` |
 | `EXPO_ACCESS_TOKEN` | Only needed if your Expo project has "Enhanced Security for Push Notifications" turned on | blank |
 | `*_SERVICE_PORT` (e.g. `IDENTITY_SERVICE_PORT`) | Which **host** port each service is reachable on | matches the port table in §3 |
 
@@ -467,9 +467,10 @@ That's Paystack itself talking, not a bug — third-party payouts (money going *
 
 ### The AI Coach (Abena) returns a "service unavailable" or quota error
 
-- **503 / "not configured"** — `GROK_API_KEY` is blank in `.env`. This is expected behavior, not a bug, if you haven't set up a key.
-- **401 / "invalid api key"** — the key is wrong or lacks access; check the key at [console.x.ai](https://console.x.ai).
-- **404 "model does not exist" / "model not found"** — your key can't access the configured model; set `GROK_MODEL` in `.env` (or `grok.chat-model` in `expense-service`'s `application.yml`) to a model your key supports.
+- **503 / "not configured"** — `GEMINI_API_KEY` is blank in `.env`. This is expected behavior, not a bug, if you haven't set up a key.
+- **401/403 / "API key not valid" or "permission denied"** — the key is wrong, disabled, or restricted; check it at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+- **404 "model not found"** — your key can't access the configured model; set `GEMINI_MODEL` in `.env` (or `gemini.chat-model` in `expense-service`'s `application.yml`) to a model your key supports — `gemini-flash-lite-latest` is free-tier eligible and the default.
+- **429 "quota exceeded"** — the free tier's per-minute/per-day request cap was hit; wait a bit or check usage at [aistudio.google.com](https://aistudio.google.com).
 
 ### Registering/logging in seems to hang waiting for an OTP code
 
