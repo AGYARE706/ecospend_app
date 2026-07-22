@@ -259,6 +259,14 @@ public class FinanceController {
             @RequestHeader("X-User-Id") UUID userId) {
         SavingsGoal goal = savingsGoalRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+        // Money already contributed here was debited from the wallet on
+        // /contribute — deleting the goal outright would destroy it with no
+        // way back. Mirrors VaultService.delete()'s same guard for vaults.
+        if (goal.getCurrentAmount().compareTo(BigDecimal.ZERO) > 0) {
+            throw new BadRequestException(
+                    "This goal still holds GHS " + goal.getCurrentAmount()
+                            + " — withdraw it first before deleting the goal.");
+        }
         savingsGoalRepository.delete(goal);
         return ResponseEntity.noContent().build();
     }

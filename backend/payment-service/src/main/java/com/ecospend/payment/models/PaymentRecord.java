@@ -61,6 +61,9 @@ public class PaymentRecord {
     @Column(name = "momo_provider", length = 20)
     private String momoProvider;
 
+    @Column(name = "category", length = 50)
+    private String category;
+
     @Column(name = "transfer_code", length = 100)
     private String transferCode;
 

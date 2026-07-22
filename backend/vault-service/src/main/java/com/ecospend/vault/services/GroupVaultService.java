@@ -150,7 +150,11 @@ public class GroupVaultService {
         long memberships = memberRepository.countByUserIdAndStatus(userId, GroupVaultMember.Status.ACTIVE);
         vaultTierPolicy.assertCanJoinOrCreateGroup(tier, memberships);
 
-        GroupVault group = requireGroup(groupId);
+        // Locked for the rest of this transaction: two concurrent joins
+        // against the same group could otherwise both read the same
+        // member count below and both pass the capacity check, pushing
+        // membership past maxMembers.
+        GroupVault group = groupRepository.lockById(groupId).orElseThrow(VaultException::notFound);
         requireActive(group);
 
         if (memberRepository.findByGroupIdAndUserId(groupId, userId).isPresent()) {
@@ -290,7 +294,16 @@ public class GroupVaultService {
     public WithdrawalRequestView requestWithdrawal(UUID userId, UUID groupId, AmountRequest request) {
         GroupVault group = requireGroup(groupId);
         requireActive(group);
-        GroupVaultMember member = requireActiveMember(groupId, userId);
+        // Locked for the rest of this transaction: two near-simultaneous
+        // requests from the same member (double-tap, retried request)
+        // could otherwise both pass the "no pending request yet" check
+        // below before either commits, creating two live requests against
+        // the same balance.
+        GroupVaultMember member = memberRepository.lockByGroupIdAndUserId(groupId, userId)
+                .orElseThrow(VaultException::notFound);
+        if (member.getStatus() != GroupVaultMember.Status.ACTIVE) {
+            throw VaultException.conflict("You have exited this group vault");
+        }
 
         if (member.getBalance().compareTo(request.amount()) < 0) {
             throw VaultException.badRequest("Withdrawal exceeds your own balance in this group vault");

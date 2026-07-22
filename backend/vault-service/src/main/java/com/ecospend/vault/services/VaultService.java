@@ -35,7 +35,10 @@ public class VaultService {
 
     @Transactional
     public Vault create(UUID userId, String tier, CreateVaultRequest request) {
-        long count = vaultRepository.countByUserId(userId);
+        // Only ACTIVE vaults count toward the FREE-tier cap — a vault the
+        // user already withdrew or broke shouldn't count against them
+        // forever; "up to 3" means concurrently held, not lifetime total.
+        long count = vaultRepository.countByUserIdAndStatus(userId, Vault.Status.ACTIVE);
         vaultTierPolicy.assertCanCreatePersonalVault(tier, count);
 
         Vault vault = new Vault();
@@ -122,6 +125,14 @@ public class VaultService {
                 shortfall ? "Below-target maturity fee (4%)" : "Platform sustainability fee (2%)");
         record(vault, VaultTransaction.Type.WITHDRAWAL, payout,
                 request.note() != null ? request.note() : "Withdrawal payout");
+        // A full withdrawal closes the vault out — mirrors breakVault's
+        // terminal BROKEN status below, so the mobile app can reliably tell
+        // "already withdrawn, nothing left to do here" apart from "active
+        // with a temporarily low balance" even after a refetch. A partial
+        // withdrawal (balance still > 0) leaves the vault ACTIVE.
+        if (vault.getBalance().compareTo(BigDecimal.ZERO) == 0) {
+            vault.setStatus(Vault.Status.CLOSED);
+        }
         Vault saved = vaultRepository.save(vault);
 
         // Net payout lands in the central wallet; a failed credit rolls

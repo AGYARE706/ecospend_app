@@ -29,13 +29,21 @@ spring:
     locations: classpath:db/migration
 
 paystack:
-  # Blank secret key runs the service in simulated mode: deposits verify
-  # instantly and transfers auto-succeed — no Paystack account required.
-  # Set a sk_test_... key to exercise the real Paystack test API.
+  # Blank secret key runs the whole service in simulated mode: deposits
+  # verify instantly and transfers auto-succeed — no Paystack account
+  # required. Set a sk_test_... key to exercise the real Paystack test API.
   secret-key: ${PAYSTACK_SECRET_KEY:}
   base-url: ${PAYSTACK_BASE_URL:https://api.paystack.co}
   # Where Paystack redirects the browser after checkout (deep link back into the app).
   callback-url: ${PAYSTACK_CALLBACK_URL:ecospend://payments/callback}
+  # Independent of the above: Paystack rejects third-party payouts entirely
+  # for any business still on its "Starter" tier (returns "You cannot
+  # initiate third party payouts as a starter business") — an account/KYC
+  # restriction, not something a request can work around. Deposits still
+  # hit real Paystack even with a real key configured; only the MoMo
+  # transfer leg simulates, so Send Money still demos correctly. Set to
+  # false once the Paystack business is verified as a Registered Business.
+  transfers-simulated: ${PAYSTACK_TRANSFERS_SIMULATED:true}
 
 vault-service:
   base-url: ${VAULT_SERVICE_URL:http://vault-service:8083}

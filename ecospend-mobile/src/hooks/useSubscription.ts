@@ -120,8 +120,27 @@ export function useSubscription() {
     [],
   );
 
+  const confirmUpgrade = useCallback((): Promise<boolean> => {
+    return new Promise((resolve) => {
+      Alert.alert(
+        'Upgrade to Plus?',
+        `GHS ${PLUS_ANNUAL_PRICE.toFixed(2)} will be deducted from your wallet right away. This can't be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Upgrade', onPress: () => resolve(true) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) },
+      );
+    });
+  }, []);
+
   const handleUpgrade = useCallback(async () => {
     if (isPlus || isUpgrading) {
+      return false;
+    }
+
+    const confirmed = await confirmUpgrade();
+    if (!confirmed) {
       return false;
     }
 
@@ -150,6 +169,7 @@ export function useSubscription() {
       setIsUpgrading(false);
     }
   }, [
+    confirmUpgrade,
     isPlus,
     isUpgrading,
     refreshEnvelopes,

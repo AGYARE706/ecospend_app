@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -45,6 +46,14 @@ public class WalletController {
             @Valid @RequestBody SendMoneyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(paymentService.sendMoney(userId, request));
+    }
+
+    /** Current status of a payout — polled while a transfer is still PENDING confirmation. */
+    @GetMapping("/withdrawals/{reference}")
+    public ResponseEntity<PaymentRecord> getPayout(
+            @RequestHeader("X-User-Id") UUID userId,
+            @PathVariable String reference) {
+        return ResponseEntity.ok(paymentService.getPayout(userId, reference));
     }
 
     @PostMapping("/transfers/vault")

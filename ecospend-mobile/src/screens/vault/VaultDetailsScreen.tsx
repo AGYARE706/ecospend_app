@@ -57,6 +57,8 @@ function statusMeta(
       return { label: 'Matured', color: colors.blue, bg: colors.blueLight };
     case 'pending':
       return { label: 'Pending', color: colors.textGrey, bg: colors.chipBg };
+    case 'withdrawn':
+      return { label: 'Withdrawn', color: colors.textGrey, bg: colors.chipBg };
   }
 
   return { label: 'Pending', color: colors.textGrey, bg: colors.chipBg };
@@ -88,7 +90,8 @@ export default function VaultDetailsScreen({
     vault.accentColor,
   ];
   const isTargetReached = vault.targetAmount > 0 && stats.remainingAmount <= 0;
-  const canAddFunds = !isTargetReached;
+  const isWithdrawn = vault.status === 'withdrawn';
+  const canAddFunds = !isTargetReached && !isWithdrawn;
 
   function handleWithdraw() {
     navigateApp('WithdrawVault', { vaultId: vault.id });
@@ -342,36 +345,47 @@ export default function VaultDetailsScreen({
 
           {/* ─── 6. Action Buttons ─────────────────────────────── */}
           <SectionHeader title="Actions" icon="flash-outline" />
-          {isTargetReached ? (
-            <View style={styles.targetReachedBanner}>
-              <Ionicons name="trophy-outline" size={16} color={colors.success} />
-              <Text style={styles.targetReachedText}>
-                Target reached — locked from further deposits until {formattedMaturity}.
+          {isWithdrawn ? (
+            <View style={styles.withdrawnBanner}>
+              <Ionicons name="archive-outline" size={16} color={colors.textGrey} />
+              <Text style={styles.withdrawnBannerText}>
+                This vault has been withdrawn — no further deposits or withdrawals are possible.
               </Text>
             </View>
-          ) : null}
-          <View style={styles.actionsRow}>
-            {canAddFunds ? (
-              <>
+          ) : (
+            <>
+              {isTargetReached ? (
+                <View style={styles.targetReachedBanner}>
+                  <Ionicons name="trophy-outline" size={16} color={colors.success} />
+                  <Text style={styles.targetReachedText}>
+                    Target reached — locked from further deposits until {formattedMaturity}.
+                  </Text>
+                </View>
+              ) : null}
+              <View style={styles.actionsRow}>
+                {canAddFunds ? (
+                  <>
+                    <View style={styles.actionButton}>
+                      <AppButton
+                        title="Add Funds"
+                        variant="outline"
+                        icon="add-circle-outline"
+                        onPress={handleAddFunds}
+                      />
+                    </View>
+                    <View style={styles.actionSpacer} />
+                  </>
+                ) : null}
                 <View style={styles.actionButton}>
                   <AppButton
-                    title="Add Funds"
-                    variant="outline"
-                    icon="add-circle-outline"
-                    onPress={handleAddFunds}
+                    title="Withdraw"
+                    icon="cash-outline"
+                    onPress={handleWithdraw}
                   />
                 </View>
-                <View style={styles.actionSpacer} />
-              </>
-            ) : null}
-            <View style={styles.actionButton}>
-              <AppButton
-                title="Withdraw"
-                icon="cash-outline"
-                onPress={handleWithdraw}
-              />
-            </View>
-          </View>
+              </View>
+            </>
+          )}
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -1103,6 +1117,22 @@ const createStyles = (colors: ThemeColors) =>
   },
   targetReachedText: {
     color: colors.textDark,
+    flex: 1,
+    fontSize: fontSize.xs,
+    minWidth: 140,
+  },
+  withdrawnBanner: {
+    alignItems: 'center',
+    backgroundColor: colors.chipBg,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+    padding: spacing.smd,
+  },
+  withdrawnBannerText: {
+    color: colors.textMuted,
     flex: 1,
     fontSize: fontSize.xs,
     minWidth: 140,
