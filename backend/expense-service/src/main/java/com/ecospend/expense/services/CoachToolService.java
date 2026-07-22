@@ -1,6 +1,6 @@
 package com.ecospend.expense.services;
 
-import com.ecospend.expense.client.GrokClient;
+import com.ecospend.expense.client.GeminiClient;
 import com.ecospend.expense.client.VaultClient;
 import com.ecospend.expense.dto.TransactionSummaryResponse;
 import com.ecospend.expense.models.BudgetEnvelope;
@@ -58,9 +58,9 @@ public class CoachToolService {
         this.vaultClient = vaultClient;
     }
 
-    public List<GrokClient.ToolSpec> tools() {
+    public List<GeminiClient.ToolSpec> tools() {
         return List.of(
-                new GrokClient.ToolSpec(
+                new GeminiClient.ToolSpec(
                         GET_SPENDING_SUMMARY,
                         "Get total income, total expense, net balance and transaction count for a "
                                 + "given month. Call this when the user asks about overall spending/income for a "
@@ -68,13 +68,13 @@ public class CoachToolService {
                         objectSchema(Map.of(
                                 "month", property("integer", "Month number 1-12. Defaults to the current month."),
                                 "year", property("integer", "Four-digit year. Defaults to the current year.")))),
-                new GrokClient.ToolSpec(
+                new GeminiClient.ToolSpec(
                         GET_BUDGET_STATUS,
                         "Get every budget envelope (category, monthly limit, amount spent so far, "
                                 + "percent used) for the current month. Call this whenever the user asks whether "
                                 + "they are on track, over budget, or overspending in any category.",
                         objectSchema(Map.of())),
-                new GrokClient.ToolSpec(
+                new GeminiClient.ToolSpec(
                         LIST_RECENT_TRANSACTIONS,
                         "List the user's most recent transactions, newest first, optionally filtered "
                                 + "to one category. Call this when the user asks about specific recent purchases "
@@ -82,19 +82,19 @@ public class CoachToolService {
                         objectSchema(Map.of(
                                 "category", property("string", "Only include transactions in this category. Omit for all categories."),
                                 "limit", property("integer", "Max transactions to return. Defaults to 10.")))),
-                new GrokClient.ToolSpec(
+                new GeminiClient.ToolSpec(
                         GET_GOALS_PROGRESS,
                         "Get every savings goal (name, target amount, current amount, deadline, days "
                                 + "remaining, completed flag). Call this when the user asks about savings goals or "
                                 + "whether they are on track to reach one.",
                         objectSchema(Map.of())),
-                new GrokClient.ToolSpec(
+                new GeminiClient.ToolSpec(
                         GET_INCOME_TARGET_STATUS,
                         "Get the user's expected monthly income target versus their actual recorded "
                                 + "income so far this month. Call this when the user asks about income, pay, or "
                                 + "whether they're earning what they expect.",
                         objectSchema(Map.of())),
-                new GrokClient.ToolSpec(
+                new GeminiClient.ToolSpec(
                         GET_VAULT_SUMMARY,
                         "Get the user's personal locked savings vaults and group (susu) vaults, with "
                                 + "balances and targets. Call this when the user asks about their vaults, locked "
