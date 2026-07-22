@@ -1,11 +1,16 @@
 import { apiClient } from './apiClient';
 import type { AuthResponse } from './authApi';
 
+export type SubscriptionPlan = 'MONTHLY' | 'YEARLY';
+
 export interface UserProfileResponse {
   id: string;
   name: string;
   phone: string;
   tier: string;
+  subscriptionPlan?: SubscriptionPlan | null;
+  subscriptionExpiresAt?: string | null;
+  autoRenew: boolean;
   photoUrl?: string | null;
   twoFactorEnabled: boolean;
   setupCompleted: boolean;
@@ -31,8 +36,14 @@ export async function updateProfilePhoto(photoBase64: string): Promise<UserProfi
   return data;
 }
 
-export async function upgradeToPlus(): Promise<AuthResponse> {
-  const { data } = await apiClient.post<AuthResponse>('/api/users/upgrade-to-plus');
+export async function upgradeToPlus(plan: SubscriptionPlan): Promise<AuthResponse> {
+  const { data } = await apiClient.post<AuthResponse>('/api/users/upgrade-to-plus', { plan });
+  return data;
+}
+
+/** Keeps Plus active until the current period ends, then it lapses to Free instead of re-charging the wallet. */
+export async function cancelAutoRenew(): Promise<UserProfileResponse> {
+  const { data } = await apiClient.post<UserProfileResponse>('/api/users/cancel-plus-renewal');
   return data;
 }
 

@@ -8,6 +8,7 @@ import com.ecospend.identity.dto.UpdateMomoProviderRequest;
 import com.ecospend.identity.dto.UpdateSetupCompletedRequest;
 import com.ecospend.identity.dto.UpdateTwoFactorRequest;
 import com.ecospend.identity.dto.UpdateUserProfileRequest;
+import com.ecospend.identity.dto.UpgradePlanRequest;
 import com.ecospend.identity.dto.UserProfileResponse;
 import com.ecospend.identity.service.AuthService;
 import com.ecospend.identity.service.UserService;
@@ -100,9 +101,16 @@ public class UserController {
 
     @PostMapping("/upgrade-to-plus")
     public ResponseEntity<AuthResponse> upgradeToPlus(
-            @RequestHeader("X-User-Id") UUID userId) {
+            @RequestHeader("X-User-Id") UUID userId,
+            @Valid @RequestBody UpgradePlanRequest request) {
 
-        AuthResponse response = userService.upgradeToPlus(userId);
+        AuthResponse response = userService.upgradeToPlus(userId, request.plan());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/cancel-plus-renewal")
+    public ResponseEntity<UserProfileResponse> cancelPlusRenewal(
+            @RequestHeader("X-User-Id") UUID userId) {
+        return ResponseEntity.ok(userService.cancelAutoRenew(userId));
     }
 }

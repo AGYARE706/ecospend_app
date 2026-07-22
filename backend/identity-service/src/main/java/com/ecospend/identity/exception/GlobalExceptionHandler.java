@@ -85,6 +85,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of("SESSION_NOT_FOUND", ex.getMessage(), 404);
     }
 
+    @ExceptionHandler(AlreadySubscribedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleAlreadySubscribed(AlreadySubscribedException ex) {
+        return ErrorResponse.of("ALREADY_SUBSCRIBED", ex.getMessage(), 409);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {
