@@ -2,7 +2,7 @@
 
 This is your one-stop reference for EcoSpend: how to run it, what every feature does, how it's built under the hood, and how to fix the errors you're most likely to hit. Written so you can use it as your own study notes before presenting to a judging panel, and as a runbook whenever you sit down to work on the app.
 
-Written 2026-07 against the current codebase. If you change something significant later (a new service, a new screen), come back and update the relevant section.
+Updated 2026-07-22 against the current codebase. If you change something significant later (a new service, a new screen), come back and update the relevant section.
 
 ---
 
@@ -35,6 +35,24 @@ EcoSpend is a mobile budgeting and savings app for a Ghanaian audience (currency
 - **Stay motivated** — streaks, XP, badges, and short financial-literacy lessons (a small "Duolingo for money" layer).
 
 It's built as a set of independent backend services (a **microservices architecture**) behind a single gateway, plus a **React Native / Expo** mobile app.
+
+### 1.1 How It's Actually Built — No Jargon
+
+If you've never worked on an app before, here's the whole picture with no assumed knowledge.
+
+**Two separate programs, always.** Every app like this is really two things: something that runs *on your phone* (what you actually see and tap — called the **frontend**), and something that runs on a computer somewhere else, permanently on, that the phone talks to over the internet (called the **backend**). The phone never stores your real balance or does the money math itself — it just asks the backend "what's my balance?" and displays the answer. This matters because it means your data survives even if you delete the app and reinstall it, and it means EcoSpend can't be cheated by editing something on your own phone.
+
+**The backend isn't one program — it's seven.** Instead of one giant program doing everything, EcoSpend splits the backend into small, focused programs called **services**, each responsible for exactly one job — think of it like departments in a company: an Accounts department that only handles money, an HR department that only handles who's logged in, and so on (the full list is the table in [§3](#3-architecture--the-big-picture)). If the notifications department has a bug, the accounts department keeps working fine, because they're genuinely separate programs, not just separate files in one program.
+
+**The gateway is the reception desk.** The phone doesn't get to walk into any department directly. Every request first hits one program called the **api-gateway** — like a building's reception desk. Reception checks your ID badge (a login token, explained next), and only then sends you to the right department. No visitor, and no phone, can walk straight into a department's back office.
+
+**A login token is like a festival wristband.** The first time you log in, the backend checks your password once and hands back a signed, tamper-proof token (a **JWT**). From then on, the app shows that token on every request instead of your password — like getting a wristband at a festival gate after showing ID once, then just flashing the wristband to get back in all day. It can't be forged, because it's cryptographically signed by the backend.
+
+**A database is a very organized filing cabinet.** Every service that needs to remember something permanently (your transactions, your goals, your vaults) writes it into a **database** — a program built specifically for storing and looking up structured records reliably, so nothing is lost when a service restarts. EcoSpend uses **PostgreSQL**, and — matching the "departments" idea — each service gets its own private section of the filing cabinet that only it is allowed to open directly.
+
+**Docker containers are labeled shipping boxes.** Each of the seven backend programs, plus everything it needs to actually run (its exact language runtime, its libraries), gets packaged into a **container** — a self-contained box that runs identically on any computer. This is why setting up this whole project is one command (`docker compose up --build`) instead of manually installing seven different programs' worth of dependencies by hand.
+
+**The mobile app is one codebase, both phones.** The app you install is built with **React Native** (via a toolchain called **Expo**) and written in **TypeScript** (a version of JavaScript that catches more mistakes before you even run the app). The point of React Native is writing the screens once and having them become a real iPhone app *and* a real Android app, instead of building and maintaining two separate apps.
 
 ---
 
@@ -183,12 +201,6 @@ docker compose -f docker-compose.yml -f docker-compose.runtime.yml up --build -d
 ⚠️ **About that command specifically** — see [§11](#11-troubleshooting--common-errors) if you hit a "port 8081 already in use" error running it; that's a known, easy-to-fix conflict with Expo's dev server, not a bug in this override.
 
 ---
-For tomorrow: if you see that daemon error again, it's disk space. Quick fix: 
-docker builder prune -a
-then try again. You can also run bash
-scripts/smoke-test.sh
-any time you want a fast "is everything actually working" check before you go on.
-
 
 ## 7. Running the Mobile App
 
@@ -231,12 +243,13 @@ This section is written so you (or a judge) can understand every corner of the a
 - **2FA (two-factor authentication).** Users can turn on an extra verification step for logins from the Profile → Security screen.
 - **Login lockout.** Repeated failed login attempts lock the account temporarily — a basic brute-force defense.
 - **Sessions & device history.** The app tracks which devices you've logged in from and when (Profile → Security → login history / active sessions), and lets you see/revoke them.
-- **App lock.** A local PIN/biometric lock screen that guards the app itself after it's already logged in (separate from the login password).
+- **App lock.** A local Face ID / fingerprint / device-passcode lock screen that guards the app itself after it's already logged in (separate from the login password) — it's **on by default** the moment a device has any screen lock set up, and re-engages every time the app is reopened or comes back from the background. It can be turned off from Profile → Security.
 - **Setup wizard.** After first login: set your expected monthly income, set up starter budget envelopes, and choose notification preferences.
 
 ### 8.2 Wallet & Transactions
 
 - The **wallet** is the one place your real money sits. You top it up (via Paystack) and every other feature — goals, vaults, bills — moves money in or out of it.
+- **Topping up opens Paystack's real checkout inside the app** (an in-app browser tab, not your phone's separate Safari/Chrome app), and closes itself and returns you straight to EcoSpend the moment the payment finishes — no manual switching back and forth.
 - **Transactions are never entered by hand.** Every wallet movement (a top-up, a goal contribution, a bill payment, a vault deposit) automatically writes a transaction record. This keeps spending reports trustworthy — there's no way to fake or edit history.
 - **Send Money** — send wallet funds to any mobile-money (MoMo) number, including your own (a handy way to "cash out" without going through a bank).
 - **Bills** — set up recurring bills that get paid from the wallet.
@@ -311,7 +324,7 @@ A light gamification layer to encourage regular use:
 | FREE | up to 3 | none |
 | PLUS | unlimited | up to 10 (2–8 members each) |
 
-PLUS costs **GHS 36/year**, paid straight from the wallet (so top up the wallet first if testing this).
+PLUS costs **GHS 36/year**, paid straight from the wallet (so top up the wallet first if testing this). Upgrading always shows a confirmation dialog stating the exact amount first — nothing is charged until you confirm a second time.
 
 ---
 
@@ -377,7 +390,8 @@ This is what "grounds" the AI in real numbers instead of letting it guess — wo
 | `JWT_SECRET` | Signs and verifies login tokens | **required** — generated by `setup-env.sh`, gateway refuses to boot without it |
 | `JWT_EXPIRY_MS` / `JWT_REFRESH_EXPIRY_MS` | How long login tokens last | 15 min / 7 days |
 | `PAYSTACK_SECRET_KEY` | Paystack (payments provider) secret key | **blank = simulated mode** — see §11 |
-| `PAYSTACK_CALLBACK_URL` | Where Paystack redirects after checkout | `ecospend://payments/callback` |
+| `PAYSTACK_CALLBACK_URL` | Fallback for where Paystack redirects after checkout | `ecospend://payments/callback` — the app now sends its own actual redirect link with every top-up request (Expo Go and a standalone build resolve to different URL schemes, so it can't be hardcoded); this value is only used if the app doesn't send one |
+| `PAYSTACK_TRANSFERS_SIMULATED` | Whether Send Money (MoMo payouts) simulates instead of calling real Paystack transfers | **`true` by default** — independent of `PAYSTACK_SECRET_KEY`. Paystack rejects third-party payouts outright for a "Starter" business (account/KYC restriction, no code workaround), so payouts simulate even with a real key configured, while deposits still hit real Paystack. Set to `false` once the Paystack business is verified as Registered |
 | `GROK_API_KEY` | Powers the Abena AI coach (Grok / xAI) | blank = coach feature disabled, nothing else breaks |
 | `GROK_MODEL` | Grok model id for the coach | optional, defaults to `grok-3` |
 | `EXPO_ACCESS_TOKEN` | Only needed if your Expo project has "Enhanced Security for Push Notifications" turned on | blank |
@@ -446,6 +460,10 @@ This deletes the database volume — every user, transaction, goal, vault, every
 ### A Flyway migration fails on startup ("checksum mismatch")
 
 Flyway refuses to start a service if a migration file it already applied has since been *edited*. Never edit a migration file that's already run against your database — always add a new `V{n}__description.sql` file instead. If you're on a throwaway local database and just want to move on: `docker compose down -v` and start fresh.
+
+### Send Money fails with "you cannot initiate third party payouts as a starter business"
+
+That's Paystack itself talking, not a bug — third-party payouts (money going *out* to someone else's MoMo number) are blocked entirely for any Paystack business still on the "Starter" tier; only a KYC-verified "Registered Business" can transfer out. Deposits (top-ups) are unaffected — that restriction is deposit-only. `PAYSTACK_TRANSFERS_SIMULATED` (default `true`, see §10) works around this for local dev/demos by simulating just the MoMo transfer leg while deposits keep hitting real Paystack; flip it to `false` once the Paystack business is verified.
 
 ### The AI Coach (Abena) returns a "service unavailable" or quota error
 

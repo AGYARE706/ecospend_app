@@ -52,7 +52,8 @@ public class PaymentService {
         String reference = "ecospend-dep-" + UUID.randomUUID();
 
         PaystackClient.InitializeResult init =
-                paystackClient.initializeTransaction(reference, request.amount(), request.phone());
+                paystackClient.initializeTransaction(
+                        reference, request.amount(), request.phone(), request.redirectUrl());
 
         PaymentRecord record = new PaymentRecord();
         record.setUserId(userId);
@@ -69,6 +70,13 @@ public class PaymentService {
                 .findByReferenceAndUserId(reference, userId)
                 .orElseThrow(PaymentException::notFound);
         return DepositView.of(record, null);
+    }
+
+    /** Current status of a MoMo payout — backs the mobile poll while a transfer is still PENDING. */
+    public PaymentRecord getPayout(UUID userId, String reference) {
+        return paymentRecordRepository
+                .findByReferenceAndUserId(reference, userId)
+                .orElseThrow(PaymentException::notFound);
     }
 
     public List<PaymentRecord> history(UUID userId) {
@@ -135,13 +143,21 @@ public class PaymentService {
 
     /**
      * Debits the wallet and initiates a Paystack transfer to the given
-     * MoMo number. Runs in one transaction: if the transfer cannot be
-     * initiated, the debit rolls back. A transfer that fails later
-     * (webhook transfer.failed) is refunded in {@link #completeTransfer}.
+     * MoMo number. Runs in one transaction: if the transfer cannot even be
+     * initiated, the debit rolls back. Paystack transfers are asynchronous
+     * — the initiate call merely means Paystack *accepted* the request, not
+     * that the money has moved — so the record stays PENDING (no expense
+     * recorded yet) unless Paystack's response is already a final
+     * "success". Either way, {@link #completeTransfer} is what settles it:
+     * on the matching transfer.success webhook, or refunds the wallet on
+     * transfer.failed/transfer.reversed.
      */
     @Transactional
     public PaymentRecord sendMoney(UUID userId, SendMoneyRequest request) {
         String reference = "ecospend-pay-" + UUID.randomUUID();
+        String category = request.category() == null || request.category().isBlank()
+                ? "Other"
+                : request.category();
 
         walletService.debit(userId, request.amount());
 
@@ -152,6 +168,7 @@ public class PaymentService {
         record.setReference(reference);
         record.setMomoNumber(request.momoNumber());
         record.setMomoProvider(request.momoProvider());
+        record.setCategory(category);
         paymentRecordRepository.save(record);
 
         PaystackClient.TransferResult result = paystackClient.transferToMomo(
@@ -163,28 +180,48 @@ public class PaymentService {
                 "EcoSpend wallet transfer");
 
         record.setTransferCode(result.transferCode());
-        if (result.success()) {
-            record.setStatus(PaymentRecord.Status.SUCCESS);
-        }
         paymentRecordRepository.save(record);
 
-        String category = request.category() == null || request.category().isBlank()
-                ? "Other"
-                : request.category();
-        expenseClient.recordTransaction(userId, request.amount(), "EXPENSE", category,
-                "Sent to " + request.momoNumber() + " (" + request.momoProvider() + ")");
+        if ("success".equalsIgnoreCase(result.status())) {
+            // Already final (simulated mode, or a transfer type Paystack
+            // completes synchronously) — settle immediately.
+            int claimed = paymentRecordRepository.markSuccessIfPending(reference);
+            if (claimed > 0) {
+                // markSuccessIfPending is a bulk update — it doesn't touch
+                // this in-memory entity, but this is what's returned to the
+                // caller below, so reflect the transition here too.
+                record.setStatus(PaymentRecord.Status.SUCCESS);
+                recordPayoutExpense(record);
+            }
+        }
+        // Otherwise still PENDING ("pending"/"otp"/...) — leave the books
+        // untouched until the webhook confirms it one way or the other.
         return record;
     }
 
     /**
-     * Webhook completion for outbound transfers. A failed or reversed
-     * transfer refunds the wallet exactly once (guarded by the
-     * PENDING → FAILED claim).
+     * Webhook completion for outbound transfers. A confirmed success
+     * records the expense (deferred from {@link #sendMoney} until now,
+     * unless it already settled synchronously there). A failed or reversed
+     * transfer refunds the wallet. Both are guarded by the PENDING → * claim
+     * so retried/duplicate webhooks can never double-apply either effect.
      */
     @Transactional
     public void completeTransfer(String reference, boolean success, String message) {
         if (success) {
-            paymentRecordRepository.markSuccessIfPending(reference);
+            int claimed = paymentRecordRepository.markSuccessIfPending(reference);
+            if (claimed == 0) {
+                return;
+            }
+            PaymentRecord record = paymentRecordRepository.findByReference(reference)
+                    .orElseThrow(PaymentException::notFound);
+            if (record.getType() == PaymentRecord.Type.PAYOUT) {
+                recordPayoutExpense(record);
+                notificationClient.send(record.getUserId(), "Transfer confirmed",
+                        String.format("GHS %.2f was sent to %s (%s).",
+                                record.getAmountGhs(), record.getMomoNumber(), record.getMomoProvider()),
+                        "WALLET_TRANSFER", Map.of("reference", reference));
+            }
             return;
         }
 
@@ -198,8 +235,18 @@ public class PaymentService {
             walletService.credit(record.getUserId(), record.getAmountGhs());
             expenseClient.recordTransaction(record.getUserId(), record.getAmountGhs(),
                     "INCOME", "Transfer", "Refund — MoMo transfer failed");
+            notificationClient.send(record.getUserId(), "Transfer failed",
+                    String.format("GHS %.2f could not be sent to %s — it's back in your wallet.",
+                            record.getAmountGhs(), record.getMomoNumber()),
+                    "WALLET_TRANSFER_FAILED", Map.of("reference", reference));
             log.info("Refunded wallet for failed transfer {}", reference);
         }
+    }
+
+    private void recordPayoutExpense(PaymentRecord record) {
+        expenseClient.recordTransaction(record.getUserId(), record.getAmountGhs(), "EXPENSE",
+                record.getCategory(),
+                "Sent to " + record.getMomoNumber() + " (" + record.getMomoProvider() + ")");
     }
 
     // ------------------------------------------------------------------

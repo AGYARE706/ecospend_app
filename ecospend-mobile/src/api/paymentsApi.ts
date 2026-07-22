@@ -38,6 +38,7 @@ export async function getWallet(): Promise<WalletView> {
 export async function initializeTopUp(payload: {
   amount: number;
   phone?: string;
+  redirectUrl?: string;
 }): Promise<DepositView> {
   const { data } = await apiClient.post<DepositView>('/api/payments/deposits', payload);
   return data;
@@ -71,6 +72,18 @@ export async function sendMoney(payload: {
   const { data } = await apiClient.post<PaymentRecordView>(
     '/api/payments/withdrawals',
     payload,
+  );
+  return data;
+}
+
+/**
+ * Polls the current status of a MoMo payout — Paystack transfers are
+ * asynchronous, so a payout can still be PENDING right after sendMoney
+ * resolves, settling moments later via webhook.
+ */
+export async function getPayoutStatus(reference: string): Promise<PaymentRecordView> {
+  const { data } = await apiClient.get<PaymentRecordView>(
+    `/api/payments/withdrawals/${reference}`,
   );
   return data;
 }

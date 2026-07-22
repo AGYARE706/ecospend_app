@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -107,9 +108,6 @@ export default function EditGoalScreen() {
         if (!form.targetAmount || Number(form.targetAmount) <= 0) {
             nextErrors.targetAmount = 'Enter a valid target amount.';
         }
-        if (form.currentSaved === '' || Number(form.currentSaved) < 0) {
-            nextErrors.currentSaved = 'Enter a valid saved amount.';
-        }
         if (!form.category) nextErrors.category = 'Choose a category.';
 
         setErrors(nextErrors);
@@ -124,20 +122,38 @@ export default function EditGoalScreen() {
         await updateGoal(existing.id, {
           name: form.name.trim(),
           targetAmount: Number(form.targetAmount),
-          currentAmount: Number(form.currentSaved),
           deadline: form.targetDeadline.trim() || null,
         });
 
         navigation.goBack();
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (!existing) {
           return;
         }
 
-        await deleteGoal(existing.id);
-        navigation.goBack();
+        const hasBalance = existing.currentAmount > 0;
+        Alert.alert(
+          'Delete this goal?',
+          hasBalance
+            ? `This goal still holds GHS ${existing.currentAmount.toLocaleString()} — withdraw it back to your wallet first. This can't be undone.`
+            : "This can't be undone.",
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: () => {
+                void deleteGoal(existing.id).then((success) => {
+                  if (success) {
+                    navigation.goBack();
+                  }
+                });
+              },
+            },
+          ],
+        );
     };
 
     if (!existing) {
@@ -235,14 +251,15 @@ export default function EditGoalScreen() {
                             error={errors.targetAmount}
                         />
 
-                        <AppInput
-                            label="Current Saved (GHS)"
-                            value={form.currentSaved}
-                            onChangeText={(text) => handleChange('currentSaved', text)}
-                            placeholder="45000"
-                            keyboardType="number-pad"
-                            error={errors.currentSaved}
-                        />
+                        <View>
+                            <Text style={styles.inputLabel}>Current Saved (GHS)</Text>
+                            <View style={styles.readOnlyField}>
+                                <Text style={styles.readOnlyFieldValue}>{form.currentSaved}</Text>
+                            </View>
+                            <Text style={styles.readOnlyFieldHint}>
+                                Only changes through Add Money or Withdraw — not editable here.
+                            </Text>
+                        </View>
 
                         <View>
                             <Text style={styles.inputLabel}>Target Deadline</Text>
@@ -517,6 +534,25 @@ const createStyles = (colors: ThemeColors) =>
         color: colors.error,
         fontSize: fontSize.sm,
         fontWeight: fontWeight.medium,
+        marginTop: spacing.xs,
+    },
+    readOnlyField: {
+        backgroundColor: colors.chipBg,
+        borderColor: colors.border,
+        borderRadius: radius.input,
+        borderWidth: 1.5,
+        justifyContent: 'center',
+        minHeight: 54,
+        paddingHorizontal: spacing.md,
+    },
+    readOnlyFieldValue: {
+        color: colors.textSecondary,
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.medium,
+    },
+    readOnlyFieldHint: {
+        color: colors.textLight,
+        fontSize: fontSize.xs,
         marginTop: spacing.xs,
     },
     categoryRow: {

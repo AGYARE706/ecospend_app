@@ -35,13 +35,33 @@ function clearTabRouteParams(tab: keyof TabParamList): void {
   }
   const root = navigationRef.getRootState();
   const mainTabs = root.routes.find((r) => r.name === 'MainTabs');
-  const tabRoute = mainTabs?.state?.routes.find((r) => r.name === tab);
-  if (!tabRoute?.key) {
+  const tabsState = mainTabs?.state;
+  const tabRoute = tabsState?.routes.find((r) => r.name === tab);
+  if (!tabsState?.key || !tabRoute?.key) {
+    return;
+  }
+  // A tab's nested stack is lazy — it has no `.state` of its own until it
+  // actually mounts (first visit this session). Until then, the {screen,
+  // params} we just set ARE the only way it'll know what to open once it
+  // does mount. Clearing them here — before that mount happens — silently
+  // strands it on its default screen instead (this is exactly what broke
+  // "jump straight to Financial Lessons" the first time a session visited
+  // the Profile tab via the Dashboard shortcut rather than the tab bar).
+  // Only an already-mounted tab (real `.state` present) has genuinely
+  // stale params left over from an earlier navigate — that's the case this
+  // cleanup exists for.
+  if (!tabRoute.state) {
     return;
   }
   navigationRef.dispatch({
     ...CommonActions.setParams({ screen: undefined, params: undefined }),
     source: tabRoute.key,
+    // Dispatching from the root ref only ever checks the root navigator's
+    // own routes unless `target` names the nested navigator to drill into —
+    // `source` alone (a route key one level down, inside MainTabs' tab
+    // navigator) was silently failing with "action was not handled by any
+    // navigator" on every cross-tab navigate.
+    target: tabsState.key,
   });
 }
 

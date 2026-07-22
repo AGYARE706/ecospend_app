@@ -8,7 +8,6 @@ import { useEffect } from 'react';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
 import { useAuth } from '../../context/AuthContext';
 import { useGroupVaultDashboard } from '../../hooks/useGroupVaultDashboard';
-import { useUnreadNotificationsCount } from '../../hooks/useUnreadNotificationsCount';
 import { navigateApp, navigateToSubscription } from '../../navigation/navigationRef';
 import type { VaultStackParamList } from '../../navigation/types';
 import {
@@ -78,7 +77,6 @@ export default function GroupVaultDashboardScreen() {
     isEmpty,
     hasPendingRequests,
   } = useGroupVaultDashboard();
-  const unreadNotifications = useUnreadNotificationsCount();
 
   useEffect(() => {
     if (tier === 'FREE') {
@@ -138,11 +136,6 @@ export default function GroupVaultDashboardScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <HeaderIconBtn
-              icon="notifications-outline"
-              onPress={() => navigateApp('Notifications')}
-              badge={unreadNotifications > 0 ? unreadNotifications : undefined}
-            />
             <HeaderIconBtn
               icon="enter-outline"
               onPress={openJoinGroup}

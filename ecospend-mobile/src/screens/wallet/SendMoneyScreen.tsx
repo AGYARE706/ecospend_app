@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -59,7 +59,7 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
   } = useSendMoney();
 
   const showTopUpPrompt =
-    isAmountValid && !hasEnoughBalance && phase !== 'success';
+    isAmountValid && !hasEnoughBalance && phase !== 'success' && phase !== 'processing';
 
   return (
     <ScreenWrapper background="page" padded={false}>
@@ -84,7 +84,7 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
             </Text>
           </View>
 
-          {phase !== 'success' ? (
+          {phase !== 'success' && phase !== 'processing' ? (
             <>
               <AppInput
                 label="Amount to send (GHS)"
@@ -170,6 +170,18 @@ export default function SendMoneyScreen({ navigation }: SendMoneyScreenProps) {
                 />
               ) : null}
             </>
+          ) : null}
+
+          {phase === 'processing' ? (
+            <View style={styles.stateCard}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.stateTitle}>Confirming transfer</Text>
+              <Text style={styles.stateBody}>
+                We're confirming this with Paystack — it usually takes a few
+                seconds. It'll show up in your wallet and transaction history
+                the moment it's confirmed, even if you navigate away.
+              </Text>
+            </View>
           ) : null}
 
           {phase === 'success' ? (

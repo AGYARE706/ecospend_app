@@ -2,43 +2,54 @@ package com.ecospend.payment.client;
 
 import com.ecospend.payment.exceptions.PaymentException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 /**
  * The only class in EcoSpend that talks to Paystack.
  *
- * Two modes, decided by whether PAYSTACK_SECRET_KEY is set:
- *  - Real mode: calls the Paystack test API (initialize, verify,
- *    transfer recipient, transfer) with the sk_test key.
- *  - Simulated mode (blank key): returns deterministic success responses
- *    so the full deposit/payout flow can be demonstrated locally without
- *    a Paystack account. The rest of the system cannot tell the difference.
+ * Deposits (initialize/verify) and transfers (payouts) simulate
+ * independently:
+ *  - Deposits: real when PAYSTACK_SECRET_KEY is set, simulated when blank.
+ *  - Transfers: simulated whenever deposits are simulated, OR whenever
+ *    PAYSTACK_TRANSFERS_SIMULATED is true (the default) — because Paystack
+ *    rejects third-party payouts outright for a "Starter" business, an
+ *    account/KYC restriction no request can work around. Simulated
+ *    responses are deterministic successes, so the full deposit/payout
+ *    flow can be demonstrated without a verified Paystack business; the
+ *    rest of the system cannot tell the difference.
  */
 @Component
 public class PaystackClient {
 
     private static final Logger log = LoggerFactory.getLogger(PaystackClient.class);
+    private static final ObjectMapper ERROR_MAPPER = new ObjectMapper();
 
     private final String secretKey;
     private final String callbackUrl;
+    private final boolean transfersSimulated;
     private final RestClient restClient;
 
     public PaystackClient(
             @Value("${paystack.secret-key}") String secretKey,
             @Value("${paystack.base-url}") String baseUrl,
-            @Value("${paystack.callback-url}") String callbackUrl) {
+            @Value("${paystack.callback-url}") String callbackUrl,
+            @Value("${paystack.transfers-simulated:true}") boolean transfersSimulated) {
         this.secretKey = secretKey == null ? "" : secretKey.trim();
         this.callbackUrl = callbackUrl;
+        this.transfersSimulated = transfersSimulated;
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.secretKey)
@@ -50,6 +61,17 @@ public class PaystackClient {
         return secretKey.isEmpty();
     }
 
+    /**
+     * Paystack rejects third-party payouts outright for any business still
+     * on its "Starter" tier — an account/KYC restriction with no request-side
+     * workaround. Deposits can still hit real Paystack (isSimulated()) while
+     * transfers simulate independently, so Send Money keeps working before
+     * the business is verified.
+     */
+    public boolean isTransfersSimulated() {
+        return isSimulated() || transfersSimulated;
+    }
+
     public String secretKey() {
         return secretKey;
     }
@@ -58,18 +80,41 @@ public class PaystackClient {
 
     public record VerifyResult(boolean success, String gatewayResponse) {}
 
-    public record TransferResult(boolean success, String transferCode, String message) {}
+    /** {@code status} is Paystack's own transfer status ("success", "pending", "otp", ...) — never a free-text message. */
+    public record TransferResult(String transferCode, String status) {}
 
     /**
      * Starts a checkout for the given amount. Paystack requires an email;
      * EcoSpend users only have phone numbers, so a synthetic address is
      * derived from the phone.
+     *
+     * @param redirectUrlOverride the client's own deep link (Linking.createURL),
+     *     used as the Paystack callback_url when present. This must win over
+     *     the configured default — Expo Go and standalone builds resolve
+     *     Linking.createURL to different schemes, so the app that actually
+     *     opened the checkout is the only one that knows what it can catch.
      */
-    public InitializeResult initializeTransaction(String reference, BigDecimal amountGhs, String userPhone) {
+    public InitializeResult initializeTransaction(
+            String reference, BigDecimal amountGhs, String userPhone, String redirectUrlOverride) {
         if (isSimulated()) {
             log.info("[SIMULATED] initialize {} GHS {} — auto-approving", reference, amountGhs);
             return new InitializeResult("https://checkout.paystack.com/simulated/" + reference, "sim_" + reference);
         }
+
+        String effectiveCallbackUrl =
+                (redirectUrlOverride == null || redirectUrlOverride.isBlank())
+                        ? callbackUrl
+                        : redirectUrlOverride.trim();
+
+        // custom_fields is Paystack's standard way to attach business context
+        // to a transaction (shown on the dashboard/receipt) — without it,
+        // nothing in the request identifies this charge as an EcoSpend
+        // wallet top-up.
+        Map<String, Object> metadata = Map.of(
+                "custom_fields", List.of(Map.of(
+                        "display_name", "Purpose",
+                        "variable_name", "purpose",
+                        "value", "EcoSpend Wallet Top-up")));
 
         try {
             JsonNode body = restClient.post()
@@ -79,7 +124,8 @@ public class PaystackClient {
                             "amount", toPesewas(amountGhs),
                             "currency", "GHS",
                             "reference", reference,
-                            "callback_url", callbackUrl))
+                            "callback_url", effectiveCallbackUrl,
+                            "metadata", metadata))
                     .retrieve()
                     .body(JsonNode.class);
 
@@ -89,7 +135,9 @@ public class PaystackClient {
                     data.get("authorization_url").asText(),
                     data.get("access_code").asText());
         } catch (RestClientException e) {
-            throw PaymentException.upstream("Paystack initialize failed: " + e.getMessage());
+            String detail = describeError(e);
+            log.error("Paystack initialize transaction failed: {}", detail, e);
+            throw PaymentException.upstream("Paystack initialize failed: " + detail);
         }
     }
 
@@ -113,7 +161,9 @@ public class PaystackClient {
                     : data.get("status").asText();
             return new VerifyResult(success, gatewayResponse);
         } catch (RestClientException e) {
-            throw PaymentException.upstream("Paystack verify failed: " + e.getMessage());
+            String detail = describeError(e);
+            log.error("Paystack verify transaction failed: {}", detail, e);
+            throw PaymentException.upstream("Paystack verify failed: " + detail);
         }
     }
 
@@ -128,26 +178,34 @@ public class PaystackClient {
             String momoProvider,
             String recipientName,
             String reason) {
-        if (isSimulated()) {
-            log.info("[SIMULATED] transfer {} GHS {} to {} ({}) — success",
-                    reference, amountGhs, momoNumber, momoProvider);
-            return new TransferResult(true, "sim_trf_" + reference, "Transfer complete (simulated)");
+        if (isTransfersSimulated()) {
+            String simReason = isSimulated() ? "no secret key configured" : "Starter-tier payouts disabled";
+            log.info("[SIMULATED, {}] transfer {} GHS {} to {} ({}) — success",
+                    simReason, reference, amountGhs, momoNumber, momoProvider);
+            return new TransferResult("sim_trf_" + reference, "success");
         }
 
+        String recipientCode;
         try {
             JsonNode recipientBody = restClient.post()
                     .uri("/transferrecipient")
                     .body(Map.of(
                             "type", "mobile_money",
                             "name", recipientName,
-                            "account_number", momoNumber,
+                            "account_number", normalizeGhanaMomoNumber(momoNumber),
                             "bank_code", momoProviderToBankCode(momoProvider),
                             "currency", "GHS"))
                     .retrieve()
                     .body(JsonNode.class);
             requireStatusTrue(recipientBody, "create transfer recipient");
-            String recipientCode = recipientBody.get("data").get("recipient_code").asText();
+            recipientCode = recipientBody.get("data").get("recipient_code").asText();
+        } catch (RestClientException e) {
+            String detail = describeError(e);
+            log.error("Paystack transfer-recipient creation failed: {}", detail, e);
+            throw PaymentException.upstream("Could not create the transfer recipient: " + detail);
+        }
 
+        try {
             JsonNode transferBody = restClient.post()
                     .uri("/transfer")
                     .body(Map.of(
@@ -161,12 +219,54 @@ public class PaystackClient {
             requireStatusTrue(transferBody, "initiate transfer");
             JsonNode data = transferBody.get("data");
             return new TransferResult(
-                    true,
                     data.get("transfer_code").asText(),
                     data.has("status") ? data.get("status").asText() : "pending");
         } catch (RestClientException e) {
-            throw PaymentException.upstream("Paystack transfer failed: " + e.getMessage());
+            String detail = describeError(e);
+            log.error("Paystack transfer initiation failed: {}", detail, e);
+            throw PaymentException.upstream("Could not initiate the transfer: " + detail);
         }
+    }
+
+    /**
+     * Paystack's Ghana mobile_money account_number expects a consistent
+     * local format — the mobile app accepts both "0XXXXXXXXX" and
+     * "+233XXXXXXXXX", so a raw "+233..." number reaching Paystack
+     * unmodified is a plausible rejection cause.
+     */
+    private static String normalizeGhanaMomoNumber(String momoNumber) {
+        if (momoNumber == null) {
+            return momoNumber;
+        }
+        String trimmed = momoNumber.trim();
+        if (trimmed.startsWith("+233")) {
+            return "0" + trimmed.substring(4);
+        }
+        return trimmed;
+    }
+
+    /**
+     * Extracts Paystack's own {@code message} field from a failed response
+     * body when possible, so callers see the real rejection reason instead
+     * of a bare status code.
+     */
+    private static String describeError(RestClientException e) {
+        if (e instanceof HttpStatusCodeException httpEx) {
+            String body = httpEx.getResponseBodyAsString();
+            if (body != null && !body.isBlank()) {
+                try {
+                    JsonNode node = ERROR_MAPPER.readTree(body);
+                    if (node.hasNonNull("message")) {
+                        return node.get("message").asText();
+                    }
+                } catch (Exception ignored) {
+                    // body wasn't JSON — fall through to the raw text below
+                }
+                return body;
+            }
+            return "HTTP " + httpEx.getStatusCode();
+        }
+        return e.getMessage();
     }
 
     private static void requireStatusTrue(JsonNode body, String action) {

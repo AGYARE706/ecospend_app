@@ -10,5 +10,5 @@ import java.util.UUID;
 public interface VaultRepository extends JpaRepository<Vault, UUID> {
     List<Vault> findByUserIdOrderByCreatedAtDesc(UUID userId);
     Optional<Vault> findByIdAndUserId(UUID id, UUID userId);
-    long countByUserId(UUID userId);
+    long countByUserIdAndStatus(UUID userId, Vault.Status status);
 }

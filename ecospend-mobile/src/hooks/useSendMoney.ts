@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as paymentsApi from '../api/paymentsApi';
@@ -17,8 +17,10 @@ export const MOMO_PROVIDERS: { key: MomoProvider; label: string }[] = [
 ];
 
 const GHANA_PHONE_PATTERN = /^(0|\+233)\d{9}$/;
+const POLL_INTERVAL_MS = 5000;
+const MAX_POLLS = 24; // two minutes
 
-export type SendMoneyPhase = 'input' | 'sending' | 'success' | 'failed';
+export type SendMoneyPhase = 'input' | 'sending' | 'processing' | 'success' | 'failed';
 
 /**
  * Wallet money-out: sends the amount to an external MoMo number via a
@@ -38,6 +40,8 @@ export function useSendMoney() {
   const [category, setCategory] = useState<TransactionCategory | null>(null);
   const [phase, setPhase] = useState<SendMoneyPhase>('input');
   const [error, setError] = useState<string | null>(null);
+  const [reference, setReference] = useState<string | null>(null);
+  const pollCount = useRef(0);
 
   const parsedAmount = parseFloat(amount);
   const isAmountValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
@@ -96,13 +100,26 @@ export function useSendMoney() {
 
     setPhase('sending');
     try {
-      await paymentsApi.sendMoney({
+      const record = await paymentsApi.sendMoney({
         amount: parsedAmount,
         momoNumber: trimmedNumber,
         momoProvider,
         category,
       });
-      setPhase('success');
+      // Paystack transfers are asynchronous — the request being accepted
+      // doesn't mean the money has moved yet. If it's not already final,
+      // poll until the webhook confirms it, instead of claiming success
+      // for a transfer that might still fail.
+      if (record.status === 'SUCCESS') {
+        setPhase('success');
+      } else if (record.status === 'FAILED') {
+        setPhase('failed');
+        setError('The transfer failed. Your wallet was not charged.');
+      } else {
+        pollCount.current = 0;
+        setReference(record.reference);
+        setPhase('processing');
+      }
       void refreshWallet();
       void refreshTransactions();
       // The send was tagged with a spending category — reflect it against
@@ -124,9 +141,49 @@ export function useSendMoney() {
     refreshWallet,
   ]);
 
+  const checkNow = useCallback(async () => {
+    if (!reference) return;
+    try {
+      const record = await paymentsApi.getPayoutStatus(reference);
+      if (record.status === 'SUCCESS') {
+        setPhase('success');
+        void refreshWallet();
+        void refreshTransactions();
+      } else if (record.status === 'FAILED') {
+        setPhase('failed');
+        setError("The transfer didn't go through — your wallet was refunded.");
+        void refreshWallet();
+      }
+    } catch {
+      // Transient network hiccup — the poll interval retries on its own.
+    }
+  }, [reference, refreshTransactions, refreshWallet]);
+
+  useEffect(() => {
+    if (phase !== 'processing') {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      pollCount.current += 1;
+      if (pollCount.current > MAX_POLLS) {
+        clearInterval(timer);
+        setPhase('failed');
+        setError(
+          "This is taking longer than usual to confirm. Check your transaction history in a moment — if it didn't go through, your wallet is automatically refunded.",
+        );
+        return;
+      }
+      void checkNow();
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [checkNow, phase]);
+
   const reset = useCallback(() => {
     setPhase('input');
     setError(null);
+    setReference(null);
   }, []);
 
   return {

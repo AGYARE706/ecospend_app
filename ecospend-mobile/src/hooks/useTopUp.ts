@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
 import * as paymentsApi from '../api/paymentsApi';
+import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
 import { useWallet } from '../context/WalletContext';
 
@@ -25,6 +26,7 @@ const MAX_POLLS = 36; // three minutes
 export function useTopUp() {
   const { balance, refreshWallet } = useWallet();
   const { refreshTransactions } = useFinance();
+  const { user } = useAuth();
 
   const [amount, setAmount] = useState('');
   const [phase, setPhase] = useState<TopUpPhase>('input');
@@ -50,7 +52,16 @@ export function useTopUp() {
     setPhase('starting');
     setError(null);
     try {
-      const deposit = await paymentsApi.initializeTopUp({ amount: parsedAmount });
+      // Computed once and sent to the backend so Paystack's callback_url
+      // always matches what openAuthSessionAsync below is listening for —
+      // Linking.createURL resolves to a different scheme in Expo Go than
+      // in a standalone build, so the server can't hardcode this.
+      const redirectUrl = Linking.createURL('payments/callback');
+      const deposit = await paymentsApi.initializeTopUp({
+        amount: parsedAmount,
+        redirectUrl,
+        phone: user?.phone,
+      });
       setReference(deposit.reference);
 
       // In simulated mode (no Paystack key on the backend) the very first
@@ -72,8 +83,8 @@ export function useTopUp() {
       setPhase('awaiting');
       if (deposit.authorizationUrl) {
         // Paystack redirects here after checkout; the in-app browser closes
-        // itself when it sees this URL. Matches the backend PAYSTACK_CALLBACK_URL.
-        const redirectUrl = Linking.createURL('payments/callback');
+        // itself when it sees this URL, since it's the same one we sent as
+        // callback_url when initializing the transaction above.
         try {
           await WebBrowser.openAuthSessionAsync(deposit.authorizationUrl, redirectUrl);
         } catch {
@@ -94,7 +105,7 @@ export function useTopUp() {
       setPhase('failed');
       setError(getApiErrorMessage(err, 'Could not start the top-up'));
     }
-  }, [finishSuccess, isAmountValid, parsedAmount]);
+  }, [finishSuccess, isAmountValid, parsedAmount, user?.phone]);
 
   const checkNow = useCallback(async () => {
     if (!reference) return;
