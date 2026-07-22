@@ -45,6 +45,19 @@ public class User {
     @Builder.Default
     private String subscriptionTier = "FREE";
 
+    /** "MONTHLY" or "YEARLY" — null while on FREE. */
+    @Column(name = "subscription_plan", length = 20)
+    private String subscriptionPlan;
+
+    /** When the current Plus period ends. Null while on FREE. */
+    @Column(name = "subscription_expires_at")
+    private LocalDateTime subscriptionExpiresAt;
+
+    /** Whether the subscription re-charges the wallet at expiry instead of lapsing to FREE. */
+    @Column(name = "auto_renew", nullable = false)
+    @Builder.Default
+    private boolean autoRenew = true;
+
     @Column(name = "push_token")
     private String pushToken;
 

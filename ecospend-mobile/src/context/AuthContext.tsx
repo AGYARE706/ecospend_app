@@ -46,7 +46,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
   updatePhoto: (photoBase64: string) => Promise<void>;
-  upgradeToPlus: () => Promise<boolean>;
+  upgradeToPlus: (plan: 'MONTHLY' | 'YEARLY') => Promise<boolean>;
   markSetupComplete: () => Promise<void>;
   setMomoProvider: (momoProvider: string) => Promise<void>;
 }
@@ -244,12 +244,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Paid upgrade: the backend charges GHS 36 from the wallet before
-   * flipping the tier, so failures (e.g. insufficient balance) are
-   * rethrown for the caller to surface to the user.
+   * Paid upgrade: the backend charges the chosen plan's price from the
+   * wallet before flipping the tier, so failures (e.g. insufficient
+   * balance, or an already-active subscription) are rethrown for the
+   * caller to surface to the user.
    */
-  const upgradeToPlus = useCallback(async (): Promise<boolean> => {
-    const response = await usersApi.upgradeToPlus();
+  const upgradeToPlus = useCallback(async (plan: 'MONTHLY' | 'YEARLY'): Promise<boolean> => {
+    const response = await usersApi.upgradeToPlus(plan);
     // AuthResponse's user summary carries only name/phone — preserve the
     // photo and setup state already held rather than silently dropping them.
     const nextUser = {

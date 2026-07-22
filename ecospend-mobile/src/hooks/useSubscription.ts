@@ -1,15 +1,22 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { getApiErrorMessage } from '../api/getApiErrorMessage';
+import * as usersApi from '../api/usersApi';
+import type { SubscriptionPlan } from '../api/usersApi';
 import { useAuth } from '../context/AuthContext';
 import { useEnvelopes } from '../context/EnvelopesContext';
 import { useFinance } from '../context/FinanceContext';
 import { useTheme } from '../context/ThemeContext';
 import { useWallet } from '../context/WalletContext';
 
-export const PLUS_ANNUAL_PRICE = 36;
+export const PLUS_MONTHLY_PRICE = 15;
+export const PLUS_YEARLY_PRICE = 165;
+/** How much cheaper yearly is per-month-equivalent, vs paying monthly all year. */
+export const YEARLY_SAVINGS_PERCENT = Math.round(
+  (1 - PLUS_YEARLY_PRICE / (PLUS_MONTHLY_PRICE * 12)) * 100,
+);
 
 export interface SubscriptionBenefit {
   id: string;
@@ -28,6 +35,13 @@ export interface PlanComparisonRow {
   freeIncluded: boolean;
 }
 
+function formatRenewalDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export function useSubscription() {
   const { tier, upgradeToPlus } = useAuth();
   const { refreshWallet } = useWallet();
@@ -35,8 +49,33 @@ export function useSubscription() {
   const { refreshEnvelopes } = useEnvelopes();
   const { colors } = useTheme();
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('YEARLY');
 
   const isPlus = tier === 'PLUS';
+
+  // Renewal/auto-renew details live only here, fetched on demand — nothing
+  // else in the app needs them, so this stays out of the global AuthUser
+  // state that every profile-touching flow would otherwise have to carry.
+  const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
+  const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
+  const [autoRenew, setAutoRenew] = useState(true);
+
+  const refreshSubscriptionDetails = useCallback(async () => {
+    try {
+      const profile = await usersApi.getMe();
+      setSubscriptionPlan(profile.subscriptionPlan ?? null);
+      setSubscriptionExpiresAt(profile.subscriptionExpiresAt ?? null);
+      setAutoRenew(profile.autoRenew);
+    } catch {
+      // Best-effort — the screen still works without the renewal details.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isPlus) {
+      void refreshSubscriptionDetails();
+    }
+  }, [isPlus, refreshSubscriptionDetails]);
 
   const benefits = useMemo<SubscriptionBenefit[]>(
     () => [
@@ -115,16 +154,17 @@ export function useSubscription() {
     ? 'Premium vault tools and insights are active on your account.'
     : 'Upgrade to unlock advanced savings features.';
 
-  const monthlyEquivalent = useMemo(
-    () => (PLUS_ANNUAL_PRICE / 12).toFixed(2),
-    [],
-  );
+  const renewsOn = formatRenewalDate(subscriptionExpiresAt);
+  const activePrice = subscriptionPlan === 'MONTHLY' ? PLUS_MONTHLY_PRICE : PLUS_YEARLY_PRICE;
+  const activePeriodLabel = subscriptionPlan === 'MONTHLY' ? 'month' : 'year';
 
-  const confirmUpgrade = useCallback((): Promise<boolean> => {
+  const confirmUpgrade = useCallback((plan: SubscriptionPlan): Promise<boolean> => {
+    const price = plan === 'MONTHLY' ? PLUS_MONTHLY_PRICE : PLUS_YEARLY_PRICE;
+    const period = plan === 'MONTHLY' ? 'month' : 'year';
     return new Promise((resolve) => {
       Alert.alert(
         'Upgrade to Plus?',
-        `GHS ${PLUS_ANNUAL_PRICE.toFixed(2)} will be deducted from your wallet right away. This can't be undone.`,
+        `GHS ${price.toFixed(2)} will be deducted from your wallet now, then again every ${period} until you cancel auto-renewal.`,
         [
           { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
           { text: 'Upgrade', onPress: () => resolve(true) },
@@ -139,23 +179,25 @@ export function useSubscription() {
       return false;
     }
 
-    const confirmed = await confirmUpgrade();
+    const confirmed = await confirmUpgrade(selectedPlan);
     if (!confirmed) {
       return false;
     }
 
     setIsUpgrading(true);
     try {
-      const ok = await upgradeToPlus();
+      const ok = await upgradeToPlus(selectedPlan);
       if (ok) {
-        // The upgrade charged GHS 36 from the wallet and auto-recorded
-        // the expense — refresh both so the UI reflects it immediately.
+        // The upgrade charged the wallet and auto-recorded the expense —
+        // refresh both so the UI reflects it immediately.
         void refreshWallet();
         void refreshTransactions();
         void refreshEnvelopes();
+        void refreshSubscriptionDetails();
+        const price = selectedPlan === 'MONTHLY' ? PLUS_MONTHLY_PRICE : PLUS_YEARLY_PRICE;
         Alert.alert(
           'Welcome to Plus!',
-          `GHS ${PLUS_ANNUAL_PRICE.toFixed(2)} was paid from your wallet.`,
+          `GHS ${price.toFixed(2)} was paid from your wallet.`,
         );
       }
       return ok;
@@ -173,10 +215,36 @@ export function useSubscription() {
     isPlus,
     isUpgrading,
     refreshEnvelopes,
+    refreshSubscriptionDetails,
     refreshTransactions,
     refreshWallet,
+    selectedPlan,
     upgradeToPlus,
   ]);
+
+  const handleCancelAutoRenew = useCallback(() => {
+    Alert.alert(
+      'Cancel auto-renewal?',
+      renewsOn
+        ? `Plus stays active until ${renewsOn}, then your account moves to the Free plan. You won't be charged again.`
+        : "Plus stays active until your current period ends, then your account moves to the Free plan. You won't be charged again.",
+      [
+        { text: 'Keep auto-renewal', style: 'cancel' },
+        {
+          text: 'Cancel renewal',
+          style: 'destructive',
+          onPress: () => {
+            void usersApi
+              .cancelAutoRenew()
+              .then(() => refreshSubscriptionDetails())
+              .catch((error) => {
+                Alert.alert('Could not cancel', getApiErrorMessage(error, 'Please try again'));
+              });
+          },
+        },
+      ],
+    );
+  }, [refreshSubscriptionDetails, renewsOn]);
 
   return {
     tier,
@@ -186,8 +254,16 @@ export function useSubscription() {
     comparisonRows,
     planTitle,
     planSubtitle,
-    annualPrice: PLUS_ANNUAL_PRICE,
-    monthlyEquivalent,
+    selectedPlan,
+    setSelectedPlan,
+    monthlyPrice: PLUS_MONTHLY_PRICE,
+    yearlyPrice: PLUS_YEARLY_PRICE,
+    yearlySavingsPercent: YEARLY_SAVINGS_PERCENT,
+    activePrice,
+    activePeriodLabel,
+    renewsOn,
+    autoRenew,
     handleUpgrade,
+    handleCancelAutoRenew,
   };
 }

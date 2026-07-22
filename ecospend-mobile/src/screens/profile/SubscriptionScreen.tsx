@@ -4,6 +4,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import type { SubscriptionPlan } from '../../api/usersApi';
 import AppButton from '../../components/ui/AppButton';
 import GhsText from '../../components/ui/GhsText';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
@@ -42,9 +43,17 @@ export default function SubscriptionScreen() {
     comparisonRows,
     planTitle,
     planSubtitle,
-    annualPrice,
-    monthlyEquivalent,
+    selectedPlan,
+    setSelectedPlan,
+    monthlyPrice,
+    yearlyPrice,
+    yearlySavingsPercent,
+    activePrice,
+    activePeriodLabel,
+    renewsOn,
+    autoRenew,
     handleUpgrade,
+    handleCancelAutoRenew,
   } = useSubscription();
 
   return (
@@ -95,17 +104,22 @@ export default function SubscriptionScreen() {
 
           <SectionLabel title="Pricing" icon="pricetag-outline" />
           <PricingCard
-            annualPrice={annualPrice}
-            monthlyEquivalent={monthlyEquivalent}
             isPlus={isPlus}
+            selectedPlan={selectedPlan}
+            setSelectedPlan={setSelectedPlan}
+            monthlyPrice={monthlyPrice}
+            yearlyPrice={yearlyPrice}
+            yearlySavingsPercent={yearlySavingsPercent}
+            activePrice={activePrice}
+            activePeriodLabel={activePeriodLabel}
           />
 
           <SectionLabel title="Compare Plans" icon="git-compare-outline" />
           <ComparisonTable rows={comparisonRows} />
 
           <Text style={styles.disclaimer}>
-            Subscription renews annually. Cancel anytime from your account settings.
-            Payment processing is simulated in this demo.
+            Your plan renews automatically from your EcoSpend wallet each period until you
+            cancel auto-renewal.
           </Text>
 
           <View style={styles.bottomSpacer} />
@@ -118,17 +132,27 @@ export default function SubscriptionScreen() {
               <View style={styles.activePlanTextBlock}>
                 <Text style={styles.activePlanTitle}>You're on EcoSpend Plus</Text>
                 <Text style={styles.activePlanSub}>
-                  All premium benefits are active on your account.
+                  {autoRenew
+                    ? renewsOn
+                      ? `Renews ${renewsOn} — GHS ${activePrice.toFixed(2)}/${activePeriodLabel}`
+                      : 'All premium benefits are active on your account.'
+                    : renewsOn
+                      ? `Auto-renewal is off — Plus ends ${renewsOn}`
+                      : 'Auto-renewal is off.'}
                 </Text>
+                {autoRenew ? (
+                  <Pressable onPress={handleCancelAutoRenew} hitSlop={spacing.xs}>
+                    <Text style={styles.cancelRenewalLink}>Cancel auto-renewal</Text>
+                  </Pressable>
+                ) : null}
               </View>
             </View>
           ) : (
             <>
               <View style={styles.footerPriceRow}>
-                <GhsText amount={annualPrice} size="md" />
-                <Text style={styles.footerPriceSuffix}>/year</Text>
-                <Text style={styles.footerPriceHint}>
-                  · GHS {monthlyEquivalent}/mo
+                <GhsText amount={selectedPlan === 'MONTHLY' ? monthlyPrice : yearlyPrice} size="md" />
+                <Text style={styles.footerPriceSuffix}>
+                  /{selectedPlan === 'MONTHLY' ? 'month' : 'year'}
                 </Text>
               </View>
               <AppButton
@@ -211,16 +235,29 @@ function BenefitCard({ benefit }: { benefit: SubscriptionBenefit }) {
 }
 
 function PricingCard({
-  annualPrice,
-  monthlyEquivalent,
   isPlus,
+  selectedPlan,
+  setSelectedPlan,
+  monthlyPrice,
+  yearlyPrice,
+  yearlySavingsPercent,
+  activePrice,
+  activePeriodLabel,
 }: {
-  annualPrice: number;
-  monthlyEquivalent: string;
   isPlus: boolean;
+  selectedPlan: SubscriptionPlan;
+  setSelectedPlan: (plan: SubscriptionPlan) => void;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  yearlySavingsPercent: number;
+  activePrice: number;
+  activePeriodLabel: string;
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const displayPrice = isPlus ? activePrice : selectedPlan === 'MONTHLY' ? monthlyPrice : yearlyPrice;
+  const displayPeriod = isPlus ? activePeriodLabel : selectedPlan === 'MONTHLY' ? 'month' : 'year';
+
   return (
     <View style={styles.pricingCard}>
       <LinearGradient
@@ -229,20 +266,42 @@ function PricingCard({
         end={{ x: 1, y: 1 }}
         style={styles.pricingGradient}
       >
+        {!isPlus ? (
+          <View style={styles.planToggleRow}>
+            <PlanToggleOption
+              label="Monthly"
+              active={selectedPlan === 'MONTHLY'}
+              onPress={() => setSelectedPlan('MONTHLY')}
+            />
+            <PlanToggleOption
+              label="Yearly"
+              badge={`Save ${yearlySavingsPercent}%`}
+              active={selectedPlan === 'YEARLY'}
+              onPress={() => setSelectedPlan('YEARLY')}
+            />
+          </View>
+        ) : null}
+
         <View style={styles.pricingTop}>
           <View>
-            <Text style={styles.pricingLabel}>Annual membership</Text>
-            <View style={styles.pricingAmountRow}>
-              <GhsText amount={annualPrice} size="hero" style={styles.pricingAmount} />
-              <Text style={styles.pricingPeriod}>/year</Text>
-            </View>
-            <Text style={styles.pricingHint}>
-              Just GHS {monthlyEquivalent} per month, billed once yearly
+            <Text style={styles.pricingLabel}>
+              {displayPeriod === 'month' ? 'Monthly membership' : 'Annual membership'}
             </Text>
+            <View style={styles.pricingAmountRow}>
+              <GhsText amount={displayPrice} size="hero" style={styles.pricingAmount} />
+              <Text style={styles.pricingPeriod}>/{displayPeriod}</Text>
+            </View>
+            {!isPlus && selectedPlan === 'YEARLY' ? (
+              <Text style={styles.pricingHint}>
+                Just GHS {(yearlyPrice / 12).toFixed(2)} per month, billed once yearly
+              </Text>
+            ) : null}
           </View>
-          <View style={styles.pricingBadge}>
-            <Text style={styles.pricingBadgeText}>Best value</Text>
-          </View>
+          {!isPlus && selectedPlan === 'YEARLY' ? (
+            <View style={styles.pricingBadge}>
+              <Text style={styles.pricingBadgeText}>Best value</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.pricingDivider} />
@@ -261,6 +320,36 @@ function PricingCard({
         ) : null}
       </LinearGradient>
     </View>
+  );
+}
+
+function PlanToggleOption({
+  label,
+  badge,
+  active,
+  onPress,
+}: {
+  label: string;
+  badge?: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.planToggleOption, active && styles.planToggleOptionActive]}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: active }}
+    >
+      <Text style={[styles.planToggleLabel, active && styles.planToggleLabelActive]}>{label}</Text>
+      {badge ? (
+        <View style={styles.planToggleBadge}>
+          <Text style={styles.planToggleBadgeText}>{badge}</Text>
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -818,5 +907,51 @@ const createStyles = (colors: ThemeColors) =>
   activePlanSub: {
     color: colors.textMuted,
     fontSize: fontSize.sm,
+  },
+  cancelRenewalLink: {
+    color: colors.error,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    marginTop: spacing.xs,
+  },
+  planToggleRow: {
+    backgroundColor: colors.chipBg,
+    borderRadius: radius.full,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+    padding: spacing.xxs,
+  },
+  planToggleOption: {
+    alignItems: 'center',
+    borderRadius: radius.full,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+  },
+  planToggleOptionActive: {
+    backgroundColor: colors.white,
+    ...shadowSm,
+  },
+  planToggleLabel: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  planToggleLabelActive: {
+    color: colors.textDark,
+  },
+  planToggleBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+  },
+  planToggleBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
   },
 });
