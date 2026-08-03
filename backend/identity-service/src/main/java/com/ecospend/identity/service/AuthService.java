@@ -15,6 +15,7 @@ import com.ecospend.identity.entity.Otp;
 import com.ecospend.identity.entity.RefreshToken;
 import com.ecospend.identity.entity.User;
 import com.ecospend.identity.exception.AccountLockedException;
+import com.ecospend.identity.exception.DuplicateEmailException;
 import com.ecospend.identity.exception.DuplicatePhoneException;
 import com.ecospend.identity.exception.InvalidCredentialsException;
 import com.ecospend.identity.exception.InvalidOtpException;
@@ -44,10 +45,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final String REGISTRATION_SUBJECT = "Your EcoSpend verification code";
     private static final String REGISTRATION_MESSAGE =
             "Your EcoSpend verification code is %s. It expires in 10 minutes.";
+    private static final String PASSWORD_RESET_SUBJECT = "Your EcoSpend password reset code";
     private static final String PASSWORD_RESET_MESSAGE =
             "Your EcoSpend password reset code is %s. It expires in 10 minutes.";
+    private static final String LOGIN_2FA_SUBJECT = "Your EcoSpend login code";
     private static final String LOGIN_2FA_MESSAGE =
             "Your EcoSpend login code is %s. It expires in 10 minutes.";
 
@@ -66,14 +70,20 @@ public class AuthService {
             throw new DuplicatePhoneException("Phone number already registered");
         }
 
+        String email = request.email().trim().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new DuplicateEmailException("Email already registered");
+        }
+
         User user = User.builder()
                 .phoneNumber(request.phoneNumber())
+                .email(email)
                 .name(request.name())
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .build();
         userRepository.save(user);
 
-        otpService.sendOtp(user.getId(), user.getPhoneNumber(), Otp.Purpose.REGISTRATION, REGISTRATION_MESSAGE);
+        otpService.sendOtp(user, Otp.Purpose.REGISTRATION, REGISTRATION_SUBJECT, REGISTRATION_MESSAGE);
         return new RegisterResponse(user.getPhoneNumber());
     }
 
@@ -96,7 +106,7 @@ public class AuthService {
                 .filter(u -> !u.isPhoneVerified())
                 .orElseThrow(() -> new InvalidCredentialsException("No pending verification for this number"));
 
-        otpService.sendOtp(user.getId(), user.getPhoneNumber(), Otp.Purpose.REGISTRATION, REGISTRATION_MESSAGE);
+        otpService.sendOtp(user, Otp.Purpose.REGISTRATION, REGISTRATION_SUBJECT, REGISTRATION_MESSAGE);
         return Map.of("phone", request.phoneNumber());
     }
 
@@ -127,12 +137,12 @@ public class AuthService {
         userRepository.save(user);
 
         if (!user.isPhoneVerified()) {
-            otpService.sendOtp(user.getId(), user.getPhoneNumber(), Otp.Purpose.REGISTRATION, REGISTRATION_MESSAGE);
+            otpService.sendOtp(user, Otp.Purpose.REGISTRATION, REGISTRATION_SUBJECT, REGISTRATION_MESSAGE);
             return LoginResponse.phoneVerificationRequired(user.getPhoneNumber());
         }
 
         if (user.isTwoFactorEnabled()) {
-            otpService.sendOtp(user.getId(), user.getPhoneNumber(), Otp.Purpose.LOGIN_2FA, LOGIN_2FA_MESSAGE);
+            otpService.sendOtp(user, Otp.Purpose.LOGIN_2FA, LOGIN_2FA_SUBJECT, LOGIN_2FA_MESSAGE);
             return LoginResponse.otpRequired(user.getPhoneNumber());
         }
 
@@ -158,7 +168,7 @@ public class AuthService {
                 .filter(User::isTwoFactorEnabled)
                 .filter(User::isPhoneVerified)
                 .ifPresent(user -> otpService.sendOtp(
-                        user.getId(), user.getPhoneNumber(), Otp.Purpose.LOGIN_2FA, LOGIN_2FA_MESSAGE));
+                        user, Otp.Purpose.LOGIN_2FA, LOGIN_2FA_SUBJECT, LOGIN_2FA_MESSAGE));
         return Map.of("phone", request.phoneNumber());
     }
 
@@ -201,7 +211,7 @@ public class AuthService {
         Optional<User> userOpt = userRepository.findByPhoneNumber(request.phoneNumber());
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            otpService.sendOtp(user.getId(), user.getPhoneNumber(), Otp.Purpose.PASSWORD_RESET, PASSWORD_RESET_MESSAGE);
+            otpService.sendOtp(user, Otp.Purpose.PASSWORD_RESET, PASSWORD_RESET_SUBJECT, PASSWORD_RESET_MESSAGE);
         }
         return Map.of("phone", request.phoneNumber());
     }

@@ -1,6 +1,7 @@
 package com.ecospend.identity.service;
 
 import com.ecospend.identity.entity.Otp;
+import com.ecospend.identity.entity.User;
 import com.ecospend.identity.exception.InvalidOtpException;
 import com.ecospend.identity.exception.TooManyRequestsException;
 import com.ecospend.identity.repository.OtpRepository;
@@ -17,7 +18,9 @@ import java.util.UUID;
  * Generates, sends, and verifies one-time codes for all three OTP-gated
  * flows (registration, password reset, login 2FA), sharing one rate
  * limit and one attempt cap so none of the three can be brute-forced or
- * used to spam a phone number with SMS.
+ * used to spam a user with codes. Codes are keyed by phone number (the
+ * verify flow looks them up by phone) but delivered to the user's email
+ * via {@link EmailSender}.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,18 +35,20 @@ public class OtpService {
 
     private final OtpRepository otpRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final SmsSender smsSender;
+    private final EmailSender emailSender;
 
     /**
      * {@code messageTemplate} must contain exactly one {@code %s} for the
-     * code. Deliberately does NOT clear prior rows for this
-     * (phone, purpose) before inserting — verifyOtp() always looks up
-     * the most recent one regardless, and keeping history is what lets
-     * the rate limit above actually count repeated sends instead of
-     * only ever seeing the single still-live row.
+     * code. The OTP is keyed by the user's phone number (that's what
+     * verifyOtp looks up) but delivered to their email. Deliberately does
+     * NOT clear prior rows for this (phone, purpose) before inserting —
+     * verifyOtp() always looks up the most recent one regardless, and
+     * keeping history is what lets the rate limit above actually count
+     * repeated sends instead of only ever seeing the single still-live row.
      */
     @Transactional
-    public void sendOtp(UUID userId, String phoneNumber, Otp.Purpose purpose, String messageTemplate) {
+    public void sendOtp(User user, Otp.Purpose purpose, String subject, String messageTemplate) {
+        String phoneNumber = user.getPhoneNumber();
         long recentSends = otpRepository.countByPhoneNumberAndPurposeAndCreatedAtAfter(
                 phoneNumber, purpose, LocalDateTime.now().minusHours(1));
         if (recentSends >= MAX_SENDS_PER_HOUR) {
@@ -52,7 +57,7 @@ public class OtpService {
 
         String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
         Otp otp = Otp.builder()
-                .userId(userId)
+                .userId(user.getId())
                 .phoneNumber(phoneNumber)
                 .purpose(purpose)
                 .codeHash(passwordEncoder.encode(code))
@@ -60,7 +65,7 @@ public class OtpService {
                 .build();
         otpRepository.save(otp);
 
-        smsSender.send(phoneNumber, String.format(messageTemplate, code));
+        emailSender.send(user.getEmail(), subject, String.format(messageTemplate, code));
     }
 
     /** Returns the OTP's userId on success; throws InvalidOtpException otherwise. Consumes the code either way on success. */

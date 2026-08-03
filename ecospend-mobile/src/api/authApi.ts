@@ -27,6 +27,7 @@ export interface LoginResponse {
 
 export async function register(payload: {
   phoneNumber: string;
+  email: string;
   password: string;
   name: string;
 }): Promise<RegisterResponse> {

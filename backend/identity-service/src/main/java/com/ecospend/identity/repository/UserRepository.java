@@ -14,6 +14,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
+    boolean existsByEmail(String email);
+
     /** Plus subscriptions whose current period has ended — feeds the renewal sweep. */
     List<User> findBySubscriptionTierAndSubscriptionExpiresAtBefore(String subscriptionTier, LocalDateTime cutoff);
 }
