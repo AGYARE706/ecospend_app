@@ -1,0 +1,24 @@
+# Caddy reverse proxy for EcoSpend.
+#
+# Caddy automatically obtains and renews a free Let's Encrypt TLS
+# certificate for {$API_DOMAIN}, so the mobile app can talk to
+# https://<your-domain> with no cert setup on your side.
+#
+# The whole app only exposes ONE public HTTP entry point: the api-gateway.
+# Everything else stays on the private Docker network.
+
+{$API_DOMAIN} {
+	# Contact address Let's Encrypt uses for expiry warnings (optional).
+	tls {$ACME_EMAIL}
+
+	encode gzip
+
+	# Forward every request to the gateway on the internal Docker network.
+	# "api-gateway" resolves via Docker DNS; 8080 is its in-container port.
+	reverse_proxy api-gateway:8080
+
+	log {
+		output stdout
+		format console
+	}
+}

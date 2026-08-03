@@ -1,0 +1,69 @@
+# Production override for a single public VM (AWS EC2).
+#
+# Apply ON TOP of the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+#
+# What this changes vs. local dev:
+#  1. Stops publishing Postgres (5432) and every internal service (8081-8086)
+#     to the host. On a public VM those ports would otherwise be reachable
+#     from the whole internet. Services still talk to each other over Docker's
+#     internal network by name, exactly as before — only the *host* mapping is
+#     removed. `!reset []` clears the base file's `ports:` (Compose v2.24+).
+#  2. The api-gateway is no longer published directly either; Caddy sits in
+#     front of it and is the only thing exposed publicly (80/443), terminating
+#     HTTPS with an automatic Let's Encrypt certificate.
+#  3. restart: unless-stopped so services come back after a reboot/crash.
+
+services:
+  postgres:
+    ports: !reset []
+    restart: unless-stopped
+
+  identity-service:
+    ports: !reset []
+    restart: unless-stopped
+
+  expense-service:
+    ports: !reset []
+    restart: unless-stopped
+
+  vault-service:
+    ports: !reset []
+    restart: unless-stopped
+
+  engagement-service:
+    ports: !reset []
+    restart: unless-stopped
+
+  notification-service:
+    ports: !reset []
+    restart: unless-stopped
+
+  payment-service:
+    ports: !reset []
+    restart: unless-stopped
+
+  api-gateway:
+    ports: !reset []
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ecospend-caddy
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env, e.g. api.yourdomain.com}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
