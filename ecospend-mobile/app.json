@@ -17,6 +17,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "me.ecospend.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

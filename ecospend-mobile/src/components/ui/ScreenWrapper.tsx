@@ -15,7 +15,10 @@ import type { ThemeColors } from '../../theme';
 /**
  * background — screen background color variant ('white' or 'page')
  * scrollable — wraps children in a ScrollView when true
- * keyboardAvoiding — adds KeyboardAvoidingView for form screens
+ * keyboardAvoiding — adds KeyboardAvoidingView so the iOS keyboard pushes
+ *   inputs into view instead of covering them. Defaults to true; pass
+ *   keyboardAvoiding={false} to opt out (e.g. screens with no text inputs,
+ *   or that manage their own KeyboardAvoidingView).
  * padded — applies horizontal/vertical padding to scroll content when true
  * children — screen content to render inside the wrapper
  */
@@ -32,7 +35,7 @@ export interface ScreenWrapperProps {
 export default function ScreenWrapper({
   background = 'page',
   scrollable = false,
-  keyboardAvoiding = false,
+  keyboardAvoiding = true,
   padded = true,
   edges = ['top', 'right', 'bottom', 'left'],
   children,

@@ -30,7 +30,7 @@ const deviceLabel = computeDeviceLabel();
 
 export const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_BASE_URL,
-  timeout: 20000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     ...(deviceLabel ? { 'X-Device-Label': deviceLabel } : {}),
@@ -51,7 +51,7 @@ async function refreshAccessToken(): Promise<string | null> {
     const { data } = await axios.post(
       `${apiClient.defaults.baseURL}/api/auth/refresh`,
       { refreshToken },
-      { headers: { 'Content-Type': 'application/json' }, timeout: 20000 },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 30000 },
     );
 
     await persistSession({
