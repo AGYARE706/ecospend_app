@@ -36,6 +36,8 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     setName,
     phone,
     setPhone,
+    email,
+    setEmail,
     password,
     setPassword,
     confirmPassword,
@@ -75,6 +77,15 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
           placeholder="0XX XXX XXXX"
           keyboardType="phone-pad"
           error={getFieldError('phone')}
+        />
+
+        <AppInput
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          error={getFieldError('email')}
         />
 
         <AppInput

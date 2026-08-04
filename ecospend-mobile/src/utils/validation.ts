@@ -12,6 +12,15 @@ export function isValidOtpCode(value: string): boolean {
 }
 
 /**
+ * Pragmatic email check: non-empty local part, "@", a dotted domain. Mirrors
+ * the backend's @Email + non-blank validation on RegisterRequest closely
+ * enough to catch typos client-side without rejecting valid addresses.
+ */
+export function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+/**
  * Mirrors the backend's password policy exactly (RegisterRequest /
  * ResetPasswordRequest `@Pattern`): at least 8 characters, one uppercase
  * letter, one lowercase letter, one digit. Returns null when valid, or

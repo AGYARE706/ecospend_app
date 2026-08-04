@@ -27,6 +27,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of("DUPLICATE_PHONE", ex.getMessage(), 409);
     }
 
+    @ExceptionHandler(DuplicateEmailException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleDuplicateEmail(DuplicateEmailException ex) {
+        return ErrorResponse.of("DUPLICATE_EMAIL", ex.getMessage(), 409);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidation(MethodArgumentNotValidException ex) {

@@ -12,7 +12,6 @@ import { useVerifyOtp } from '../../hooks/useVerifyOtp';
 import type { AuthStackParamList } from '../../navigation/types';
 import { fontSize, fontWeight, spacing, useThemedStyles } from '../../theme';
 import type { ThemeColors } from '../../theme';
-import { maskPhone } from '../../utils/strings';
 
 type VerifyOtpNavigationProp = StackNavigationProp<AuthStackParamList, 'VerifyOtp'>;
 type VerifyOtpRouteProp = RouteProp<AuthStackParamList, 'VerifyOtp'>;
@@ -34,11 +33,11 @@ export default function VerifyOtpScreen() {
     handleResend,
   } = useVerifyOtp(route, navigation);
 
-  const heading = purpose === 'register' ? 'Verify your number' : 'Enter your login code';
+  const heading = purpose === 'register' ? 'Verify your email' : 'Enter your login code';
   const subheading =
     purpose === 'register'
-      ? `We sent a 6-digit code to ${maskPhone(phone)} to confirm it's really you.`
-      : `Two-factor authentication is on for this account. Enter the code sent to ${maskPhone(phone)}.`;
+      ? `We emailed a 6-digit code to confirm it's really you. It expires in 10 minutes.`
+      : `Two-factor authentication is on for this account. Enter the code we emailed you.`;
 
   return (
     <ScreenWrapper background="white" scrollable keyboardAvoiding>
@@ -61,7 +60,7 @@ export default function VerifyOtpScreen() {
           keyboardType="number-pad"
           maxLength={6}
           error={error}
-          hint={__DEV__ ? 'Dev: OTP is logged by identity-service unless a real SMS provider is configured' : undefined}
+          hint={__DEV__ ? 'Dev: OTP is logged by identity-service unless a real email provider is configured' : undefined}
         />
 
         <AppButton title="Verify" onPress={handleVerify} loading={loading} />
