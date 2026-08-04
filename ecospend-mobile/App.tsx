@@ -17,6 +17,7 @@ import { GoalsProvider } from './src/context/GoalsContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { VaultProvider } from './src/context/VaultContext';
 import { WalletProvider } from './src/context/WalletContext';
+import UpdateGate from './src/components/system/UpdateGate';
 import { linking } from './src/navigation/linking';
 import { navigationRef } from './src/navigation/navigationRef';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -52,23 +53,25 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <AppLockProvider>
-              <WalletProvider>
-                <FinanceProvider>
-                  {/* Envelopes must wrap Goals/Vault: their contribute flows
-                      call useEnvelopes() to refresh spend after an expense. */}
-                  <EnvelopesProvider>
-                    <GoalsProvider>
-                      <VaultProvider>
-                        <ThemedApp />
-                      </VaultProvider>
-                    </GoalsProvider>
-                  </EnvelopesProvider>
-                </FinanceProvider>
-              </WalletProvider>
-            </AppLockProvider>
-          </AuthProvider>
+          <UpdateGate>
+            <AuthProvider>
+              <AppLockProvider>
+                <WalletProvider>
+                  <FinanceProvider>
+                    {/* Envelopes must wrap Goals/Vault: their contribute flows
+                        call useEnvelopes() to refresh spend after an expense. */}
+                    <EnvelopesProvider>
+                      <GoalsProvider>
+                        <VaultProvider>
+                          <ThemedApp />
+                        </VaultProvider>
+                      </GoalsProvider>
+                    </EnvelopesProvider>
+                  </FinanceProvider>
+                </WalletProvider>
+              </AppLockProvider>
+            </AuthProvider>
+          </UpdateGate>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

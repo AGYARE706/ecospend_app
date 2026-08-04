@@ -10,7 +10,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.ecospend.me"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "android": {
@@ -18,7 +19,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.ecospend.me"
-      }
+      },
+      "channel": "production"
     }
   }
 }
