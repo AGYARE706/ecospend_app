@@ -54,7 +54,7 @@ export default function ResetPasswordScreen({
 
       <Text style={styles.heading}>Reset password</Text>
       <Text style={styles.subheading}>
-        Enter the 6-digit code sent to {maskPhone(phone)} and choose a new password.
+        Enter the 6-digit code sent to your email and choose a new password.
       </Text>
 
       {successMessage ? (

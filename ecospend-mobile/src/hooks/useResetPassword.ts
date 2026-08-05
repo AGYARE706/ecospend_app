@@ -36,7 +36,7 @@ export function useResetPassword(
     const nextErrors: ResetPasswordFieldErrors = {};
 
     if (!isValidOtpCode(code)) {
-      nextErrors.code = 'Enter the 6-digit code sent to your phone';
+      nextErrors.code = 'Enter the 6-digit code sent to your email';
     }
 
     const passwordError = getPasswordRequirementError(password);
@@ -76,7 +76,7 @@ export function useResetPassword(
       setErrors({
         code: getApiErrorMessage(
           error,
-          'Invalid or expired code. Check the SMS and try again.',
+          'Invalid or expired code. Check your email and try again.',
         ),
       });
     } finally {

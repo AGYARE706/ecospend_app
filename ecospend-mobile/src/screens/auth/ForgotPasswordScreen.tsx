@@ -39,7 +39,7 @@ export default function ForgotPasswordScreen({
 
       <Text style={styles.heading}>Forgot password?</Text>
       <Text style={styles.subheading}>
-        Enter your phone number and we&apos;ll send you a verification code via SMS.
+        Enter your phone number and we&apos;ll send you a verification code to your registered email address.
       </Text>
 
       <View style={styles.form}>
