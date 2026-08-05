@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../../components/ui/icons';
 import type { IconName } from '../../components/ui/icons';
 import ScreenWrapper from '../../components/ui/ScreenWrapper';
+import { useManualUpdate } from '../../hooks/useManualUpdate';
 import { useProfile } from '../../hooks/useProfile';
 import type { ProfileStackParamList } from '../../navigation/types';
 import {
@@ -62,6 +63,7 @@ export default function ProfileScreen() {
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<ProfileNavigationProp>();
   const { name, formattedPhone, isPlus, stats } = useProfile();
+  const { status, errorMessage, checkForUpdate, isChecking } = useManualUpdate();
 
   return (
     <ScreenWrapper background="page" padded={false} edges={[]}>
@@ -171,6 +173,46 @@ export default function ProfileScreen() {
                 onPress={() => navigation.navigate(item.route)}
               />
             ))}
+          </View>
+
+          {/* Check for Updates */}
+          <SectionLabel title="App" icon="phone-portrait-outline" />
+          <View style={styles.updateCard}>
+            <Pressable
+              onPress={checkForUpdate}
+              disabled={isChecking}
+              style={({ pressed }) => [
+                styles.updateButton,
+                pressed && !isChecking && styles.updateButtonPressed,
+                isChecking && styles.updateButtonDisabled,
+              ]}
+            >
+              <View style={styles.updateIconRing}>
+                {isChecking ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Icon name="cloud-download-outline" size={18} color={colors.primary} />
+                )}
+              </View>
+              <View style={styles.updateTextBlock}>
+                <Text style={styles.updateLabel}>Check for Updates</Text>
+                {status === 'checking' && (
+                  <Text style={styles.updateStatus}>Checking for updates...</Text>
+                )}
+                {status === 'downloading' && (
+                  <Text style={styles.updateStatus}>Downloading update...</Text>
+                )}
+                {status === 'up-to-date' && (
+                  <Text style={styles.updateStatusSuccess}>You're up to date!</Text>
+                )}
+                {status === 'error' && (
+                  <Text style={styles.updateStatusError}>{errorMessage}</Text>
+                )}
+              </View>
+              {!isChecking && (
+                <Icon name="chevron-forward" size={18} color={colors.textLight} />
+              )}
+            </Pressable>
           </View>
 
           <View style={styles.bottomSpacer} />
@@ -598,6 +640,57 @@ const createStyles = (colors: ThemeColors) =>
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     ...shadowSm,
+  },
+  updateCard: {
+    backgroundColor: colors.cardBackground,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    ...shadowSm,
+  },
+  updateButton: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  updateButtonPressed: {
+    opacity: 0.85,
+  },
+  updateButtonDisabled: {
+    opacity: 0.6,
+  },
+  updateIconRing: {
+    alignItems: 'center',
+    backgroundColor: colors.primaryBackground,
+    borderRadius: radius.full,
+    height: 36,
+    justifyContent: 'center',
+    marginRight: spacing.md,
+    width: 36,
+  },
+  updateTextBlock: {
+    flex: 1,
+  },
+  updateLabel: {
+    color: colors.textDark,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
+  },
+  updateStatus: {
+    color: colors.textMuted,
+    fontSize: fontSize.sm,
+    marginTop: spacing.xs,
+  },
+  updateStatusSuccess: {
+    color: colors.success,
+    fontSize: fontSize.sm,
+    marginTop: spacing.xs,
+  },
+  updateStatusError: {
+    color: colors.error,
+    fontSize: fontSize.sm,
+    marginTop: spacing.xs,
   },
   bottomSpacer: {
     height: spacing.lg,
