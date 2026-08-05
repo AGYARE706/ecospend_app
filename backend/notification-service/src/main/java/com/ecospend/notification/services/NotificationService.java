@@ -139,7 +139,11 @@ public class NotificationService {
                 .toList();
 
         if (!tokens.isEmpty()) {
-            Set<String> dead = expoPushService.send(tokens, request.title(), request.body(), request.data());
+            // The just-persisted notification is unread, so this count already
+            // includes it — drives the app-icon badge while the app is closed.
+            int badge = (int) Math.min(unreadCount(request.userId()), Integer.MAX_VALUE);
+            Set<String> dead = expoPushService.send(
+                    tokens, request.title(), request.body(), request.data(), badge);
             dead.forEach(deviceTokenRepository::deleteByExpoPushToken);
         }
 

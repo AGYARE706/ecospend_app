@@ -20,7 +20,31 @@ import {
 } from '../api/authTokenAccessor';
 import { registerPushTokenIfAvailable } from '../api/registerPushToken';
 import * as usersApi from '../api/usersApi';
+import {
+  clearBadgeCount,
+  registerForPushNotifications,
+} from '../services/pushNotifications';
 import type { UserTier } from '../types';
+
+/**
+ * Requests OS notification permission, obtains the Expo push token, and
+ * registers it with the backend so this device can receive pushes (and the
+ * app-icon badge). Best-effort: any failure is swallowed so it never blocks
+ * authentication.
+ */
+async function syncPushRegistration(): Promise<void> {
+  try {
+    const registration = await registerForPushNotifications();
+    if (registration) {
+      await registerPushTokenIfAvailable(
+        registration.token,
+        registration.platform,
+      );
+    }
+  } catch {
+    // Never let push setup break the auth flow.
+  }
+}
 
 export interface AuthUser {
   name: string;
@@ -61,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applyLocalSignOut = useCallback(async () => {
     await clearSession();
+    void clearBadgeCount();
     setUser(null);
     setTier('FREE');
     setIsAuthenticated(false);
@@ -104,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profile.tier === 'PLUS' || profile.tier === 'PREMIUM' ? 'PLUS' : 'FREE',
           );
           setIsAuthenticated(true);
+          void syncPushRegistration();
         } catch {
           try {
             const refreshed = await authApi.refresh(stored.refreshToken);
@@ -166,8 +192,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session.tier === 'PLUS' || session.tier === 'PREMIUM' ? 'PLUS' : 'FREE',
     );
     setIsAuthenticated(true);
-    // Push token registration is a no-op until expo-notifications supplies a token.
-    void registerPushTokenIfAvailable(null).catch(() => undefined);
+    // Request notification permission and register the Expo push token so this
+    // device receives pushes + the app-icon badge. Best-effort, non-blocking.
+    void syncPushRegistration();
 
     // The login/register response only carries name+phone. If this account
     // already has a saved photo from an earlier session, fetch it now so it

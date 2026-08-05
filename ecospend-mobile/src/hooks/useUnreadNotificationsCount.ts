@@ -3,6 +3,7 @@ import { useIsFocused } from '@react-navigation/native';
 
 import * as notificationsApi from '../api/notificationsApi';
 import { useAuth } from '../context/AuthContext';
+import { syncBadgeCount } from '../services/pushNotifications';
 
 const POLL_MS = 30000;
 
@@ -32,6 +33,16 @@ export function useUnreadNotificationsCount(): number {
     const interval = setInterval(() => void refresh(), POLL_MS);
     return () => clearInterval(interval);
   }, [isFocused, refresh]);
+
+  // Keep the app-icon badge aligned with the live unread count while the app is
+  // open. When the app is closed the server drives the badge via the push
+  // payload; this keeps it correct after the user reads/clears notifications.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+    void syncBadgeCount(count);
+  }, [count, isAuthenticated]);
 
   return count;
 }

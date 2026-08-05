@@ -37,6 +37,18 @@ public class ExpoPushService {
      *         These should be deleted by the caller.
      */
     public Set<String> send(List<String> tokens, String title, String body, Map<String, Object> data) {
+        return send(tokens, title, body, data, null);
+    }
+
+    /**
+     * Delivers the same title/body/data to every supplied Expo token, and — when
+     * {@code badge} is non-null — asks the OS to set the app-icon badge to that
+     * value so it stays correct while the app is closed.
+     *
+     * @return the subset of tokens Expo reported as no longer registered.
+     *         These should be deleted by the caller.
+     */
+    public Set<String> send(List<String> tokens, String title, String body, Map<String, Object> data, Integer badge) {
         Set<String> deadTokens = new HashSet<>();
         if (tokens == null || tokens.isEmpty()) {
             return deadTokens;
@@ -49,6 +61,9 @@ public class ExpoPushService {
             message.put("title", title);
             message.put("body", body);
             message.put("sound", "default");
+            if (badge != null && badge >= 0) {
+                message.put("badge", badge);
+            }
             if (data != null && !data.isEmpty()) {
                 message.put("data", data);
             }
